@@ -18,24 +18,24 @@
     </Window.DataContext>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <TextBlock Text="Loading products..." Grid.Row="0" Margin="10" 
-                   Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Visible}"/>
+        <!-- Sidebar -->
+        <StackPanel Grid.Column="0" Background="#2D2D30" VerticalAlignment="Stretch">
+            <TextBlock Text="Menu" Foreground="White" FontWeight="Bold" FontSize="18" Margin="16,24,0,24" />
+            <Button Content="Dashboard" Margin="8,4" Height="40" />
+            <Button Content="Products" Margin="8,4" Height="40" />
+            <Button Content="Orders" Margin="8,4" Height="40" />
+            <Button Content="Reports" Margin="8,4" Height="40" />
+            <Button Content="Settings" Margin="8,4" Height="40" />
+        </StackPanel>
 
-        <ListBox ItemsSource="{Binding Products}" Grid.Row="1" Margin="10">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <TextBlock Text="{Binding Id}" Width="30" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Name}" Width="150" Margin="10,0"/>
-                        <TextBlock Text="{Binding Price, StringFormat=C}"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- Main Content -->
+        <Grid Grid.Column="1" Background="White">
+            <TextBlock Text="Main Content Area" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="24" Foreground="#444" />
+        </Grid>
     </Grid>
 </Window>
