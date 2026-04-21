@@ -14,6 +14,8 @@ namespace MyShop.Client
         {
             base.OnStartup(e);
             DIContainer.ConfigureServices();
+            var nav = DIContainer.ServiceProvider.GetRequiredService<Services.INavigationService>();
+            nav.NavigateTo<ViewModels.MainViewModel>();
             var mainWindow = DIContainer.ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
