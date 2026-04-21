@@ -1,9 +1,0 @@
-<Solution>
-  <Project Path="MyShop.Application/MyShop.Application.csproj" Id="dfab5ebe-7204-4279-be86-f87b79c0c8ed" />
-  <Project Path="MyShop.Client/MyShop.Client.csproj" />
-  <Project Path="MyShop.Domain/MyShop.Domain.csproj" />
-  <Project Path="MyShop.Infrastructure/MyShop.Infrastructure.csproj" Id="6f6b5a93-3ce5-4cd1-ae01-c630298e68fd" />
-  <Project Path="MyShop.Plugin.Abstractions/MyShop.Plugin.Abstractions.csproj" Id="e0f15c7f-3070-4270-b5e0-6ffff2755061" />
-  <Project Path="MyShop.Shared/MyShop.Shared.csproj" Id="da3ee3a6-796c-40f2-a925-5ce94f44801b" />
-  <Project Path="MyShop.Tests/MyShop.Tests.csproj" Id="4c644ce1-752f-49ee-bfbd-180722a943fc" />
-</Solution>
