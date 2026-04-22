@@ -17,17 +17,15 @@ namespace MyShop.Client
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(ViewModels.MainViewModel mainViewModel)
         {
             InitializeComponent();
+            DataContext = mainViewModel;
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void MainView_Loaded()
         {
-            if (DataContext is ProductViewModel viewModel)
-            {
-                await viewModel.LoadProductsAsync();
-            }
+
         }
     }
 }

@@ -5,37 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MyShop.Client"
         xmlns:vm="clr-namespace:MyShop.Client.ViewModels"
+        xmlns:views="clr-namespace:MyShop.Client.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        Loaded="Window_Loaded">
+        Title="MainWindow" Height="450" Width="800">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
-    <Window.DataContext>
-        <vm:ProductViewModel />
-    </Window.DataContext>
-
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
-        <!-- Sidebar -->
-        <StackPanel Grid.Column="0" Background="#2D2D30" VerticalAlignment="Stretch">
-            <TextBlock Text="Menu" Foreground="White" FontWeight="Bold" FontSize="18" Margin="16,24,0,24" />
-            <Button Content="Dashboard" Margin="8,4" Height="40" />
-            <Button Content="Products" Margin="8,4" Height="40" />
-            <Button Content="Orders" Margin="8,4" Height="40" />
-            <Button Content="Reports" Margin="8,4" Height="40" />
-            <Button Content="Settings" Margin="8,4" Height="40" />
-        </StackPanel>
-
-        <!-- Main Content -->
-        <Grid Grid.Column="1" Background="White">
-            <TextBlock Text="Main Content Area" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="24" Foreground="#444" />
-        </Grid>
-    </Grid>
+    <views:MainView />
 </Window>

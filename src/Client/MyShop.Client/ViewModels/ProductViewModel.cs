@@ -7,7 +7,7 @@ using MyShop.Client.Services;
 
 namespace MyShop.Client.ViewModels
 {
-    public class ProductViewModel : INotifyPropertyChanged
+    public class ProductViewModel : BaseViewModel
     {
         private readonly ProductApiClient _apiClient;
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();

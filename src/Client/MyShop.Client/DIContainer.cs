@@ -13,6 +13,10 @@ namespace MyShop.Client
             // Register ViewModels
             services.AddSingleton<ViewModels.MainViewModel>();
             services.AddSingleton<ViewModels.ProductViewModel>();
+            services.AddSingleton<ViewModels.OrdersViewModel>();
+            services.AddSingleton<ViewModels.ReportsViewModel>();
+            services.AddSingleton<ViewModels.SettingsViewModel>();
+            services.AddSingleton<ViewModels.DashboardViewModel>();
             // Đăng ký các ViewModel khác nếu có
 
 
