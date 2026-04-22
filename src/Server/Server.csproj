@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LuciferCore" Version="2.4.7" />
+    <PackageReference Include="LuciferCore" Version="2.4.8" />
   </ItemGroup>
 
 	<ItemGroup>
