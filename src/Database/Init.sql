@@ -66,3 +66,46 @@ CREATE TABLE order_item (
     total_item_price AS (quantity * unit_price) -- Cột tính toán tự động
 );
 GO
+
+---------------------------------------------------------
+-- DỮ LIỆU MẪU (SEED DATA)
+---------------------------------------------------------
+
+-- Seed Account (2 cái)
+INSERT INTO account (username, password_hash, role) VALUES 
+('admin', 'hash_of_admin_password', N'Admin'),
+('staff01', 'hash_of_staff_password', N'Staff');
+
+-- Seed Category (10 loại để test phân trang)
+INSERT INTO category (name, description) VALUES 
+(N'Laptops', N'High performance laptops'), (N'Phones', N'Smartphones and accessories'),
+(N'Tablets', N'Portable tablets'), (N'Audio', N'Headphones and speakers'),
+(N'Gaming', N'Consoles and gear'), (N'Cameras', N'DSLR and Mirrorless'),
+(N'Storage', N'SSD, HDD, USB'), (N'Monitors', N'4K and Gaming monitors'),
+(N'Keyboards', N'Mechanical keyboards'), (N'Mice', N'Gaming and Office mice');
+
+-- Seed Product (50 record mẫu)
+DECLARE @i INT = 1;
+WHILE @i <= 50
+BEGIN
+    INSERT INTO product (sku, name, import_price, sale_price, stock_count, category_id)
+    VALUES (
+        'SKU-' + CAST(@i AS VARCHAR), 
+        N'Sản phẩm mẫu số ' + CAST(@i AS NVARCHAR), 
+        100.00 + (@i * 2), 
+        150.00 + (@i * 3), 
+        10 + @i, 
+        (CAST(RAND() * 9 AS INT) + 1) -- Random category từ 1-10
+    );
+    SET @i = @i + 1;
+END;
+
+-- Seed Voucher (5 cái)
+INSERT INTO discount_voucher (voucher_code, discount_type, discount_value, expiry_date) VALUES 
+('KHAIXUAN', 1, 50000, '2026-12-31'),
+('GIAM20', 2, 20, '2026-12-31'),
+('WELCOME', 1, 20000, '2026-12-31');
+
+-- Seed Order & OrderItem (1 cái mẫu)
+INSERT INTO [order] (account_id, sub_total, final_total) VALUES (1, 300.00, 300.00);
+INSERT INTO order_item (order_id, product_id, quantity, unit_price) VALUES (1, 1, 2, 150.00);
