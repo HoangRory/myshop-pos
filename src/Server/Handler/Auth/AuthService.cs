@@ -14,7 +14,7 @@ public class AuthService
         var response = Lucifer.Rent<ResponseModel>();
         if (account == null || string.IsNullOrEmpty(account.Username) || string.IsNullOrEmpty(account.PasswordHash))
         {
-            response.MakeCustomResponse<byte, char, byte>(400, StorageData.Http11Protocol, "Invalid username or password.", StorageData.TextPlainCharset);
+            response.MakeCustomResponse<byte, char, byte>(400, StorageData.Http11Protocol, "Bad request.", StorageData.TextPlainCharset);
             return response;
         }
 
