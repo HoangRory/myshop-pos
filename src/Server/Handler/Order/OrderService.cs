@@ -241,12 +241,11 @@ public class OrderService
                 // Trả về kết quả sau khi đã tính toán
                 response.MakeCustomResponse<byte, char, byte>(200, StorageData.Http11Protocol, updateData.ToJson(), StorageData.ApplicationJson);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try { if (trans != null) await trans.RollbackAsync(); } catch { }
 
-                // Lấy message lỗi thật từ SQL hoặc Exception gốc
-                var msg = ex.InnerException?.Message ?? ex.Message;
+                const string msg = "Unable to update order.";
                 response.MakeCustomResponse<byte, char, byte>(400, StorageData.Http11Protocol, msg, StorageData.TextPlainCharset);
             }
             return response;
