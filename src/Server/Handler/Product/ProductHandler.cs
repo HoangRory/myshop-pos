@@ -6,7 +6,6 @@ using LuciferCore.Model;
 using LuciferCore.Service;
 using LuciferCore.Storage;
 using Server.Core;
-using Server.Models;
 
 namespace Server.Handler.Product;
 
