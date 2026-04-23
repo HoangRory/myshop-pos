@@ -63,9 +63,15 @@ public class OrderService
 
         // Lọc theo ngày
         if (filter.FromDate.HasValue)
-            query = query.Where(o => o.CreatedAt >= filter.FromDate);
+        {
+            var fromDate = filter.FromDate.Value;
+            query = query.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value >= fromDate);
+        }
         if (filter.ToDate.HasValue)
-            query = query.Where(o => o.CreatedAt <= filter.ToDate);
+        {
+            var toDate = filter.ToDate.Value;
+            query = query.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value <= toDate);
+        }
 
         // Lọc theo trạng thái
         if (filter.Status.HasValue)
