@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Server.Models;
 
@@ -20,10 +17,10 @@ public partial class OrderItem
     public int? ProductId { get; set; }
 
     [Column("quantity")]
-    public int Quantity { get; set; }
+    public int? Quantity { get; set; }
 
     [Column("unit_price", TypeName = "decimal(18, 2)")]
-    public decimal UnitPrice { get; set; }
+    public decimal? UnitPrice { get; set; }
 
     [Column("total_item_price", TypeName = "decimal(29, 2)")]
     public decimal? TotalItemPrice { get; set; }

@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Server.Models;
 
@@ -20,7 +18,7 @@ public partial class Order
     public DateTime? CreatedAt { get; set; }
 
     [Column("sub_total", TypeName = "decimal(18, 2)")]
-    public decimal SubTotal { get; set; }
+    public decimal? SubTotal { get; set; }
 
     [Column("voucher_code")]
     [StringLength(20)]
@@ -31,7 +29,7 @@ public partial class Order
     public decimal? DiscountAmount { get; set; }
 
     [Column("final_total", TypeName = "decimal(18, 2)")]
-    public decimal FinalTotal { get; set; }
+    public decimal? FinalTotal { get; set; }
 
     [Column("note")]
     public string? Note { get; set; }
