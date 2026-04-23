@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Server.Models;
 
@@ -16,10 +14,10 @@ public partial class DiscountVoucher
     public string VoucherCode { get; set; } = null!;
 
     [Column("discount_type")]
-    public byte DiscountType { get; set; }
+    public byte? DiscountType { get; set; }
 
     [Column("discount_value", TypeName = "decimal(18, 2)")]
-    public decimal DiscountValue { get; set; }
+    public decimal? DiscountValue { get; set; }
 
     [Column("min_order_value", TypeName = "decimal(18, 2)")]
     public decimal? MinOrderValue { get; set; }
@@ -28,7 +26,7 @@ public partial class DiscountVoucher
     public decimal? MaxDiscountAmount { get; set; }
 
     [Column("expiry_date", TypeName = "datetime")]
-    public DateTime ExpiryDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
     [Column("is_active")]
     public bool? IsActive { get; set; }

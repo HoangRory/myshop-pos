@@ -1,15 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Server.Models;
 
 [Table("product")]
-[Index("Sku", Name = "UQ__product__DDDF4BE713AE91B5", IsUnique = true)]
+[Index("Sku", Name = "UQ__product__DDDF4BE71184CD7E", IsUnique = true)]
 public partial class Product
 {
     [Key]
     [Column("product_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int ProductId { get; set; }
 
     [Column("sku")]
@@ -33,6 +35,9 @@ public partial class Product
     [Column("description")]
     public string? Description { get; set; }
 
+    [Column("images")]
+    public string? Images { get; set; }
+
     [Column("category_id")]
     public int? CategoryId { get; set; }
 
@@ -41,6 +46,7 @@ public partial class Product
 
     [ForeignKey("CategoryId")]
     [InverseProperty("Products")]
+    [JsonIgnore]
     public virtual Category? Category { get; set; }
 
     [InverseProperty("Product")]
