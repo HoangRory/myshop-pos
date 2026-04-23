@@ -215,7 +215,7 @@ public class OrderService
                     var voucher = await db.Set<Models.DiscountVoucher>()
                         .FirstOrDefaultAsync(v => v.VoucherCode == updateData.VoucherCode);
 
-                    if (voucher == null || voucher.ExpiryDate < DateTime.Now)
+                    if (voucher == null || !voucher.ExpiryDate.HasValue || voucher.ExpiryDate.Value < DateTime.Now)
                         throw new Exception("Mã giảm giá không tồn tại hoặc đã hết hạn");
 
                     if (voucher.DiscountType == 1) // Giảm tiền mặt
