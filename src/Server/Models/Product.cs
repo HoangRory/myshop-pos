@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Server.Models;
 
@@ -17,17 +15,17 @@ public partial class Product
     [Column("sku")]
     [StringLength(50)]
     [Unicode(false)]
-    public string Sku { get; set; } = null!;
+    public string? Sku { get; set; } = null!;
 
     [Column("name")]
     [StringLength(200)]
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; } = null!;
 
     [Column("import_price", TypeName = "decimal(18, 2)")]
-    public decimal ImportPrice { get; set; }
+    public decimal? ImportPrice { get; set; }
 
     [Column("sale_price", TypeName = "decimal(18, 2)")]
-    public decimal SalePrice { get; set; }
+    public decimal? SalePrice { get; set; }
 
     [Column("stock_count")]
     public int? StockCount { get; set; }
