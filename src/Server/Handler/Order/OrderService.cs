@@ -164,7 +164,7 @@ public class OrderService
                 }
                 catch { }
 
-                response.MakeCustomResponse<byte, char, byte>(400, StorageData.Http11Protocol, ex.Message, StorageData.TextPlainCharset);
+                response.MakeCustomResponse<byte, byte, byte>(400, StorageData.Http11Protocol, "Create order failed"u8, StorageData.TextPlainCharset);
             }
             return response;
         });
@@ -256,8 +256,7 @@ public class OrderService
             {
                 try { if (trans != null) await trans.RollbackAsync(); } catch { }
 
-                const string msg = "Unable to update order.";
-                response.MakeCustomResponse<byte, char, byte>(400, StorageData.Http11Protocol, msg, StorageData.TextPlainCharset);
+                response.MakeCustomResponse<byte, byte, byte>(400, StorageData.Http11Protocol, "Unable to update order."u8, StorageData.TextPlainCharset);
             }
             return response;
         });
@@ -314,7 +313,7 @@ public class OrderService
             catch (Exception ex)
             {
                 await trans.RollbackAsync();
-                response.MakeCustomResponse<byte, char, byte>(500, StorageData.Http11Protocol, ex.Message, StorageData.TextPlainCharset);
+                response.MakeCustomResponse<byte, char, byte>(500, StorageData.Http11Protocol, "Delete Order Failed", StorageData.TextPlainCharset);
             }
             return response;
         });
