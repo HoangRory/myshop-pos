@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Server.Models;
 
@@ -9,6 +10,7 @@ public partial class Order
 {
     [Key]
     [Column("order_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int OrderId { get; set; }
 
     [Column("account_id")]
@@ -16,6 +18,12 @@ public partial class Order
 
     [Column("created_at", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
+
+    [Column("status")]
+    public byte? Status { get; set; }
+
+    [Column("payment_method")]
+    public byte? PaymentMethod { get; set; }
 
     [Column("sub_total", TypeName = "decimal(18, 2)")]
     public decimal? SubTotal { get; set; }
@@ -36,6 +44,7 @@ public partial class Order
 
     [ForeignKey("AccountId")]
     [InverseProperty("Orders")]
+    [JsonIgnore]
     public virtual Account? Account { get; set; }
 
     [InverseProperty("Order")]
@@ -43,5 +52,6 @@ public partial class Order
 
     [ForeignKey("VoucherCode")]
     [InverseProperty("Orders")]
+    [JsonIgnore]
     public virtual DiscountVoucher? VoucherCodeNavigation { get; set; }
 }

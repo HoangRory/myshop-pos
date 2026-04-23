@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Server.Models;
 
 [Table("account")]
-[Index("Username", Name = "UQ__account__F3DBC572B5A2D473", IsUnique = true)]
+[Index("Username", Name = "UQ__account__F3DBC5729B2A1E43", IsUnique = true)]
 public partial class Account
 {
     [Key]
     [Column("account_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int AccountId { get; set; }
 
     [Column("username")]
