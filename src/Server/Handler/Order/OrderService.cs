@@ -72,10 +72,15 @@ public class OrderService
             query = query.Where(o => (int?)o.Status == filter.Status);
 
         // Phân trang
+        const int maxPageSize = 100;
+        var pageIndex = filter.PageIndex < 1 ? 1 : filter.PageIndex;
+        var pageSize = filter.PageSize < 1 ? 1 : (filter.PageSize > maxPageSize ? maxPageSize : filter.PageSize);
+        var skip = (pageIndex - 1) * pageSize;
+
         var totalItems = await query.CountAsync();
         var items = await query.OrderByDescending(o => o.CreatedAt)
-                               .Skip((filter.PageIndex - 1) * filter.PageSize)
-                               .Take(filter.PageSize)
+                               .Skip(skip)
+                               .Take(pageSize)
                                .ToListAsync();
 
         var result = new { Total = totalItems, Data = items };
