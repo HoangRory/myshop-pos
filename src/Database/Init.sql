@@ -1,4 +1,7 @@
-﻿USE MyShop;
+﻿CREATE DATABASE MyShop;
+GO
+
+USE MyShop;
 GO
 
 CREATE TABLE account(
@@ -17,7 +20,8 @@ GO
 CREATE TABLE category (
     category_id INT PRIMARY KEY IDENTITY(1,1),
     name NVARCHAR(100) NOT NULL,
-    description NVARCHAR(MAX)
+    description NVARCHAR(MAX),
+    is_active BIT DEFAULT 1 -- Thêm để quản lý ẩn/hiện loại SP
 );
 GO
 
@@ -29,6 +33,7 @@ CREATE TABLE product (
     sale_price DECIMAL(18, 2) NOT NULL,
     stock_count INT DEFAULT 0,
     description NVARCHAR(MAX),
+    images NVARCHAR(MAX), -- Cột lưu danh sách ảnh (nên lưu dạng JSON array hoặc string cách nhau dấu ;)
     category_id INT FOREIGN KEY REFERENCES category(category_id),
     updated_at DATETIME DEFAULT GETDATE()
 );
@@ -49,6 +54,8 @@ CREATE TABLE [order] (
     order_id INT PRIMARY KEY IDENTITY(1,1),
     account_id INT FOREIGN KEY REFERENCES account(account_id),
     created_at DATETIME DEFAULT GETDATE(),
+    status TINYINT DEFAULT 0, -- Trạng thái: 0: Mới tạo (Pending), 1: Đã thanh toán (Paid), 2: Đã hủy (Cancelled)
+    payment_method TINYINT DEFAULT 0,  -- PaymentMethod: 0: Tiền mặt, 1: Chuyển khoản, 2: Thẻ...
     sub_total DECIMAL(18, 2) NOT NULL, -- Tổng tiền trước giảm giá
     voucher_code VARCHAR(20) FOREIGN KEY REFERENCES discount_voucher(voucher_code),
     discount_amount DECIMAL(18, 2) DEFAULT 0, -- Số tiền thực tế được giảm
@@ -71,41 +78,41 @@ GO
 -- DỮ LIỆU MẪU (SEED DATA)
 ---------------------------------------------------------
 
--- Seed Account (2 cái)
+-- Seed Account
 INSERT INTO account (username, password_hash, role) VALUES 
 ('admin', 'hash_of_admin_password', N'Admin'),
 ('staff01', 'hash_of_staff_password', N'Staff');
 
--- Seed Category (10 loại để test phân trang)
+-- Seed Category
 INSERT INTO category (name, description) VALUES 
-(N'Laptops', N'High performance laptops'), (N'Phones', N'Smartphones and accessories'),
-(N'Tablets', N'Portable tablets'), (N'Audio', N'Headphones and speakers'),
-(N'Gaming', N'Consoles and gear'), (N'Cameras', N'DSLR and Mirrorless'),
-(N'Storage', N'SSD, HDD, USB'), (N'Monitors', N'4K and Gaming monitors'),
-(N'Keyboards', N'Mechanical keyboards'), (N'Mice', N'Gaming and Office mice');
+(N'Laptops', N'High performance laptops'), (N'Phones', N'Smartphones'),
+(N'Audio', N'Headphones'), (N'Gaming', N'Consoles'), (N'Mice', N'Mice');
 
--- Seed Product (50 record mẫu)
+-- Seed Product (50 record mẫu với images giả lập)
 DECLARE @i INT = 1;
 WHILE @i <= 50
 BEGIN
-    INSERT INTO product (sku, name, import_price, sale_price, stock_count, category_id)
+    INSERT INTO product (sku, name, import_price, sale_price, stock_count, category_id, images)
     VALUES (
         'SKU-' + CAST(@i AS VARCHAR), 
         N'Sản phẩm mẫu số ' + CAST(@i AS NVARCHAR), 
         100.00 + (@i * 2), 
         150.00 + (@i * 3), 
         10 + @i, 
-        (CAST(RAND() * 9 AS INT) + 1) -- Random category từ 1-10
+        (CAST(RAND() * 4 AS INT) + 1),
+        N'https://img.myshop.com/p' + CAST(@i AS NVARCHAR) + '_1.jpg;https://img.myshop.com/p' + CAST(@i AS NVARCHAR) + '_2.jpg'
     );
     SET @i = @i + 1;
 END;
 
--- Seed Voucher (5 cái)
+-- Seed Voucher
 INSERT INTO discount_voucher (voucher_code, discount_type, discount_value, expiry_date) VALUES 
 ('KHAIXUAN', 1, 50000, '2026-12-31'),
-('GIAM20', 2, 20, '2026-12-31'),
-('WELCOME', 1, 20000, '2026-12-31');
+('GIAM20', 2, 20, '2026-12-31');
 
--- Seed Order & OrderItem (1 cái mẫu)
-INSERT INTO [order] (account_id, sub_total, final_total) VALUES (1, 300.00, 300.00);
-INSERT INTO order_item (order_id, product_id, quantity, unit_price) VALUES (1, 1, 2, 150.00);
+-- Seed Order & OrderItem mẫu (status=1: Đã thanh toán, payment_method=0: Tiền mặt)
+INSERT INTO [order] (account_id, sub_total, final_total, status, payment_method) 
+VALUES (1, 300.00, 300.00, 1, 0);
+
+INSERT INTO order_item (order_id, product_id, quantity, unit_price) 
+VALUES (1, 1, 2, 150.00);
