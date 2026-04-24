@@ -1,6 +1,6 @@
-namespace MyShop.Client.Models
+namespace MyShop.Shared.DTOs
 {
-    public class Product
+    public class ProductDto
     {
         public int Id { get; set; }
         public string SKU { get; set; } = string.Empty;

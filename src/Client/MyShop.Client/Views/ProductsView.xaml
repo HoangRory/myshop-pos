@@ -1,11 +1,65 @@
 <UserControl x:Class="MyShop.Client.Views.ProductsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="600">
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:MyShop.Client.ViewModels"
+             d:DataContext="{d:DesignInstance Type=viewmodels:ProductsViewModel}"
+             mc:Ignorable="d"
+             Padding="14">
     <Grid>
-        <TextBlock Text="Products" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="32"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- DataGrid (Left) -->
+        <DataGrid Grid.Column="0"
+                  ItemsSource="{Binding Products}"
+                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  Margin="0,0,16,0"
+                  FontSize="13"
+                  VerticalAlignment="Stretch"
+                  HorizontalAlignment="Stretch">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="*" />
+                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="2*" />
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
+                <DataGridTextColumn Header="SalePrice" Binding="{Binding SalePrice}" Width="*" />
+                <DataGridTextColumn Header="StockCount" Binding="{Binding StockCount}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <!-- Form (Right) -->
+        <StackPanel Grid.Column="1" Margin="0,0,0,0" VerticalAlignment="Stretch">
+            <!-- Name -->
+            <TextBlock Text="Name" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
+            <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
+            <!-- SKU -->
+            <TextBlock Text="SKU" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
+            <TextBox Text="{Binding SKU, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
+            <!-- SalePrice -->
+            <TextBlock Text="SalePrice" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
+            <TextBox Text="{Binding SalePrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
+            <!-- StockCount -->
+            <TextBlock Text="StockCount" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
+            <TextBox Text="{Binding StockCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,20" />
+            <!-- Buttons -->
+            <Grid Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Button Grid.Row="0" Grid.Column="0" Content="Add" Command="{Binding AddProductCommand}" MinHeight="32" Margin="0,0,8,8" FontSize="13" />
+                <Button Grid.Row="0" Grid.Column="1" Content="Update" Command="{Binding UpdateProductCommand}" MinHeight="32" Margin="0,0,0,8" FontSize="13" />
+                <Button Grid.Row="1" Grid.Column="0" Content="Delete" Command="{Binding DeleteProductCommand}" MinHeight="32" Margin="0,0,8,0" FontSize="13" />
+                <Button Grid.Row="1" Grid.Column="1" Content="Clear" Command="{Binding ClearFormCommand}" MinHeight="32" FontSize="13" />
+            </Grid>
+        </StackPanel>
     </Grid>
 </UserControl>

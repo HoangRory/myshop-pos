@@ -10,11 +10,15 @@ namespace MyShop.Client.ViewModels
     {
         private readonly INavigationService _navigationService;
 
-        private object _currentViewModel;
-        public object CurrentViewModel
+        private BaseViewModel _currentViewModel;
+        public BaseViewModel CurrentViewModel
         {
             get => _currentViewModel;
-            private set => SetProperty(ref _currentViewModel, value);
+            set
+            {
+                _currentViewModel = value;
+                OnPropertyChanged();
+            }
         }
 
         public ICommand NavigateDashboardCommand { get; }
@@ -28,7 +32,7 @@ namespace MyShop.Client.ViewModels
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
             NavigateDashboardCommand = new RelayCommand(_ => NavigateTo<DashboardViewModel>());
-            NavigateProductsCommand = new RelayCommand(_ => NavigateTo<ProductViewModel>());
+            NavigateProductsCommand = new RelayCommand(_ => NavigateTo<ProductsViewModel>());
             NavigateOrdersCommand = new RelayCommand(_ => NavigateTo<OrdersViewModel>());
             NavigateReportsCommand = new RelayCommand(_ => NavigateTo<ReportsViewModel>());
             NavigateSettingsCommand = new RelayCommand(_ => NavigateTo<SettingsViewModel>());
@@ -41,6 +45,7 @@ namespace MyShop.Client.ViewModels
                     if (e.PropertyName == nameof(_navigationService.CurrentViewModel))
                     {
                         CurrentViewModel = _navigationService.CurrentViewModel;
+                        TryLoadProductsViewModel();
                     }
                 };
             }
@@ -53,6 +58,16 @@ namespace MyShop.Client.ViewModels
         {
             _navigationService.NavigateTo<TViewModel>();
             CurrentViewModel = _navigationService.CurrentViewModel;
+            TryLoadProductsViewModel();
+        }
+
+        private void TryLoadProductsViewModel()
+        {
+            if (CurrentViewModel is ProductsViewModel productsVm && !productsVm.IsLoaded)
+            {
+                if (productsVm.LoadProductsCommand.CanExecute(null))
+                    productsVm.LoadProductsCommand.Execute(null);
+            }
         }
     }
 }

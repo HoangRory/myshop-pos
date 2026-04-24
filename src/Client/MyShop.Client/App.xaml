@@ -7,19 +7,19 @@
     <Application.Resources>
         <!-- DataTemplate mapping ViewModel -> View -->
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
-            <views:DashboardView />
+            <views:DashboardView DataContext="{Binding}" />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
-            <views:ProductsView />
+            <views:ProductsView DataContext="{Binding}" />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:OrdersViewModel}">
-            <views:OrdersView />
+            <views:OrdersView DataContext="{Binding}" />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
-            <views:ReportsView />
+            <views:ReportsView DataContext="{Binding}" />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
-            <views:SettingsView />
+            <views:SettingsView DataContext="{Binding}" />
         </DataTemplate>
     </Application.Resources>
 </Application>

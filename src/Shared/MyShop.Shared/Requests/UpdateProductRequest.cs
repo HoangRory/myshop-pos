@@ -1,6 +1,6 @@
-namespace MyShop.Client.Models
+namespace MyShop.Shared.Requests
 {
-    public class Product
+    public class UpdateProductRequest
     {
         public int Id { get; set; }
         public string SKU { get; set; } = string.Empty;

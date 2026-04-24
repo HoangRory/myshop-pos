@@ -12,7 +12,7 @@ namespace MyShop.Client
 
             // Register ViewModels
             services.AddSingleton<ViewModels.MainViewModel>();
-            services.AddSingleton<ViewModels.ProductViewModel>();
+            services.AddSingleton<ViewModels.ProductsViewModel>();
             services.AddSingleton<ViewModels.OrdersViewModel>();
             services.AddSingleton<ViewModels.ReportsViewModel>();
             services.AddSingleton<ViewModels.SettingsViewModel>();
@@ -22,6 +22,9 @@ namespace MyShop.Client
 
             // Register NavigationService as INavigationService
             services.AddSingleton<Services.INavigationService, Services.NavigationService>();
+
+            // Register ProductApiClient
+            services.AddSingleton<Services.Interfaces.IProductApiClient, Services.Mock.MockProductApiClient>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();

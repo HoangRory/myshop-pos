@@ -5,23 +5,7 @@
              xmlns:vm="clr-namespace:MyShop.Client.ViewModels"
              xmlns:local="clr-namespace:MyShop.Client"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008">
-    <UserControl.Resources>
-        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
-            <views:DashboardView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ProductViewModel}">
-            <views:ProductsView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:OrdersViewModel}">
-            <views:OrdersView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
-            <views:ReportsView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
-            <views:SettingsView />
-        </DataTemplate>
-    </UserControl.Resources>
+    <!-- DataTemplates moved to App.xaml (global). Templates here removed to avoid duplication. -->
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="180" />
