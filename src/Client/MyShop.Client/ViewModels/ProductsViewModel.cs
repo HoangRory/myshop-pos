@@ -23,7 +23,43 @@ namespace MyShop.Client.ViewModels
             private set => SetProperty(ref _isLoaded, value);
         }
 
+        // Full in-memory list loaded from API
+        private readonly ObservableCollection<Product> _allProducts = new ObservableCollection<Product>();
+
+        // Products currently displayed after filtering/paging/sorting
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
+
+        // --- Paging / Filtering / Sorting state ---
+        private int _pageIndex = 1;
+        public int PageIndex { get => _pageIndex; set { if (SetProperty(ref _pageIndex, value)) ApplyFilteringAndPaging(); } }
+
+        private int _pageSize = 10;
+        public int PageSize { get => _pageSize; set { if (SetProperty(ref _pageSize, value)) ApplyFilteringAndPaging(); } }
+
+        private int _totalCount;
+        public int TotalCount { get => _totalCount; set => SetProperty(ref _totalCount, value); }
+
+        public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Ceiling((double)TotalCount / PageSize);
+
+        private string _searchKeyword;
+        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) { PageIndex = 1; ApplyFilteringAndPaging(); } } }
+
+        private decimal? _minPrice;
+        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) { PageIndex = 1; ApplyFilteringAndPaging(); } } }
+
+        private decimal? _maxPrice;
+        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) { PageIndex = 1; ApplyFilteringAndPaging(); } } }
+
+        private string _selectedSortField = "Name";
+        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) ApplyFilteringAndPaging(); } }
+
+        private bool _sortDescending = false;
+        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) ApplyFilteringAndPaging(); } }
+
+        private string _selectedProductType;
+        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) { PageIndex = 1; ApplyFilteringAndPaging(); } } }
+
+        public ObservableCollection<string> ProductTypes { get; } = new ObservableCollection<string>();
 
         private Product _selectedProduct;
         public Product SelectedProduct
@@ -110,6 +146,12 @@ namespace MyShop.Client.ViewModels
         public AsyncRelayCommand UpdateProductCommand { get; }
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
+        public System.Windows.Input.ICommand NextPageCommand { get; }
+        public System.Windows.Input.ICommand PrevPageCommand { get; }
+        public System.Windows.Input.ICommand ApplyFiltersCommand { get; }
+        public System.Windows.Input.ICommand ImportExcelCommand { get; }
+        public System.Windows.Input.ICommand ImportAccessCommand { get; }
+        public System.Windows.Input.ICommand AddProductTypeCommand { get; }
 
         public ProductsViewModel(IProductApiClient productApiClient)
         {
@@ -119,6 +161,13 @@ namespace MyShop.Client.ViewModels
             UpdateProductCommand = new AsyncRelayCommand(UpdateProductAsync, CanExecuteUpdateOrDeleteProduct);
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
             ClearFormCommand = new AsyncRelayCommand(_ => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
+
+            NextPageCommand = new MyShop.Client.Helpers.RelayCommand(_ => { if (PageIndex < TotalPages) PageIndex++; }, _ => PageIndex < TotalPages);
+            PrevPageCommand = new MyShop.Client.Helpers.RelayCommand(_ => { if (PageIndex > 1) PageIndex--; }, _ => PageIndex > 1);
+            ApplyFiltersCommand = new MyShop.Client.Helpers.RelayCommand(_ => { PageIndex = 1; ApplyFilteringAndPaging(); });
+            ImportExcelCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromExcel());
+            ImportAccessCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromAccess());
+            AddProductTypeCommand = new MyShop.Client.Helpers.RelayCommand(_ => AddProductType());
         }
 
         private void FillFormFromSelected()
@@ -169,13 +218,23 @@ namespace MyShop.Client.ViewModels
             try
             {
                 var response = await _productApiClient.GetAllAsync();
+                _allProducts.Clear();
                 Products.Clear();
                 if (response.Success && response.Data != null)
                 {
                     var models = ProductMapper.ToModelList(response.Data);
                     foreach (var p in models)
-                        Products.Add(p);
+                        _allProducts.Add(p);
+
+                    // populate product types from data (if any). Use CategoryId if available
+                    ProductTypes.Clear();
+                    ProductTypes.Add("(All)");
+                    foreach (var t in System.Linq.Enumerable.Distinct(System.Linq.Enumerable.Select(_allProducts, p => (p.CategoryId.HasValue ? p.CategoryId.Value.ToString() : "Unknown"))))
+                        ProductTypes.Add(t);
+
                     ErrorMessage = string.Empty;
+                    // apply filters / paging
+                    ApplyFilteringAndPaging();
                 }
                 else
                 {
@@ -186,6 +245,80 @@ namespace MyShop.Client.ViewModels
             {
                 ErrorMessage = $"Error: {ex.Message}";
             }
+        }
+
+        private void ApplyFilteringAndPaging()
+        {
+            try
+            {
+                var query = System.Linq.Enumerable.AsEnumerable(_allProducts);
+
+                // Filter by product type
+                if (!string.IsNullOrWhiteSpace(SelectedProductType) && SelectedProductType != "(All)")
+                    query = System.Linq.Enumerable.Where(query, p => (p.CategoryId.HasValue ? p.CategoryId.Value.ToString() : "Unknown") == SelectedProductType);
+
+                // Search keyword
+                if (!string.IsNullOrWhiteSpace(SearchKeyword))
+                {
+                    var kw = SearchKeyword.Trim();
+                    query = System.Linq.Enumerable.Where(query, p => (!string.IsNullOrEmpty(p.Name) && p.Name.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0) || (!string.IsNullOrEmpty(p.SKU) && p.SKU.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0));
+                }
+
+                // Price filter
+                if (MinPrice.HasValue)
+                    query = System.Linq.Enumerable.Where(query, p => p.SalePrice >= MinPrice.Value);
+                if (MaxPrice.HasValue)
+                    query = System.Linq.Enumerable.Where(query, p => p.SalePrice <= MaxPrice.Value);
+
+                // Sorting
+                query = SelectedSortField switch
+                {
+                    "Name" => SortDescending ? System.Linq.Enumerable.OrderByDescending(query, p => p.Name) : System.Linq.Enumerable.OrderBy(query, p => p.Name),
+                    "SalePrice" => SortDescending ? System.Linq.Enumerable.OrderByDescending(query, p => p.SalePrice) : System.Linq.Enumerable.OrderBy(query, p => p.SalePrice),
+                    "StockCount" => SortDescending ? System.Linq.Enumerable.OrderByDescending(query, p => p.StockCount) : System.Linq.Enumerable.OrderBy(query, p => p.StockCount),
+                    _ => query
+                };
+
+                var list = System.Linq.Enumerable.ToList(query);
+                TotalCount = list.Count;
+
+                // Adjust PageIndex if out of bounds
+                if (PageIndex < 1) PageIndex = 1;
+                if (PageIndex > TotalPages) PageIndex = TotalPages;
+
+                var skip = (PageIndex - 1) * PageSize;
+                var paged = System.Linq.Enumerable.Skip(list, skip).Take(PageSize);
+
+                Products.Clear();
+                foreach (var p in paged)
+                    Products.Add(p);
+
+                UpdateCommandStates();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Filtering error: {ex.Message}";
+            }
+        }
+
+        private void ImportFromExcel()
+        {
+            // Minimal placeholder implementation - shows message via ErrorMessage.
+            // Real implementation should open file dialog and parse Excel (ExcelDataReader/EPPlus).
+            ErrorMessage = "Import from Excel is not implemented in this build.";
+        }
+
+        private void ImportFromAccess()
+        {
+            ErrorMessage = "Import from Access is not implemented in this build.";
+        }
+
+        private void AddProductType()
+        {
+            // Very small helper to add a product type - in real app show dialog to input new type
+            var newType = "NewType" + (ProductTypes.Count + 1);
+            if (!ProductTypes.Contains(newType)) ProductTypes.Add(newType);
+            ErrorMessage = $"Added product type '{newType}' (demo).";
         }
         
 

@@ -7,59 +7,304 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:ProductsViewModel}"
              mc:Ignorable="d"
              Padding="14">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
 
-        <!-- DataGrid (Left) -->
-        <DataGrid Grid.Column="0"
-                  ItemsSource="{Binding Products}"
-                  SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  Margin="0,0,16,0"
-                  FontSize="13"
-                  VerticalAlignment="Stretch"
-                  HorizontalAlignment="Stretch">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="*" />
-                <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="2*" />
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
-                <DataGridTextColumn Header="SalePrice" Binding="{Binding SalePrice}" Width="*" />
-                <DataGridTextColumn Header="StockCount" Binding="{Binding StockCount}" Width="*" />
-            </DataGrid.Columns>
-        </DataGrid>
-        <!-- Form (Right) -->
-        <StackPanel Grid.Column="1" Margin="0,0,0,0" VerticalAlignment="Stretch">
-            <!-- Name -->
-            <TextBlock Text="Name" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
-            <TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
-            <!-- SKU -->
-            <TextBlock Text="SKU" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
-            <TextBox Text="{Binding SKU, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
-            <!-- SalePrice -->
-            <TextBlock Text="SalePrice" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
-            <TextBox Text="{Binding SalePrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,10" />
-            <!-- StockCount -->
-            <TextBlock Text="StockCount" FontWeight="Bold" FontSize="13" Margin="0,0,0,2" />
-            <TextBox Text="{Binding StockCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="13" Margin="0,0,0,20" />
-            <!-- Buttons -->
-            <Grid Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Button Grid.Row="0" Grid.Column="0" Content="Add" Command="{Binding AddProductCommand}" MinHeight="32" Margin="0,0,8,8" FontSize="13" />
-                <Button Grid.Row="0" Grid.Column="1" Content="Update" Command="{Binding UpdateProductCommand}" MinHeight="32" Margin="0,0,0,8" FontSize="13" />
-                <Button Grid.Row="1" Grid.Column="0" Content="Delete" Command="{Binding DeleteProductCommand}" MinHeight="32" Margin="0,0,8,0" FontSize="13" />
-                <Button Grid.Row="1" Grid.Column="1" Content="Clear" Command="{Binding ClearFormCommand}" MinHeight="32" FontSize="13" />
-            </Grid>
+    <UserControl.Resources>
+        <!-- Palette -->
+        <Color x:Key="BgColor">#F6F7F8</Color>
+        <Color x:Key="CardBg">#FFFFFFFF</Color>
+        <Color x:Key="BorderColor">#E6E9EC</Color>
+        <Color x:Key="TextMuted">#6B6F76</Color>
+        <Color x:Key="Accent">#2F6F9F</Color>
+
+        <SolidColorBrush x:Key="AppBackground" Color="{StaticResource BgColor}" />
+        <SolidColorBrush x:Key="CardBackground" Color="{StaticResource CardBg}" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource BorderColor}" />
+        <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource TextMuted}" />
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}" />
+
+        <!-- Card style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBackground}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- Primary button -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="BorderBrush" Value="{x:Null}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="MinWidth" Value="88" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <!-- Outlined danger -->
+        <Style x:Key="DangerOutlineButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#D9534F" />
+            <Setter Property="Foreground" Value="#D9534F" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="MinWidth" Value="88" />
+        </Style>
+
+        <!-- DataGrid header style -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+        </Style>
+
+        <!-- DataGrid row style -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="DGR_Border" Background="{TemplateBinding Background}">
+                            <DataGridCellsPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DGR_Border" Property="Background" Value="{StaticResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DGR_Border" Property="Background" Value="#F0F6FA" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Thumbnail cell template (fallback shows SKU) -->
+        <DataTemplate x:Key="ThumbnailTemplate">
+            <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
+                <TextBlock Text="{Binding SKU}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+            </Border>
+        </DataTemplate>
+
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource AppBackground}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="420" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Page header -->
+        <DockPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" LastChildFill="True" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                <TextBlock Text="Sản phẩm" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Text="  •  Quản lý sản phẩm" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="0,8,12,0">
+                <Button Content="Import" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                <Button Content="Thêm sản phẩm" Command="{Binding AddProductCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Left column: Filters + DataGrid + Pager -->
+        <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" Margin="0,0,12,0">
+            <!-- Filter toolbar card -->
+            <Border Style="{StaticResource CardStyle}">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid Width="320">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Grid.Column="1" Width="260" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" />
+                        </Grid>
+
+                        <ComboBox Width="180" ItemsSource="{Binding ProductTypes}" SelectedItem="{Binding SelectedProductType}" Height="30" HorizontalAlignment="Left" Margin="8,0,0,0" />
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Width="80" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" />
+                            <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0" />
+                            <TextBox Width="80" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" />
+                        </StackPanel>
+
+                        <Button Content="Áp dụng" Command="{Binding ApplyFiltersCommand}" Height="30" />
+                    </StackPanel>
+
+                    <!-- applied filters (not implemented in viewmodel) - reserved -->
+                </DockPanel>
+            </Border>
+
+            <!-- DataGrid card -->
+            <Border Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="ProductsGrid"
+                              Grid.Row="0"
+                              ItemsSource="{Binding Products}" 
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              RowHeaderWidth="0"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
+                              CanUserResizeRows="False"
+                              GridLinesVisibility="None"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
+                                            <TextBlock Text="{Binding SKU}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Tên" Binding="{Binding Name}" Width="3*" />
+                            <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="1.2*" />
+                            <DataGridTextColumn Header="Loại (Id)" Binding="{Binding CategoryId}" Width="1.4*" />
+                            <DataGridTextColumn Header="Giá bán" Binding="{Binding SalePrice, StringFormat=N0}" Width="1*" />
+                            <DataGridTemplateColumn Header="Tồn" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="Transparent" Padding="4">
+                                            <TextBlock Text="{Binding StockCount}" HorizontalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding StockCount}" Value="0">
+                                                                <Setter Property="Foreground" Value="#D9534F" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding StockCount}" Value="1">
+                                                                <Setter Property="Foreground" Value="#E67E22" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Inline toolbar for grid (top-right) -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0">
+                        <!-- reserved for contextual grid actions -->
+                    </StackPanel>
+
+                    <!-- Pager (row 1) -->
+                    <DockPanel Grid.Row="1" LastChildFill="False" Margin="0,12,0,0">
+                        <TextBlock Text="Trang {Binding PageIndex} / {Binding TotalPages}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Left" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                            <ComboBox Width="80" SelectedItem="{Binding PageSize}" Margin="0,0,6,0">
+                                <ComboBoxItem>10</ComboBoxItem>
+                                <ComboBoxItem>25</ComboBoxItem>
+                                <ComboBoxItem>50</ComboBoxItem>
+                            </ComboBox>
+                            <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" />
+                            <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="48" HorizontalContentAlignment="Center" />
+                            <Button Content="▶" Command="{Binding NextPageCommand}" Width="36" />
+                        </StackPanel>
+                    </DockPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Grid splitter -->
+        <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="8" ShowsPreview="True" />
+
+        <!-- Right column: Product detail panel -->
+        <StackPanel Grid.Column="2" Grid.Row="1" Orientation="Vertical">
+            <!-- Image gallery card -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Hình ảnh" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Border Height="220" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="4">
+                        <Grid>
+                            <TextBlock Text="Không có ảnh" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Basic info card -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Thông tin cơ bản" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Tên" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Text="{Binding SelectedProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="SKU" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding SelectedProduct.SKU, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Danh mục (Id)" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Text="{Binding SelectedProduct.CategoryId, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Pricing & inventory card -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Giá &amp; tồn kho" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Giá nhập" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Text="{Binding SelectedProduct.ImportPrice, Mode=TwoWay}" />
+                            <TextBlock Text="Giá bán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding SelectedProduct.SalePrice, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Số lượng" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                            <TextBox Text="{Binding SelectedProduct.StockCount, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Xóa" Command="{Binding DeleteProductCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,0" />
+                <Button Content="Hủy" Command="{Binding ClearFormCommand}" Margin="0,0,8,0" />
+                <Button Content="Lưu" Command="{Binding UpdateProductCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>

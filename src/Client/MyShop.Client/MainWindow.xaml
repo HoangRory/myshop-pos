@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:MyShop.Client.ViewModels"
         xmlns:views="clr-namespace:MyShop.Client.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MyShop" Height="900" Width="1600" >
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
