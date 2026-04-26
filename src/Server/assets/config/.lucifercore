@@ -1,0 +1,23 @@
+﻿CERT_PASSWORD=RootCA!SecureKey@Example2025Strong
+
+CERTIFICATE = assets/tools/certificates/server.pfx
+
+# Static web content
+WWWROOT = assets/wwwroot
+
+# Maximum number of concurrent worker threads
+LIMITER_WORKERS = 20
+
+
+# DB configuration
+
+DBHost = localhost
+DBPort = 1433
+DBUser = sa
+DBPassword = svcntt
+DBName = MyShop
+DBTrustServerCertificate = true
+DBConnectTimeout = 15
+DBCommandTimeout = 30
+DBMaxPoolSize = 100
+DBAppName = LuciferServer
