@@ -143,6 +143,7 @@ namespace MyShop.Client.ViewModels
 
         public AsyncRelayCommand LoadProductsCommand { get; }
         public AsyncRelayCommand AddProductCommand { get; }
+        public AsyncRelayCommand SaveProductCommand { get; }
         public AsyncRelayCommand UpdateProductCommand { get; }
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
@@ -157,7 +158,8 @@ namespace MyShop.Client.ViewModels
         {
             _productApiClient = productApiClient;
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
-            AddProductCommand = new AsyncRelayCommand(AddProductAsync, CanExecuteAddProduct);
+            AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
+            SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
             UpdateProductCommand = new AsyncRelayCommand(UpdateProductAsync, CanExecuteUpdateOrDeleteProduct);
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
             ClearFormCommand = new AsyncRelayCommand(_ => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
@@ -196,6 +198,34 @@ namespace MyShop.Client.ViewModels
             SalePrice = 0;
             StockCount = 0;
             ErrorMessage = string.Empty;
+        }
+
+        private Task OpenAddFormAsync()
+        {
+            // Prepare an empty product for the form. FillFormFromSelected will populate fields.
+            SelectedProduct = new Product();
+            ErrorMessage = string.Empty;
+            return Task.CompletedTask;
+        }
+
+        private async Task SaveProductAsync()
+        {
+            if (SelectedProduct == null) return;
+            if (!ValidateInput())
+            {
+                ErrorMessage = "Vui lòng nhập đầy đủ và hợp lệ thông tin sản phẩm.";
+                return;
+            }
+
+            // If the selected product has an Id (non-zero) treat as update, otherwise create
+            if (SelectedProduct.Id == 0)
+            {
+                await CreateProductAsync();
+            }
+            else
+            {
+                await UpdateProductAsync();
+            }
         }
 
         private async Task LoadProductsAsync()
@@ -322,7 +352,7 @@ namespace MyShop.Client.ViewModels
         }
         
 
-        private async Task AddProductAsync()
+        private async Task CreateProductAsync()
         {
             if (IsLoading) return;
             IsLoading = true;
@@ -432,7 +462,8 @@ namespace MyShop.Client.ViewModels
         }
 
         private bool CanExecuteLoadProducts() => !IsLoading;
-        private bool CanExecuteAddProduct() => !IsLoading && ValidateInput();
+        private bool CanExecuteOpenAddForm() => !IsLoading;
+        private bool CanExecuteSaveProduct() => !IsLoading && SelectedProduct != null && ValidateInput();
         private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && SelectedProduct != null;
         private bool CanExecuteClearForm() => !IsLoading;
 
@@ -440,6 +471,7 @@ namespace MyShop.Client.ViewModels
         {
             LoadProductsCommand.NotifyCanExecuteChanged();
             AddProductCommand.NotifyCanExecuteChanged();
+            SaveProductCommand.NotifyCanExecuteChanged();
             UpdateProductCommand.NotifyCanExecuteChanged();
             DeleteProductCommand.NotifyCanExecuteChanged();
             ClearFormCommand.NotifyCanExecuteChanged();

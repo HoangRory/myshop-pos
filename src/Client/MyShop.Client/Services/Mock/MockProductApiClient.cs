@@ -17,9 +17,15 @@ namespace MyShop.Client.Services.Mock
         {
             _products = new List<ProductDto>
             {
-                new ProductDto { Id = 1, Name = "Product A", SalePrice = 10000, Description = "Sample product A" },
-                new ProductDto { Id = 2, Name = "Product B", SalePrice = 20000, Description = "Sample product B" },
-                new ProductDto { Id = 3, Name = "Product C", SalePrice = 30000, Description = "Sample product C" }
+                //tạo dữ liệu mẫu cho tôi
+                new ProductDto { Id = 1, Name = "Laptop Pro", SalePrice = 1299.99m, Description = "A high-end laptop for professionals." },
+                new ProductDto { Id = 2, Name = "Smartphone X", SalePrice = 999.99m, Description = "A flagship smartphone with cutting-edge features." },
+                new ProductDto { Id = 3, Name = "Wireless Earbuds", SalePrice = 199.99m, Description = "Premium wireless earbuds with noise cancellation." },
+                new ProductDto { Id = 4, Name = "Gaming Console", SalePrice = 499.99m, Description = "Next-gen gaming console with stunning graphics." },
+                new ProductDto { Id = 5, Name = "4K Monitor", SalePrice = 399.99m, Description = "Ultra HD monitor for immersive gaming and productivity." },
+                new ProductDto { Id = 6, Name = "Mechanical Keyboard", SalePrice = 89.99m, Description = "A durable mechanical keyboard with customizable RGB lighting." },
+                new ProductDto { Id = 7, Name = "Wireless Mouse", SalePrice = 29.99m, Description = "Ergonomic wireless mouse with long battery life." },
+                new ProductDto { Id = 8, Name = "External SSD", SalePrice = 149.99m, Description = "Portable external SSD with fast read/write speeds." },
             };
             _nextId = _products.Max(x => x.Id) + 1;
         }

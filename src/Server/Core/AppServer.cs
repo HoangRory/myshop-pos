@@ -1,4 +1,5 @@
-﻿using LuciferCore.Attributes;
+﻿using System;
+using LuciferCore.Attributes;
 using LuciferCore.NetCoreServer.Server;
 using LuciferCore.NetCoreServer.Transport.SSL;
 using System.Net;
@@ -24,11 +25,32 @@ public class AppServer : WssServer
             { "/404", "/404.html" },
         };
         Mapping.Freeze();
+
+        // Informational message showing the address and port the server is listening on and a convenient base URL.
+        try
+        {
+            string host;
+            if (address == IPAddress.IPv6Any || address == IPAddress.Any)
+            {
+                host = "localhost";
+            }
+            else
+            {
+                host = address.ToString();
+            }
+
+            string baseUrl = host.Contains(":") ? $"https://[{host}]:{port}" : $"https://{host}:{port}";
+            Console.WriteLine($"[Server] Started successfully and listening on {address}:{port} - base url: {baseUrl}");
+        }
+        catch
+        {
+            // Swallow any logging errors to avoid affecting server flow
+        }
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public AppServer(int port) : this(CreateSslContext(), IPAddress.IPv6Any, port)
+    public AppServer(int port) : this(CreateSslContext(), IPAddress.Any, port)
     {
         OptionDualMode = true;
     }
