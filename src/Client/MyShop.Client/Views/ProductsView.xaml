@@ -134,16 +134,16 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Width="260" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" />
+                            <TextBox Grid.Column="1" Width="260" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
                         </Grid>
 
-                        <ComboBox Width="180" ItemsSource="{Binding ProductTypes}" SelectedItem="{Binding SelectedProductType}" Height="30" HorizontalAlignment="Left" Margin="8,0,0,0" />
+                        <ComboBox Width="180" ItemsSource="{Binding ProductTypes}" SelectedItem="{Binding SelectedProductType}" Height="30" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="8,0,0,0" />
 
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Width="80" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" />
+                            <TextBox Width="80" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" VerticalContentAlignment="Center"/>
                             <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0" />
-                            <TextBox Width="80" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" />
+                            <TextBox Width="80" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center"/>
                         </StackPanel>
 
                         <Button Content="Áp dụng" Command="{Binding ApplyFiltersCommand}" Height="30" />
@@ -220,7 +220,16 @@
 
                     <!-- Pager (row 1) -->
                     <DockPanel Grid.Row="1" LastChildFill="False" Margin="0,12,0,0">
-                        <TextBlock Text="Trang {Binding PageIndex} / {Binding TotalPages}" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Left" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   DockPanel.Dock="Left">
+                            <TextBlock.Text>
+                                <MultiBinding StringFormat="Trang {0} / {1}">
+                                    <Binding Path="PageIndex"/>
+                                    <Binding Path="TotalPages"/>
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                             <ComboBox Width="80" SelectedItem="{Binding PageSize}" Margin="0,0,6,0">
                                 <ComboBoxItem>10</ComboBoxItem>

@@ -1,4 +1,3 @@
 <Solution>
-  <Project Path="../Shared/MyShop.Shared/MyShop.Shared.csproj" />
   <Project Path="MyShop.Client/MyShop.Client.csproj" />
 </Solution>

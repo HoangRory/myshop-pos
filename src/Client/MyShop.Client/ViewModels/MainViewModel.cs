@@ -2,7 +2,7 @@ using System;
 using System.Windows.Input;
 using MyShop.Client.Helpers;
 using MyShop.Client.Services;
-using MyShop.Client.ViewModels;
+using MyShop.Client.ViewModels.ProductViewModel;
 
 namespace MyShop.Client.ViewModels
 {
