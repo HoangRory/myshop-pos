@@ -49,6 +49,9 @@ public class AppServer : WssServer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static SslContext CreateSslContext()
     {
+#if DEBUG
+        return SslContext.CreateDevelopmentContext();
+#endif
         var cert = X509CertificateLoader.LoadPkcs12FromFile(s_certPath, s_certPassword);
         return new(SslProtocols.Tls12, cert);
     }
