@@ -9,16 +9,12 @@ namespace Server.Database.EFcore.Sql;
 /// </summary>
 public class EFSqlContext : DbContext
 {
-    private readonly string _connectionString;
     private static IEnumerable<Type>? _cachedEntityTypes;
     public EFSqlContext()
     {
-        _connectionString = "Data Source=localhost;Initial Catalog=MyShop;User ID=sa;Password=svcntt;TrustServerCertificate=True;";
+
     }
-    public EFSqlContext(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
+
     public EFSqlContext(DbContextOptions<EFSqlContext> options) : base(options) { }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -26,7 +22,17 @@ public class EFSqlContext : DbContext
         // Chỉ cấu hình nếu bên ngoài chưa cấu hình (linh hoạt tối đa)
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer(_connectionString);
+            optionsBuilder.UseSqlServer(DBConfig.GetConnectstring(), sqlOptions =>
+            {
+                // Thiết lập Command Timeout mặc định cho tất cả truy vấn qua DbContext này
+                sqlOptions.CommandTimeout(DBConfig.CommandTimeout); // 30 giây
+
+                // Có thể cấu hình thêm các tính năng như tự động kết nối lại khi rớt mạng
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null);
+            });
         }
     }
 
