@@ -163,6 +163,7 @@ namespace MyShop.Client.ViewModels
         public AsyncRelayCommand SaveProductCommand { get; }
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
+        public AsyncRelayCommand CancelEditCommand { get; }
         public System.Windows.Input.ICommand NextPageCommand { get; }
         public System.Windows.Input.ICommand PrevPageCommand { get; }
         public System.Windows.Input.ICommand ApplyFiltersCommand { get; }
@@ -375,13 +376,24 @@ namespace MyShop.Client.ViewModels
         {
             if (IsLoading || SelectedProduct == null) return;
             IsLoading = true;
+            // Confirm deletion
+            var confirm = _dialogService.Confirm(
+                        "Xác nhận",
+                        $"Bạn có chắc muốn xóa sản phẩm '{SelectedProduct.Name}' không?");
+            if ( !confirm ) 
+            {
+                IsLoading = false;
+                return;
+            }
             try
             {
                 var result = await _productService.DeleteAsync(SelectedProduct.ProductId);
                 if (result)
                 {
+                    _dialogService.Success("Thành công", "Xóa sản phẩm thành công.");
                     ErrorMessage = string.Empty;
                     ClearForm();
+                    IsLoading = false;
                     await LoadProductsAsync();
                 }
                 else

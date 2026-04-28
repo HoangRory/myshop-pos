@@ -63,8 +63,15 @@ namespace MyShop.Client.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var response = await _http.DeleteAsync($"{BaseUrl}/{id}");
-            return response.IsSuccessStatusCode;
+            var json = JsonSerializer.Serialize(new { ProductId = id });
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Delete, BaseUrl)
+            {
+                Content = content
+            };
+            var response = await _http.SendAsync(request);
+            var result = await response.Content.ReadAsStringAsync();
+            return response.IsSuccessStatusCode &&  result == "Deleted";
         }
 
         public async Task<(List<Product>, int)> SearchAsync(ProductQuery query)
