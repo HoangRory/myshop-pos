@@ -17,6 +17,7 @@ namespace MyShop.Client
             services.AddSingleton<ViewModels.MainViewModel>();
             services.AddSingleton<ViewModels.ProductsViewModel>();
             services.AddScoped<Services.Interfaces.IProductService, Services.ProductService>();
+            services.AddSingleton<Services.Interfaces.IDialogService, Services.DialogService>();
             services.AddSingleton<ViewModels.OrdersViewModel>();
             services.AddSingleton<ViewModels.ReportsViewModel>();
             services.AddSingleton<ViewModels.SettingsViewModel>();

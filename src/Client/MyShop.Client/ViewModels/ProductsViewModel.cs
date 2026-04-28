@@ -7,6 +7,7 @@ namespace MyShop.Client.ViewModels
     public class ProductsViewModel : BaseViewModel
     {
         private readonly IProductService _productService;
+        private readonly IDialogService _dialogService;
 
         private bool _isLoaded;
         public bool IsLoaded
@@ -155,9 +156,10 @@ namespace MyShop.Client.ViewModels
         public System.Windows.Input.ICommand ImportAccessCommand { get; }
         public System.Windows.Input.ICommand AddProductTypeCommand { get; }
 
-        public ProductsViewModel(IProductService productService)
+        public ProductsViewModel(IProductService productService, IDialogService dialogService)
         {
             _productService = productService;
+            _dialogService = dialogService;
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
@@ -200,7 +202,8 @@ namespace MyShop.Client.ViewModels
             try
             {
                 bool result;
-                if (EditingProduct.ProductId == 0)
+                bool isCreate = EditingProduct.ProductId == 0;
+                if (isCreate)
                 {
                     result = await _productService.CreateAsync(EditingProduct);
                 }
@@ -211,13 +214,14 @@ namespace MyShop.Client.ViewModels
 
                 if (result)
                 {
-                    IsLoading = false;
-                    await LoadProductsAsync();
+                    _dialogService.Success(
+                        isCreate ? "Thành công" : "Cập nhật thành công",
+                        isCreate ? "Thêm sản phẩm thành công." : "Cập nhật sản phẩm thành công.");
                     ClearEdit();
                 }
                 else
                 {
-                    ErrorMessage = EditingProduct.ProductId == 0 ? "Thêm sản phẩm thất bại." : "Cập nhật sản phẩm thất bại.";
+                    ErrorMessage = isCreate ? "Thêm sản phẩm thất bại." : "Cập nhật sản phẩm thất bại.";
                 }
             }
             catch (Exception ex)
@@ -227,6 +231,7 @@ namespace MyShop.Client.ViewModels
             finally
             {
                 IsLoading = false;
+                await LoadProductsAsync();
             }
         }
 
@@ -263,6 +268,18 @@ namespace MyShop.Client.ViewModels
         private async Task LoadProductsAsync()
         {
             if (IsLoading) return;
+
+            if (EditingProduct != null)
+            {
+                var confirm = _dialogService.Confirm(
+                    "Xác nhận",
+                    "Bạn đang chỉnh sửa sản phẩm. Nếu tiếp tục sẽ mất thay đổi. Bạn có muốn tiếp tục không?");
+
+                if (!confirm) return;
+
+                ClearEdit(); // hủy edit trước khi load
+            }
+
             IsLoading = true;
             try
             {

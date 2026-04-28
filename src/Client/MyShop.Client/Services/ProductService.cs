@@ -27,10 +27,19 @@ namespace MyShop.Client.Services
 
         public async Task<bool> CreateAsync(Product model)
         {
-            var json = JsonSerializer.Serialize(model, new JsonSerializerOptions
+            var payload = new
             {
-                PropertyNamingPolicy = null
-            });
+                model.Sku,
+                model.Name,
+                model.ImportPrice,
+                model.SalePrice,
+                model.StockCount,
+                model.Description,
+                model.CategoryId
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _http.PostAsync(BaseUrl, content);
@@ -60,10 +69,7 @@ namespace MyShop.Client.Services
 
         public async Task<(List<Product>, int)> SearchAsync(ProductQuery query)
         {
-            var json = JsonSerializer.Serialize(query, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            var json = JsonSerializer.Serialize(query);
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
