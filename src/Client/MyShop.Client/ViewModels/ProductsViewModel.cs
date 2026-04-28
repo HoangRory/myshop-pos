@@ -1,12 +1,14 @@
 using System.Collections.ObjectModel;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
+using MyShop.Client.Services;
 using CommunityToolkit.Mvvm.Input;
 namespace MyShop.Client.ViewModels
 {
     public class ProductsViewModel : BaseViewModel
     {
         private readonly IProductService _productService;
+        private readonly ICategoryService _categoryService;
         private readonly IDialogService _dialogService;
 
         private bool _isLoaded;
@@ -18,7 +20,19 @@ namespace MyShop.Client.ViewModels
 
 
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
-        public ObservableCollection<string> ProductTypes { get; } = new ObservableCollection<string>();
+        public ObservableCollection<Category> Categories { get; } = new ObservableCollection<Category>();
+        private Category? _selectedCategory;
+        public Category? SelectedCategory
+        {
+            get => _selectedCategory;
+            set
+            {
+                if (SetProperty(ref _selectedCategory, value))
+                {
+                    PageIndex = 1;
+                }
+            }
+        }
         // --- Editing Flow State ---
         private Product? _editingProduct;
         public Product? EditingProduct
@@ -156,10 +170,11 @@ namespace MyShop.Client.ViewModels
         public System.Windows.Input.ICommand ImportAccessCommand { get; }
         public System.Windows.Input.ICommand AddProductTypeCommand { get; }
 
-        public ProductsViewModel(IProductService productService, IDialogService dialogService)
+        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService)
         {
             _productService = productService;
             _dialogService = dialogService;
+            _categoryService = categoryService;
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
@@ -171,7 +186,9 @@ namespace MyShop.Client.ViewModels
             ApplyFiltersCommand = new MyShop.Client.Helpers.RelayCommand(_ => { PageIndex = 1; LoadProductsCommand.Execute(null); });
             ImportExcelCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromExcel());
             ImportAccessCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromAccess());
-            AddProductTypeCommand = new MyShop.Client.Helpers.RelayCommand(_ => AddProductType());
+
+            // Load categories when initializing
+            _ = LoadCategoriesAsync();
         }
 
 
@@ -264,6 +281,24 @@ namespace MyShop.Client.ViewModels
             ErrorMessage = string.Empty;
         }
 
+        private async Task LoadCategoriesAsync()
+        {
+            Categories.Clear();
+
+            var allCategories = await _categoryService.GetAllAsync();
+
+            Categories.Add(new Category
+            {
+                CategoryId = 0,
+                Name = "(Tất cả)"
+            });
+
+            foreach (var c in allCategories)
+                Categories.Add(c);
+
+            if (SelectedCategory == null)
+                SelectedCategory = Categories.FirstOrDefault();
+        }
 
         private async Task LoadProductsAsync()
         {
@@ -283,11 +318,6 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
-                int? categoryId = null;
-                if (!string.IsNullOrEmpty(SelectedProductType) && SelectedProductType != "(All)" && int.TryParse(SelectedProductType, out var catId))
-                {
-                    categoryId = catId;
-                }
                 var query = new ProductQuery
                 {
                     PageIndex = PageIndex,
@@ -297,18 +327,20 @@ namespace MyShop.Client.ViewModels
                     MaxPrice = MaxPrice,
                     SortBy = SelectedSortField,
                     IsAscending = !SortDescending,
-                    CategoryId = categoryId
+                    CategoryId = SelectedCategory?.CategoryId == 0
+                    ? null
+                    : SelectedCategory?.CategoryId
                 };
                 var (products, totalCount) = await _productService.SearchAsync(query);
                 Products.Clear();
                 foreach (var p in products)
+                {
+                    p.CategoryName = Categories
+                        .FirstOrDefault(c => c.CategoryId == p.CategoryId)
+                        ?.Name ?? "Không có";
                     Products.Add(p);
+                }
                 TotalCount = totalCount;
-                // Populate product types
-                ProductTypes.Clear();
-                ProductTypes.Add("(All)");
-                foreach (var t in products.Select(p => p.CategoryId?.ToString() ?? "Unknown").Distinct())
-                    if (!ProductTypes.Contains(t)) ProductTypes.Add(t);
 
                 ErrorMessage = string.Empty;
             }
@@ -337,14 +369,7 @@ namespace MyShop.Client.ViewModels
             ErrorMessage = "Import from Access is not implemented in this build.";
         }
 
-        private void AddProductType()
-        {
-            // Very small helper to add a product type - in real app show dialog to input new type
-            var newType = "NewType" + (ProductTypes.Count + 1);
-            if (!ProductTypes.Contains(newType)) ProductTypes.Add(newType);
-            ErrorMessage = $"Added product type '{newType}' (demo).";
-        }
-        
+
 
         private async Task DeleteProductAsync()
         {

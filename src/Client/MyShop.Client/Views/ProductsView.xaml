@@ -54,6 +54,15 @@
             <Setter Property="MinWidth" Value="88" />
         </Style>
 
+        <!-- Outlined cancel button -->
+        <Style x:Key="CancelOutlineButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#6B6F76" />
+            <Setter Property="Foreground" Value="#6B6F76" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="MinWidth" Value="88" />
+        </Style>
+
         <!-- DataGrid header style -->
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="FontSize" Value="12" />
@@ -140,7 +149,14 @@
                             <TextBox Grid.Column="1" Width="260" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
                         </Grid>
 
-                        <ComboBox Width="180" ItemsSource="{Binding ProductTypes}" SelectedItem="{Binding SelectedProductType}" Height="30" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="8,0,0,0" />
+                        <ComboBox Width="180"
+                                  ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                  DisplayMemberPath="Name"
+                                  Height="30"
+                                  VerticalContentAlignment="Center"
+                                  HorizontalAlignment="Left"
+                                  Margin="8,0,0,0" />
 
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
@@ -188,7 +204,7 @@
 
                             <DataGridTextColumn Header="Tên" Binding="{Binding Name}" Width="3*" />
                             <DataGridTextColumn Header="Sku" Binding="{Binding Sku}" Width="1.2*" />
-                            <DataGridTextColumn Header="Loại (Id)" Binding="{Binding CategoryId}" Width="1.4*" />
+                            <DataGridTextColumn Header="Danh mục" Binding="{Binding CategoryName}" Width="1.4*" />
                             <DataGridTextColumn Header="Giá bán" Binding="{Binding SalePrice, StringFormat=N0}" Width="1*" />
                             <DataGridTemplateColumn Header="Tồn" Width="90">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -286,13 +302,20 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Tên" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Text="{Binding EditingProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" Padding="8,4" />
                             <TextBlock Text="Sku" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding EditingProduct.Sku, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.Sku, Mode=TwoWay}" Height="30" Padding="8,4" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
-                            <TextBlock Text="Danh mục (Id)" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.CategoryId, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
+                            <TextBlock Text="Danh mục" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox
+                                ItemsSource="{Binding Categories}"
+                                SelectedValue="{Binding EditingProduct.CategoryId, Mode=TwoWay}"
+                                SelectedValuePath="CategoryId"
+                                DisplayMemberPath="Name"
+                                Height="30"
+                                VerticalContentAlignment="Center"
+                                />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -309,13 +332,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Giá nhập" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.ImportPrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
+                            <TextBox Text="{Binding EditingProduct.ImportPrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
                             <TextBlock Text="Giá bán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding EditingProduct.SalePrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
+                            <TextBox Text="{Binding EditingProduct.SalePrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Số lượng" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.StockCount, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
+                            <TextBox Text="{Binding EditingProduct.StockCount, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -336,7 +359,7 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button Content="Hủy" Command="{Binding ClearFormCommand}" Margin="0,0,8,0" />
+                <Button Content="Hủy" Command="{Binding ClearFormCommand}" Margin="0,0,8,0" Style="{StaticResource CancelOutlineButton}"/>
                 <Button Content="Lưu" Command="{Binding SaveProductCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <Border Background="#FFF3F3"

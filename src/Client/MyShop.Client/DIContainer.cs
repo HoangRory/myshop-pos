@@ -16,7 +16,7 @@ namespace MyShop.Client
             // Register ViewModels
             services.AddSingleton<ViewModels.MainViewModel>();
             services.AddSingleton<ViewModels.ProductsViewModel>();
-            services.AddScoped<Services.Interfaces.IProductService, Services.ProductService>();
+
             services.AddSingleton<Services.Interfaces.IDialogService, Services.DialogService>();
             services.AddSingleton<ViewModels.OrdersViewModel>();
             services.AddSingleton<ViewModels.ReportsViewModel>();
@@ -29,6 +29,8 @@ namespace MyShop.Client
             services.AddSingleton<Services.INavigationService, Services.NavigationService>();
             services.AddScoped<IProductService, ProductService>();
 
+            // Register CategoryService
+            services.AddScoped<ICategoryService, CategoryService>();
 
             // Register shared named HttpClient for all API clients
             services.AddHttpClient("MyShopAPI", client =>
@@ -48,7 +50,8 @@ namespace MyShop.Client
                 var factory = sp.GetRequiredService<IHttpClientFactory>();
                 return factory.CreateClient("MyShopAPI");
             });
-            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductService, ProductService>(); 
+            services.AddScoped<ICategoryService, CategoryService>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();

@@ -30,6 +30,7 @@ namespace MyShop.Client.Models
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public int? CategoryId { get => _categoryId; set { if (_categoryId != value) { _categoryId = value; OnPropertyChanged(nameof(CategoryId)); } } }
+        public string? CategoryName { get; set; } // Thêm property để binding tên danh mục
 
         protected void OnPropertyChanged(string propertyName)
         {
