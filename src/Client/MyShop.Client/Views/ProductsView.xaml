@@ -1,6 +1,7 @@
 <UserControl x:Class="MyShop.Client.Views.ProductsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:MyShop.Client.Helpers"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:MyShop.Client.ViewModels"
@@ -90,13 +91,15 @@
             </Setter>
         </Style>
 
-        <!-- Thumbnail cell template (fallback shows SKU) -->
+        <!-- Thumbnail cell template (fallback shows Sku) -->
         <DataTemplate x:Key="ThumbnailTemplate">
             <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
-                <TextBlock Text="{Binding SKU}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Sku}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
             </Border>
         </DataTemplate>
 
+        <helpers:StringNullOrEmptyToVisibilityConverter x:Key="StringToVisibility"/>
+        <helpers:SafeDecimalConverter x:Key="SafeDecimalConverter"/>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource AppBackground}">
@@ -163,7 +166,7 @@
                     <DataGrid x:Name="ProductsGrid"
                               Grid.Row="0"
                               ItemsSource="{Binding Products}" 
-                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                              SelectedItem="{Binding SelectedProduct, Mode=OneWayToSource}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               RowHeaderWidth="0"
@@ -177,14 +180,14 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                 <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
-                                            <TextBlock Text="{Binding SKU}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Sku}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
                             <DataGridTextColumn Header="Tên" Binding="{Binding Name}" Width="3*" />
-                            <DataGridTextColumn Header="SKU" Binding="{Binding SKU}" Width="1.2*" />
+                            <DataGridTextColumn Header="Sku" Binding="{Binding Sku}" Width="1.2*" />
                             <DataGridTextColumn Header="Loại (Id)" Binding="{Binding CategoryId}" Width="1.4*" />
                             <DataGridTextColumn Header="Giá bán" Binding="{Binding SalePrice, StringFormat=N0}" Width="1*" />
                             <DataGridTemplateColumn Header="Tồn" Width="90">
@@ -283,13 +286,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Tên" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding SelectedProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Text="SKU" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding SelectedProduct.SKU, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Sku" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                            <TextBox Text="{Binding EditingProduct.Sku, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Danh mục (Id)" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding SelectedProduct.CategoryId, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.CategoryId, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -306,13 +309,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Giá nhập" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding SelectedProduct.ImportPrice, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.ImportPrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
                             <TextBlock Text="Giá bán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding SelectedProduct.SalePrice, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.SalePrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Số lượng" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding SelectedProduct.StockCount, Mode=TwoWay}" />
+                            <TextBox Text="{Binding EditingProduct.StockCount, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -326,7 +329,7 @@
                             <Setter Property="Visibility" Value="Visible" />
                             <Style.Triggers>
                                 <!-- Hide delete when creating a new product (Id == 0) -->
-                                <DataTrigger Binding="{Binding SelectedProduct.Id}" Value="0">
+                                <DataTrigger Binding="{Binding EditingProduct.ProductId}" Value="0">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -336,6 +339,17 @@
                 <Button Content="Hủy" Command="{Binding ClearFormCommand}" Margin="0,0,8,0" />
                 <Button Content="Lưu" Command="{Binding SaveProductCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
+            <Border Background="#FFF3F3"
+                BorderBrush="#F5C2C7"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,10"
+                CornerRadius="4"
+                Visibility="{Binding ErrorMessage,Converter={StaticResource StringToVisibility} }">
+                <TextBlock Text="{Binding ErrorMessage}"
+               Foreground="#D9534F"
+               TextWrapping="Wrap"/>
+            </Border>
         </StackPanel>
     </Grid>
 </UserControl>

@@ -18,6 +18,25 @@ namespace MyShop.Client.ViewModels
 
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
         public ObservableCollection<string> ProductTypes { get; } = new ObservableCollection<string>();
+        // --- Editing Flow State ---
+        private Product? _editingProduct;
+        public Product? EditingProduct
+        {
+            get => _editingProduct;
+            set
+            {
+                if (SetProperty(ref _editingProduct, value))
+                {
+                    // Khi gán object mới, thông báo toàn bộ property thay đổi để binding UI cập nhật
+                    OnPropertyChanged(nameof(EditingProduct));
+                    // Nếu có các command phụ thuộc, cập nhật trạng thái
+                    SaveProductCommand.NotifyCanExecuteChanged();
+                    DeleteProductCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        private Product? _snapshotProduct;
 
         // Query/filter state
         private int _pageIndex = 1;
@@ -59,71 +78,56 @@ namespace MyShop.Client.ViewModels
         private string _selectedProductType;
         public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) PageIndex = 1; } }
 
-        private Product _selectedProduct;
-        public Product SelectedProduct
+        private Product? _selectedProduct;
+        public Product? SelectedProduct
         {
             get => _selectedProduct;
             set
             {
                 if (SetProperty(ref _selectedProduct, value))
                 {
-                    FillFormFromSelected();
+                    // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
+                    // Nếu muốn bắt đầu edit, gọi hàm riêng
+                    OpenEditMode(value);
                     UpdateCommandStates();
                 }
             }
         }
 
-        private string _name;
-        public string Name
+        public void OpenEditMode(Product? product)
         {
-            get => _name;
-            set {
-                if (SetProperty(ref _name, value))
-                {
-                    ErrorMessage = string.Empty;
-                    UpdateCommandStates();
-                }
+            if (product == null)
+            {
+                EditingProduct = null;
+                _snapshotProduct = null;
+                return;
             }
+            // Clone thủ công từng property, không dùng MemberwiseClone
+            var clone = new Product
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Sku = product.Sku,
+                CategoryId = product.CategoryId,
+                ImportPrice = product.ImportPrice,
+                SalePrice = product.SalePrice,
+                StockCount = product.StockCount,
+                Description = product.Description
+            };
+            _snapshotProduct = new Product
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Sku = product.Sku,
+                CategoryId = product.CategoryId,
+                ImportPrice = product.ImportPrice,
+                SalePrice = product.SalePrice,
+                StockCount = product.StockCount,
+                Description = product.Description
+            };
+            EditingProduct = clone;
         }
 
-        private string _sku;
-        public string SKU
-        {
-            get => _sku;
-            set {
-                if (SetProperty(ref _sku, value))
-                {
-                    ErrorMessage = string.Empty;
-                    UpdateCommandStates();
-                }
-            }
-        }
-
-        private decimal _salePrice;
-        public decimal SalePrice
-        {
-            get => _salePrice;
-            set {
-                if (SetProperty(ref _salePrice, value))
-                {
-                    ErrorMessage = string.Empty;
-                    UpdateCommandStates();
-                }
-            }
-        }
-
-        private int _stockCount;
-        public int StockCount
-        {
-            get => _stockCount;
-            set {
-                if (SetProperty(ref _stockCount, value))
-                {
-                    ErrorMessage = string.Empty;
-                    UpdateCommandStates();
-                }
-            }
-        }
 
         private bool _isLoading;
         public bool IsLoading
@@ -142,7 +146,6 @@ namespace MyShop.Client.ViewModels
         public AsyncRelayCommand LoadProductsCommand { get; }
         public AsyncRelayCommand AddProductCommand { get; }
         public AsyncRelayCommand SaveProductCommand { get; }
-        public AsyncRelayCommand UpdateProductCommand { get; }
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
         public System.Windows.Input.ICommand NextPageCommand { get; }
@@ -158,7 +161,6 @@ namespace MyShop.Client.ViewModels
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
-            UpdateProductCommand = new AsyncRelayCommand(UpdateProductAsync, CanExecuteUpdateOrDeleteProduct);
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
             ClearFormCommand = new AsyncRelayCommand(_ => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
 
@@ -170,60 +172,91 @@ namespace MyShop.Client.ViewModels
             AddProductTypeCommand = new MyShop.Client.Helpers.RelayCommand(_ => AddProductType());
         }
 
-        private void FillFormFromSelected()
-        {
-            if (SelectedProduct != null)
-            {
-                Name = SelectedProduct.Name;
-                SKU = SelectedProduct.SKU;
-                SalePrice = SelectedProduct.SalePrice;
-                StockCount = SelectedProduct.StockCount;
-            }
-            else
-            {
-                Name = string.Empty;
-                SKU = string.Empty;
-                SalePrice = 0;
-                StockCount = 0;
-            }
-        }
+
 
         private void ClearForm()
         {
-            SelectedProduct = null;
-            Name = string.Empty;
-            SKU = string.Empty;
-            SalePrice = 0;
-            StockCount = 0;
-            ErrorMessage = string.Empty;
+            ClearEdit();
         }
 
         private Task OpenAddFormAsync()
         {
-            // Prepare an empty product for the form. FillFormFromSelected will populate fields.
-            SelectedProduct = new Product();
+            SelectedProduct = null;
+            OpenEditMode(new Product());
             ErrorMessage = string.Empty;
             return Task.CompletedTask;
         }
 
         private async Task SaveProductAsync()
         {
-            if (SelectedProduct == null) return;
+            if (EditingProduct == null) return;
             if (!ValidateInput())
             {
-                ErrorMessage = "Vui lòng nhập đầy đủ và hợp lệ thông tin sản phẩm.";
+                //ErrorMessage = "Vui lòng nhập đầy đủ và hợp lệ thông tin sản phẩm.";
                 return;
             }
 
-            // If the selected product has an Id (non-zero) treat as update, otherwise create
-            if (SelectedProduct.Id == 0)
+            IsLoading = true;
+            try
             {
-                await CreateProductAsync();
+                bool result;
+                if (EditingProduct.ProductId == 0)
+                {
+                    result = await _productService.CreateAsync(EditingProduct);
+                }
+                else
+                {
+                    result = await _productService.UpdateAsync(EditingProduct);
+                }
+
+                if (result)
+                {
+                    IsLoading = false;
+                    await LoadProductsAsync();
+                    ClearEdit();
+                }
+                else
+                {
+                    ErrorMessage = EditingProduct.ProductId == 0 ? "Thêm sản phẩm thất bại." : "Cập nhật sản phẩm thất bại.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await UpdateProductAsync();
+                ErrorMessage = $"Error: {ex.Message}";
             }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void CancelEdit()
+        {
+            if (_snapshotProduct == null)
+            {
+                EditingProduct = null;
+                return;
+            }
+            // Khôi phục lại EditingProduct từ snapshot (clone thủ công)
+            EditingProduct = new Product
+            {
+                ProductId = _snapshotProduct.ProductId,
+                Name = _snapshotProduct.Name,
+                Sku = _snapshotProduct.Sku,
+                CategoryId = _snapshotProduct.CategoryId,
+                ImportPrice = _snapshotProduct.ImportPrice,
+                SalePrice = _snapshotProduct.SalePrice,
+                StockCount = _snapshotProduct.StockCount,
+                Description = _snapshotProduct.Description
+            };
+        }
+
+        private void ClearEdit()
+        {
+            SelectedProduct = null;
+            EditingProduct = null;
+            _snapshotProduct = null;
+            ErrorMessage = string.Empty;
         }
 
 
@@ -249,7 +282,7 @@ namespace MyShop.Client.ViewModels
                     IsAscending = !SortDescending,
                     CategoryId = categoryId
                 };
-                var (products, totalCount) = await _productService.GetProductsAsync(query);
+                var (products, totalCount) = await _productService.SearchAsync(query);
                 Products.Clear();
                 foreach (var p in products)
                     Products.Add(p);
@@ -296,82 +329,13 @@ namespace MyShop.Client.ViewModels
         }
         
 
-        private async Task CreateProductAsync()
-        {
-            if (IsLoading) return;
-            IsLoading = true;
-            try
-            {
-                if (!ValidateInput())
-                {
-                    ErrorMessage = "Vui lòng nhập đầy đủ và hợp lệ thông tin sản phẩm.";
-                    return;
-                }
-                var model = new ProductEditModel { Name = Name, SKU = SKU, SalePrice = SalePrice, StockCount = StockCount };
-                var result = await _productService.CreateAsync(model);
-                if (result != null)
-                {
-                    ErrorMessage = string.Empty;
-                    ClearForm();
-                    await LoadProductsAsync();
-                }
-                else
-                {
-                    ErrorMessage = "Thêm sản phẩm thất bại.";
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task UpdateProductAsync()
-        {
-            if (IsLoading || SelectedProduct == null) return;
-            IsLoading = true;
-            try
-            {
-                var model = new ProductEditModel
-                {
-                    Id = SelectedProduct.Id,
-                    Name = Name,
-                    SKU = SKU,
-                    SalePrice = SalePrice,
-                    StockCount = StockCount
-                };
-                var result = await _productService.UpdateAsync(model);
-                if (result != null)
-                {
-                    ErrorMessage = string.Empty;
-                    await LoadProductsAsync();
-                }
-                else
-                {
-                    ErrorMessage = "Cập nhật sản phẩm thất bại.";
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
         private async Task DeleteProductAsync()
         {
             if (IsLoading || SelectedProduct == null) return;
             IsLoading = true;
             try
             {
-                var result = await _productService.DeleteAsync(SelectedProduct.Id);
+                var result = await _productService.DeleteAsync(SelectedProduct.ProductId);
                 if (result)
                 {
                     ErrorMessage = string.Empty;
@@ -395,16 +359,49 @@ namespace MyShop.Client.ViewModels
 
         private bool ValidateInput()
         {
-            if (string.IsNullOrWhiteSpace(Name)) return false;
-            if (string.IsNullOrWhiteSpace(SKU)) return false;
-            if (SalePrice <= 0) return false;
-            if (StockCount < 0) return false;
+            if (EditingProduct == null)
+            {
+                ErrorMessage = "Không có dữ liệu sản phẩm để kiểm tra.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(EditingProduct.Name))
+            {
+                ErrorMessage = "Tên sản phẩm không được để trống.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(EditingProduct.Sku))
+            {
+                ErrorMessage = "SKU không được để trống.";
+                return false;
+            }
+
+            if (EditingProduct.ImportPrice < 0)
+            {
+                ErrorMessage = "Giá nhập phải lớn hơn 0.";
+                return false;
+            }
+
+            if (EditingProduct.SalePrice < 0)
+            {
+                ErrorMessage = "Giá bán phải lớn hơn 0.";
+                return false;
+            }
+
+            if (EditingProduct.StockCount < 0)
+            {
+                ErrorMessage = "Số lượng tồn kho không được âm.";
+                return false;
+            }
+
+            ErrorMessage = string.Empty;
             return true;
         }
 
         private bool CanExecuteLoadProducts() => !IsLoading;
         private bool CanExecuteOpenAddForm() => !IsLoading;
-        private bool CanExecuteSaveProduct() => !IsLoading && SelectedProduct != null && ValidateInput();
+        private bool CanExecuteSaveProduct() => !IsLoading && EditingProduct != null;
         private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && SelectedProduct != null;
         private bool CanExecuteClearForm() => !IsLoading;
 
@@ -413,7 +410,7 @@ namespace MyShop.Client.ViewModels
             LoadProductsCommand.NotifyCanExecuteChanged();
             AddProductCommand.NotifyCanExecuteChanged();
             SaveProductCommand.NotifyCanExecuteChanged();
-            UpdateProductCommand.NotifyCanExecuteChanged();
+            // UpdateProductCommand removed
             DeleteProductCommand.NotifyCanExecuteChanged();
             ClearFormCommand.NotifyCanExecuteChanged();
         }

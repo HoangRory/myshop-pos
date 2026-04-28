@@ -16,7 +16,7 @@ namespace MyShop.Client
             // Register ViewModels
             services.AddSingleton<ViewModels.MainViewModel>();
             services.AddSingleton<ViewModels.ProductsViewModel>();
-            services.AddScoped<Services.Interfaces.IProductApiClient, Services.ProductApiClient>();
+            services.AddScoped<Services.Interfaces.IProductService, Services.ProductService>();
             services.AddSingleton<ViewModels.OrdersViewModel>();
             services.AddSingleton<ViewModels.ReportsViewModel>();
             services.AddSingleton<ViewModels.SettingsViewModel>();
@@ -47,7 +47,7 @@ namespace MyShop.Client
                 var factory = sp.GetRequiredService<IHttpClientFactory>();
                 return factory.CreateClient("MyShopAPI");
             });
-            services.AddScoped<IProductApiClient, ProductApiClient>();
+            services.AddScoped<IProductService, ProductService>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();

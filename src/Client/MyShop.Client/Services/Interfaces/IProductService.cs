@@ -6,9 +6,11 @@ namespace MyShop.Client.Services.Interfaces
 {
     public interface IProductService
     {
-        Task<(List<Product>, int)> GetProductsAsync(ProductQuery query);
-        Task<Product?> CreateAsync(ProductEditModel model);
-        Task<Product?> UpdateAsync(ProductEditModel model);
+        Task<List<Product>> GetAllAsync();
+        Task<bool> CreateAsync(Product model);
+        Task<bool> UpdateAsync(Product model);
         Task<bool> DeleteAsync(int id);
+
+        Task<(List<Product>, int)> SearchAsync(ProductQuery query);
     }
 }
