@@ -20,20 +20,59 @@ namespace MyShop.Client.ViewModels
 
 
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
-        public ObservableCollection<Category> Categories { get; } = new ObservableCollection<Category>();
+        public ObservableCollection<Category> FilterCategories { get; } = new ObservableCollection<Category>();
+        public ObservableCollection<Category> EditCategories { get; } = new ObservableCollection<Category>();
         private Category? _selectedCategory;
         public Category? SelectedCategory
         {
             get => _selectedCategory;
             set
             {
-                if (SetProperty(ref _selectedCategory, value))
+                if (_selectedCategory == value)
+                    return;
+
+                TryChangeState(() =>
                 {
-                    PageIndex = 1;
-                }
+                    if (SetProperty(ref _selectedCategory, value))
+                    {
+                        _pageIndex = 1;
+                        OnPropertyChanged(nameof(PageIndex));
+                        LoadProductsCommand.Execute(null);
+                    }
+                });
             }
         }
         // --- Editing Flow State ---
+        // ===============================
+        // STEP 1: Thêm method này vào ProductsViewModel (placed before usage)
+        // ===============================
+
+        private bool TryLeaveEditMode()
+        {
+            if (EditingProduct == null)
+                return true;
+
+            var confirm = _dialogService.Confirm(
+                "Xác nhận",
+                "Bạn đang chỉnh sửa sản phẩm. Nếu tiếp tục, các thay đổi chưa lưu sẽ bị mất. Bạn có muốn tiếp tục không?"
+            );
+
+            if (!confirm)
+                return false;
+
+            ClearEdit();
+            return true;
+        }
+
+        private bool TryChangeState(Action action)
+        {
+            if (!TryLeaveEditMode())
+                return false;
+
+            action();
+            return true;
+        }
+
         private Product? _editingProduct;
         public Product? EditingProduct
         {
@@ -55,10 +94,31 @@ namespace MyShop.Client.ViewModels
 
         // Query/filter state
         private int _pageIndex = 1;
-        public int PageIndex { get => _pageIndex; set { if (SetProperty(ref _pageIndex, value)) LoadProductsCommand.Execute(null); } }
+        public int PageIndex {
+            get => _pageIndex; 
+            set 
+            { 
+                if (SetProperty(ref _pageIndex, value))
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    LoadProductsCommand.Execute(null); 
+                }
+            } 
+        }
 
         private int _pageSize = 10;
-        public int PageSize { get => _pageSize; set { if (SetProperty(ref _pageSize, value)) LoadProductsCommand.Execute(null); } }
+        public int PageSize { 
+            get => _pageSize; 
+            set 
+            {
+                if (SetProperty(ref _pageSize, value)) 
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    PageIndex = 1;
+                    LoadProductsCommand.Execute(null);
+                } 
+            }
+        }
 
         private int _totalCount;
         public int TotalCount
@@ -182,14 +242,56 @@ namespace MyShop.Client.ViewModels
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
             ClearFormCommand = new AsyncRelayCommand(_ => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
 
-            NextPageCommand = new MyShop.Client.Helpers.RelayCommand(_ => { if (PageIndex < TotalPages) PageIndex++; }, _ => PageIndex < TotalPages);
-            PrevPageCommand = new MyShop.Client.Helpers.RelayCommand(_ => { if (PageIndex > 1) PageIndex--; }, _ => PageIndex > 1);
-            ApplyFiltersCommand = new MyShop.Client.Helpers.RelayCommand(_ => { PageIndex = 1; LoadProductsCommand.Execute(null); });
+            // ===============================
+            // STEP 4: Sửa NextPageCommand
+            // ===============================
+            NextPageCommand = new MyShop.Client.Helpers.RelayCommand(
+                _ =>
+                {
+                    TryChangeState(() =>
+                    {
+                        if (PageIndex < TotalPages)
+                        {
+                            PageIndex++;
+                        }
+                    });
+                },
+                _ => PageIndex < TotalPages
+            );
+
+            // ===============================
+            // STEP 5: Sửa PrevPageCommand
+            // ===============================
+            PrevPageCommand = new MyShop.Client.Helpers.RelayCommand(
+                _ =>
+                {
+                    TryChangeState(() =>
+                    {
+                        if (PageIndex > 1)
+                        {
+                            PageIndex--;
+                        }
+                    });
+                },
+                _ => PageIndex > 1
+            );
+
+            // ===============================
+            // STEP 6: Sửa ApplyFiltersCommand
+            // ===============================
+            ApplyFiltersCommand = new MyShop.Client.Helpers.RelayCommand(
+                _ =>
+                {
+                    TryChangeState(() =>
+                    {
+                        _pageIndex = 1;
+                        OnPropertyChanged(nameof(PageIndex));
+                        LoadProductsCommand.Execute(null);
+                    });
+                }
+            );
             ImportExcelCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromExcel());
             ImportAccessCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromAccess());
-
-            // Load categories when initializing
-            _ = LoadCategoriesAsync();
         }
 
 
@@ -199,12 +301,12 @@ namespace MyShop.Client.ViewModels
             ClearEdit();
         }
 
-        private Task OpenAddFormAsync()
+        private async Task OpenAddFormAsync()
         {
+            await EnsureCategoriesLoadedAsync();
             SelectedProduct = null;
             OpenEditMode(new Product());
             ErrorMessage = string.Empty;
-            return Task.CompletedTask;
         }
 
         private async Task SaveProductAsync()
@@ -221,6 +323,10 @@ namespace MyShop.Client.ViewModels
             {
                 bool result;
                 bool isCreate = EditingProduct.ProductId == 0;
+                if(EditingProduct.CategoryId == -1)
+                {
+                    EditingProduct.CategoryId = null; // Gán null nếu chọn "(Không có)"
+                }
                 if (isCreate)
                 {
                     result = await _productService.CreateAsync(EditingProduct);
@@ -253,27 +359,6 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void CancelEdit()
-        {
-            if (_snapshotProduct == null)
-            {
-                EditingProduct = null;
-                return;
-            }
-            // Khôi phục lại EditingProduct từ snapshot (clone thủ công)
-            EditingProduct = new Product
-            {
-                ProductId = _snapshotProduct.ProductId,
-                Name = _snapshotProduct.Name,
-                Sku = _snapshotProduct.Sku,
-                CategoryId = _snapshotProduct.CategoryId,
-                ImportPrice = _snapshotProduct.ImportPrice,
-                SalePrice = _snapshotProduct.SalePrice,
-                StockCount = _snapshotProduct.StockCount,
-                Description = _snapshotProduct.Description
-            };
-        }
-
         private void ClearEdit()
         {
             SelectedProduct = null;
@@ -284,37 +369,51 @@ namespace MyShop.Client.ViewModels
 
         private async Task LoadCategoriesAsync()
         {
-            Categories.Clear();
+            FilterCategories.Clear();
+            EditCategories.Clear();
 
             var allCategories = await _categoryService.GetAllAsync();
 
-            Categories.Add(new Category
+            FilterCategories.Add(new Category
             {
                 CategoryId = 0,
                 Name = "(Tất cả)"
             });
 
+            EditCategories.Add(new Category
+            {
+                CategoryId = -1,
+                Name = "(Không có)"
+            });
+
             foreach (var c in allCategories)
-                Categories.Add(c);
+            {
+                EditCategories.Add(c);
+                FilterCategories.Add(c);
+            }
 
             if (SelectedCategory == null)
-                SelectedCategory = Categories.FirstOrDefault();
+                SelectedCategory = FilterCategories.FirstOrDefault();
+        }
+
+        private async Task EnsureCategoriesLoadedAsync()
+        {
+            if (FilterCategories.Any() && EditCategories.Any())
+                return;
+
+            await LoadCategoriesAsync();
         }
 
         private async Task LoadProductsAsync()
         {
             if (IsLoading) return;
 
-            if (EditingProduct != null)
-            {
-                var confirm = _dialogService.Confirm(
-                    "Xác nhận",
-                    "Bạn đang chỉnh sửa sản phẩm. Nếu tiếp tục sẽ mất thay đổi. Bạn có muốn tiếp tục không?");
+            await EnsureCategoriesLoadedAsync();
 
-                if (!confirm) return;
 
-                ClearEdit(); // hủy edit trước khi load
-            }
+            // ===============================
+            // STEP 7: XÓA đoạn này khỏi LoadProductsAsync()
+            // ===============================
 
             IsLoading = true;
             try
@@ -336,7 +435,7 @@ namespace MyShop.Client.ViewModels
                 Products.Clear();
                 foreach (var p in products)
                 {
-                    p.CategoryName = Categories
+                    p.CategoryName = FilterCategories
                         .FirstOrDefault(c => c.CategoryId == p.CategoryId)
                         ?.Name ?? "Không có";
                     Products.Add(p);

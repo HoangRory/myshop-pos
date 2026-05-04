@@ -109,13 +109,13 @@
 
         <helpers:StringNullOrEmptyToVisibilityConverter x:Key="StringToVisibility"/>
         <helpers:SafeDecimalConverter x:Key="SafeDecimalConverter"/>
+        <helpers:DetailPanelWidthConverter x:Key="DetailPanelWidthConverter"/>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource AppBackground}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="8" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Left}" />
+            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Right}" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="56" />
@@ -135,45 +135,64 @@
         </DockPanel>
 
         <!-- Left column: Filters + DataGrid + Pager -->
-        <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Vertical" Margin="0,0,12,0">
+        <Grid Grid.Column="0" Grid.Row="1" Margin="0,0,12,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <!-- Filter toolbar card -->
-            <Border Style="{StaticResource CardStyle}">
-                <DockPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Grid Width="320">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Width="260" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
-                        </Grid>
-
-                        <ComboBox Width="180"
-                                  ItemsSource="{Binding Categories}"
-                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
-                                  DisplayMemberPath="Name"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  HorizontalAlignment="Left"
-                                  Margin="8,0,0,0" />
-
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Width="80" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" VerticalContentAlignment="Center"/>
-                            <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0" />
-                            <TextBox Width="80" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center"/>
-                        </StackPanel>
-
-                        <Button Content="Áp dụng" Command="{Binding ApplyFiltersCommand}" Height="30" />
-                    </StackPanel>
-
-                    <!-- applied filters (not implemented in viewmodel) - reserved -->
-                </DockPanel>
+            <Border Style="{StaticResource CardStyle}" Grid.Row="0">
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Search -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
+                    </Grid>
+                    <!-- Category -->
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding FilterCategories}"
+                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                              DisplayMemberPath="Name"
+                              Height="30"
+                              VerticalContentAlignment="Center"
+                              HorizontalAlignment="Stretch"
+                              Margin="8,0,0,0" />
+                    <!-- Price Range -->
+                    <Grid Grid.Column="2" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" VerticalContentAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="-" VerticalAlignment="Center" Margin="6,0" />
+                        <TextBox Grid.Column="3" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center"/>
+                    </Grid>
+                    <!-- Apply Button -->
+                    <Button Grid.Column="3"
+                            Content="Áp dụng"
+                            Command="{Binding ApplyFiltersCommand}"
+                            Height="30"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource PrimaryButton}" />
+                </Grid>
             </Border>
 
             <!-- DataGrid card -->
-            <Border Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
+            <Border Style="{StaticResource CardStyle}" Grid.Row="1" VerticalAlignment="Stretch">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -190,12 +209,14 @@
                               EnableColumnVirtualization="True"
                               CanUserResizeRows="False"
                               GridLinesVisibility="None"
-                              SelectionMode="Single">
+                              SelectionMode="Single"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="" Width="70">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
+                                        <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
                                             <TextBlock Text="{Binding Sku}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
                                         </Border>
                                     </DataTemplate>
@@ -250,10 +271,14 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
-                            <ComboBox Width="80" SelectedItem="{Binding PageSize}" Margin="0,0,6,0">
-                                <ComboBoxItem>10</ComboBoxItem>
-                                <ComboBoxItem>25</ComboBoxItem>
-                                <ComboBoxItem>50</ComboBoxItem>
+                            <ComboBox Width="80"
+                                  SelectedValue="{Binding PageSize}"
+                                  SelectedValuePath="Content">
+                                <ComboBoxItem Content="10"/>
+                                <ComboBoxItem Content="25"/>
+                                <ComboBoxItem Content="50"/>
+                                <ComboBoxItem Content="100"/>
+
                             </ComboBox>
                             <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" />
                             <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="48" HorizontalContentAlignment="Center" />
@@ -262,13 +287,12 @@
                     </DockPanel>
                 </Grid>
             </Border>
-        </StackPanel>
+        </Grid>
 
-        <!-- Grid splitter -->
-        <GridSplitter Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="8" ShowsPreview="True" />
+
 
         <!-- Right column: Product detail panel -->
-        <StackPanel Grid.Column="2" Grid.Row="1" Orientation="Vertical" Width="420">
+        <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical">
             <StackPanel.Style>
                 <Style TargetType="StackPanel">
                     <Setter Property="Visibility" Value="Visible" />
@@ -309,7 +333,7 @@
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Danh mục" FontSize="12" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox
-                                ItemsSource="{Binding Categories}"
+                                ItemsSource="{Binding EditCategories}"
                                 SelectedValue="{Binding EditingProduct.CategoryId, Mode=TwoWay}"
                                 SelectedValuePath="CategoryId"
                                 DisplayMemberPath="Name"
