@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="LuciferCore" Version="2.5.0" />
+		<PackageReference Include="LuciferCore" Version="2.5.1" />
 		<PackageReference Include="MiniExcel" Version="1.43.1" />
 	</ItemGroup>
 
