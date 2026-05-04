@@ -22,10 +22,5 @@ namespace MyShop.Client
             InitializeComponent();
             DataContext = mainViewModel;
         }
-
-        private void MainView_Loaded()
-        {
-
-        }
     }
 }
