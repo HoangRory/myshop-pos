@@ -12,5 +12,11 @@ namespace MyShop.Client.Services.Interfaces
         Task<bool> DeleteAsync(int id);
 
         Task<(List<Product>, int)> SearchAsync(ProductQuery query);
+        /// <summary>
+        /// Import products from Excel file (raw byte array, not multipart, not JSON)
+        /// </summary>
+        /// <param name="filePath">Path to Excel file</param>
+        /// <returns>True if import succeeded</returns>
+        Task<bool> ImportExcelAsync(string filePath);
     }
 }

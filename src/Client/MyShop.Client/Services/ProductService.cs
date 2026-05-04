@@ -7,7 +7,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
-
+using System.IO;
+using System.Net.Http.Headers;
 namespace MyShop.Client.Services
 {
     public class ProductService : IProductService
@@ -88,6 +89,24 @@ namespace MyShop.Client.Services
             var total = doc.RootElement.GetProperty("Total").GetInt32();
 
             return (JsonSerializer.Deserialize<List<Product>>(data.GetRawText()) ?? new(), total);
+        }
+        /// <summary>
+        /// Import products from Excel file (raw byte array, not multipart, not JSON)
+        /// </summary>
+        /// <param name="filePath">Path to Excel file</param>
+        /// <returns>True if import succeeded</returns>
+        public async Task<bool> ImportExcelAsync(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                return false;
+
+            byte[] fileBytes = await File.ReadAllBytesAsync(filePath);
+
+            using var content = new ByteArrayContent(fileBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            var response = await _http.PostAsync($"{BaseUrl}/import", content);
+            return response.IsSuccessStatusCode;
         }
     }
 }

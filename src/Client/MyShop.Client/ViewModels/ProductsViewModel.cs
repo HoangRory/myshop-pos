@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
@@ -227,7 +228,7 @@ namespace MyShop.Client.ViewModels
         public System.Windows.Input.ICommand NextPageCommand { get; }
         public System.Windows.Input.ICommand PrevPageCommand { get; }
         public System.Windows.Input.ICommand ApplyFiltersCommand { get; }
-        public System.Windows.Input.ICommand ImportExcelCommand { get; }
+        public AsyncRelayCommand ImportExcelCommand { get; }
         public System.Windows.Input.ICommand ImportAccessCommand { get; }
         public System.Windows.Input.ICommand AddProductTypeCommand { get; }
 
@@ -290,7 +291,7 @@ namespace MyShop.Client.ViewModels
                     });
                 }
             );
-            ImportExcelCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromExcel());
+            ImportExcelCommand = new AsyncRelayCommand(ImportFromExcelAsync, CanExecuteImportExcel);
             ImportAccessCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromAccess());
         }
 
@@ -457,11 +458,63 @@ namespace MyShop.Client.ViewModels
 
         // Removed ApplyFilteringAndPaging and all LINQ logic. All data logic is now in ProductService.
 
-        private void ImportFromExcel()
+        private bool CanExecuteImportExcel() => !IsLoading;
+
+        private async Task ImportFromExcelAsync()
         {
-            // Minimal placeholder implementation - shows message via ErrorMessage.
-            // Real implementation should open file dialog and parse Excel (ExcelDataReader/EPPlus).
-            ErrorMessage = "Import from Excel is not implemented in this build.";
+            if (IsLoading) return;
+            IsLoading = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Title = "Chọn file Excel để nhập sản phẩm",
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    CheckFileExists = true,
+                    Multiselect = false
+                };
+
+                bool? result = dialog.ShowDialog();
+                if (result != true)
+                {
+                    IsLoading = false;
+                    return;
+                }
+
+                string filePath = dialog.FileName;
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    ErrorMessage = "Vui lòng chọn file Excel hợp lệ.";
+                    IsLoading = false;
+                    return;
+                }
+
+                bool importResult = await _productService.ImportExcelAsync(filePath);
+
+                if (importResult)
+                {
+                    _dialogService.Success("Thành công", "Nhập sản phẩm từ Excel thành công.");
+                    await LoadProductsAsync();
+                }
+                else
+                {
+                    ErrorMessage = "Nhập sản phẩm từ Excel thất bại.";
+                    // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
+                    //_dialogService.Success("Lỗi", ErrorMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Lỗi khi nhập Excel: {ex.Message}";
+                // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
+                //_dialogService.Success("Lỗi", ErrorMessage);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private void ImportFromAccess()
