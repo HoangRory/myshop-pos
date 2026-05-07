@@ -251,19 +251,19 @@
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="#6B7F8F"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Status}" Value="Pending">
+                                                            <DataTrigger Binding="{Binding Status}" Value="0">
                                                                 <Setter Property="Background" Value="#FFA500"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Status}" Value="Completed">
+                                                            <DataTrigger Binding="{Binding Status}" Value="1">
                                                                 <Setter Property="Background" Value="#4CAF50"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Status}" Value="Cancelled">
+                                                            <DataTrigger Binding="{Binding Status}" Value="2">
                                                                 <Setter Property="Background" Value="#D9534F"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Border.Style>
-                                                <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" />
+                                                <TextBlock Text="{Binding StatusText}" Foreground="White" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" />
                                             </Border>
                                         </Border>
                                     </DataTemplate>
@@ -334,7 +334,7 @@
                             <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox
                                 ItemsSource="{Binding StatusOptions}"
-                                SelectedItem="{Binding Detail.Status, Mode=TwoWay}"
+                                SelectedItem="{Binding Detail.StatusText, Mode=TwoWay}"
                                 Height="30"
                                 VerticalContentAlignment="Center"
                                 />

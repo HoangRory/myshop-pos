@@ -1,9 +1,52 @@
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace MyShop.Client.Models
 {
     public class OrderItem : INotifyPropertyChanged
     {
+        private int _orderItemId;
+        public int OrderItemId
+        {
+            get => _orderItemId;
+            set
+            {
+                if (_orderItemId != value)
+                {
+                    _orderItemId = value;
+                    OnPropertyChanged(nameof(OrderItemId));
+                }
+            }
+        }
+
+        private int _orderId;
+        public int OrderId
+        {
+            get => _orderId;
+            set
+            {
+                if (_orderId != value)
+                {
+                    _orderId = value;
+                    OnPropertyChanged(nameof(OrderId));
+                }
+            }
+        }
+
+        private int _productId;
+        public int ProductId
+        {
+            get => _productId;
+            set
+            {
+                if (_productId != value)
+                {
+                    _productId = value;
+                    OnPropertyChanged(nameof(ProductId));
+                }
+            }
+        }
+
         private string _productName = string.Empty;
         public string ProductName
         {
@@ -48,7 +91,13 @@ namespace MyShop.Client.Models
             }
         }
 
+        /// <summary>
+        /// UI-only property: Used for product selection in ComboBox
+        /// Not serialized to JSON
+        /// </summary>
+        [JsonIgnore]
         private object? _selectedProduct;
+        [JsonIgnore]
         public object? SelectedProduct
         {
             get => _selectedProduct;
@@ -61,6 +110,7 @@ namespace MyShop.Client.Models
 
                     if (value is Product product)
                     {
+                        ProductId = product.ProductId;
                         ProductName = product.Name;
                         Price = product.SalePrice;
                         IsEditing = false;
@@ -69,7 +119,13 @@ namespace MyShop.Client.Models
             }
         }
 
+        /// <summary>
+        /// UI-only property: Indicates if row is in editing mode
+        /// Not serialized to JSON
+        /// </summary>
+        [JsonIgnore]
         private bool _isEditing;
+        [JsonIgnore]
         public bool IsEditing
         {
             get => _isEditing;
@@ -83,7 +139,13 @@ namespace MyShop.Client.Models
             }
         }
 
+        /// <summary>
+        /// UI-only property: Search text for product combobox
+        /// Not serialized to JSON
+        /// </summary>
+        [JsonIgnore]
         private string _searchText = string.Empty;
+        [JsonIgnore]
         public string SearchText
         {
             get => _searchText;
@@ -97,6 +159,11 @@ namespace MyShop.Client.Models
             }
         }
 
+        /// <summary>
+        /// UI-only computed property: Total price for this item
+        /// Not serialized to JSON
+        /// </summary>
+        [JsonIgnore]
         public decimal Total => Quantity * Price;
 
         public event PropertyChangedEventHandler? PropertyChanged;

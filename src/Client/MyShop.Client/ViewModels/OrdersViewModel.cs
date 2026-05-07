@@ -3,12 +3,15 @@ using System.Windows.Input;
 using MyShop.Client.Helpers;
 using MyShop.Client.Models;
 using LuciferCore.Attributes;
+using MyShop.Client.Services.Interfaces;
 
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Orders")]
     public class OrdersViewModel : BaseViewModel
     {
+        private readonly IOrderService _orderService;
+        private readonly IProductService _productService;
         private bool _isLoading;
         public bool IsLoading
         {
@@ -66,8 +69,8 @@ namespace MyShop.Client.ViewModels
             {
                 if (SetProperty(ref _selectedOrder, value) && value != null)
                 {
-                    // Load order details when selected
-                    LoadOrderDetail(value);
+                    // Load order details when selected (fire and forget with proper async handling)
+                    _ = LoadOrderDetailAsync(value);
                 }
             }
         }
@@ -132,83 +135,62 @@ namespace MyShop.Client.ViewModels
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
 
-        public OrdersViewModel()
+        public OrdersViewModel(IOrderService orderService, IProductService productService)
         {
-            // Initialize status options
-            StatusOptions.Add("All");
-            StatusOptions.Add("Pending");
-            StatusOptions.Add("Completed");
-            StatusOptions.Add("Cancelled");
+            _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
+            _productService = productService ?? throw new ArgumentNullException(nameof(productService));
 
-            // Initialize commands
-            SearchCommand = new RelayCommand(_ => OnSearch());
+            // Initialize status options
+                StatusOptions.Add("All");
+                StatusOptions.Add("Chờ thanh toán");
+                StatusOptions.Add("Đã thanh toán");
+                StatusOptions.Add("Đã hủy");
+
+            // Initialize commands with async support
+            SearchCommand = new AsyncRelayCommand(_ => OnSearchAsync());
             ResetCommand = new RelayCommand(_ => OnReset());
             CreateOrderCommand = new RelayCommand(_ => OnCreateOrder());
             ViewOrderCommand = new RelayCommand(param => OnViewOrder(param));
             EditOrderCommand = new RelayCommand(param => OnEditOrder(param));
-            DeleteOrderCommand = new RelayCommand(param => OnDeleteOrder(param));
+            DeleteOrderCommand = new AsyncRelayCommand<Order>(OnDeleteOrderAsync);
             AddProductCommand = new RelayCommand(_ => OnAddProduct());
             RemoveItemCommand = new RelayCommand(param => OnRemoveItem(param));
-            SaveOrderCommand = new RelayCommand(_ => OnSaveOrder(), _ => Detail != null);
+            SaveOrderCommand = new AsyncRelayCommand(_ => OnSaveOrderAsync(), _ => Detail != null);
             CancelEditCommand = new RelayCommand(_ => OnCancelEdit());
-            PrevPageCommand = new RelayCommand(_ => OnPrevPage(), _ => CanPrevPage);
-            NextPageCommand = new RelayCommand(_ => OnNextPage(), _ => CanNextPage);
+            PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
+            NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
 
             // Load initial data
-            InitializeData();
+            InitializeDataAsync();
         }
 
-        private void InitializeData()
+        private void OnInitializeCommandsIfNeeded()
+        {
+            // This method ensures commands can be reconstructed if needed
+            // Not typically needed, but available for dynamic command updates
+        }
+
+        private async void InitializeDataAsync()
         {
             IsLoading = true;
             try
             {
-                // Initialize available products
-                AvailableProducts.Add(new Product { ProductId = 1, Name = "Product A", SalePrice = 500000, Sku = "SKU001" });
-                AvailableProducts.Add(new Product { ProductId = 2, Name = "Product B", SalePrice = 500000, Sku = "SKU002" });
-                AvailableProducts.Add(new Product { ProductId = 3, Name = "Product C", SalePrice = 800000, Sku = "SKU003" });
-                AvailableProducts.Add(new Product { ProductId = 4, Name = "Product D", SalePrice = 500000, Sku = "SKU004" });
-
-                // Sample data - replace with actual API call
-                Orders.Add(new Order
+                // Load products from service
+                var products = await _productService.GetAllAsync();
+                foreach (var product in products)
                 {
-                    OrderId = "ORD001",
-                    Date = DateTime.Now.AddDays(-5),
-                    TotalAmount = 1500000,
-                    Status = "Completed",
-                    OrderItems = new ObservableCollection<OrderItem>
-                    {
-                        new OrderItem { ProductName = "Product A", Quantity = 2, Price = 500000 },
-                        new OrderItem { ProductName = "Product B", Quantity = 1, Price = 500000 }
-                    }
-                });
+                    AvailableProducts.Add(product);
+                }
 
-                Orders.Add(new Order
-                {
-                    OrderId = "ORD002",
-                    Date = DateTime.Now.AddDays(-3),
-                    TotalAmount = 800000,
-                    Status = "Pending",
-                    OrderItems = new ObservableCollection<OrderItem>
-                    {
-                        new OrderItem { ProductName = "Product C", Quantity = 1, Price = 800000 }
-                    }
-                });
-
-                Orders.Add(new Order
-                {
-                    OrderId = "ORD003",
-                    Date = DateTime.Now.AddDays(-1),
-                    TotalAmount = 2000000,
-                    Status = "Pending",
-                    OrderItems = new ObservableCollection<OrderItem>
-                    {
-                        new OrderItem { ProductName = "Product D", Quantity = 4, Price = 500000 }
-                    }
-                });
+                // Load all orders
+                await ReloadOrdersAsync();
 
                 SelectedStatus = "All";
-                UpdatePaginationInfo();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error initializing data: {ex.Message}");
+                // In production, you might want to show a user-friendly message
             }
             finally
             {
@@ -216,15 +198,54 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void OnSearch()
+        private async Task OnSearchAsync()
         {
             IsLoading = true;
             try
             {
-                // Filter based on search keyword, status, and date range
                 PageIndex = 1;
+
+                // Convert SelectedStatus string to byte? status
+                byte? statusFilter = null;
+                if (!string.IsNullOrEmpty(SelectedStatus) && SelectedStatus != "All")
+                {
+                    statusFilter = SelectedStatus switch
+                    {
+                        "Chờ thanh toán" => (byte)OrderStatus.Pending,
+                        "Đã thanh toán" => (byte)OrderStatus.Paid,
+                        "Đã hủy" => (byte)OrderStatus.Cancelled,
+                        _ => null
+                    };
+                }
+
+                // Build query object from filter parameters
+                var query = new OrderQuery
+                {
+                    PageIndex = PageIndex,
+                    PageSize = PageSize,
+                    FromDate = FromDate,
+                    ToDate = ToDate,
+                    Status = statusFilter
+                };
+
+                // Call service to search orders
+                var (orders, total) = await _orderService.SearchAsync(query);
+
+                // Update collection
+                Orders.Clear();
+                foreach (var order in orders)
+                {
+                    Orders.Add(order);
+                }
+
+                // Calculate total pages based on total count
+                TotalPages = total > 0 ? (int)Math.Ceiling(total / (double)PageSize) : 1;
                 UpdatePaginationInfo();
-                // TODO: Call API with filters
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error searching orders: {ex.Message}");
+                // In production, show error message to user
             }
             finally
             {
@@ -239,34 +260,58 @@ namespace MyShop.Client.ViewModels
             FromDate = null;
             ToDate = null;
             PageIndex = 1;
-            InitializeData();
+            Orders.Clear();
+            Detail = null;
+            SelectedOrder = null;
+
+            // Reload all orders after reset
+            _ = ReloadOrdersAsync();
         }
 
         private void OnCreateOrder()
         {
             Detail = new Order
             {
-                OrderId = "ORD-NEW",
-                Date = DateTime.Now,
-                Status = "Pending",
+                OrderId = -1, // Temporary ID for new order
+                CreatedAt = DateTime.Now,
+                Status = (byte)OrderStatus.Pending,
                 OrderItems = new ObservableCollection<OrderItem>()
             };
         }
 
-        private void LoadOrderDetail(Order order)
+        private async Task LoadOrderDetailAsync(Order order)
         {
+            if (order == null)
+                return;
+
             IsLoading = true;
             try
             {
-                // Clone the order for editing
-                Detail = new Order
+                // Get full order details from service
+                var fullOrder = await _orderService.GetByIdAsync(order.OrderId);
+
+                if (fullOrder != null)
                 {
-                    OrderId = order.OrderId,
-                    Date = order.Date,
-                    TotalAmount = order.TotalAmount,
-                    Status = order.Status,
-                    OrderItems = new ObservableCollection<OrderItem>(order.OrderItems)
-                };
+                    // Clone the order for safe editing
+                    Detail = new Order
+                    {
+                        OrderId = fullOrder.OrderId,
+                        AccountId = fullOrder.AccountId,
+                        CreatedAt = fullOrder.CreatedAt,
+                        Status = fullOrder.Status,
+                        PaymentMethod = fullOrder.PaymentMethod,
+                        SubTotal = fullOrder.SubTotal,
+                        VoucherCode = fullOrder.VoucherCode,
+                        DiscountAmount = fullOrder.DiscountAmount,
+                        FinalTotal = fullOrder.FinalTotal,
+                        Note = fullOrder.Note,
+                        OrderItems = new ObservableCollection<OrderItem>(fullOrder.OrderItems)
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading order detail: {ex.Message}");
             }
             finally
             {
@@ -278,7 +323,7 @@ namespace MyShop.Client.ViewModels
         {
             if (param is Order order)
             {
-                LoadOrderDetail(order);
+                _ = LoadOrderDetailAsync(order);
             }
         }
 
@@ -286,21 +331,42 @@ namespace MyShop.Client.ViewModels
         {
             if (param is Order order)
             {
-                LoadOrderDetail(order);
+                _ = LoadOrderDetailAsync(order);
             }
         }
 
-        private void OnDeleteOrder(object? param)
+        private async Task OnDeleteOrderAsync(Order? order)
         {
-            if (param is Order order)
+            if (order == null)
+                return;
+
+            IsLoading = true;
+            try
             {
-                // TODO: Show confirmation dialog
-                // TODO: Call API to delete
-                Orders.Remove(order);
-                if (Detail?.OrderId == order.OrderId)
-                {
-                    Detail = null;
-                }
+                // Parse order ID for API call
+
+                    var success = await _orderService.DeleteAsync(order.OrderId);
+
+                    if (success)
+                    {
+                        Orders.Remove(order);
+                        if (Detail?.OrderId == order.OrderId)
+                        {
+                            Detail = null;
+                        }
+
+                        // Reload list to sync with server
+                        await ReloadOrdersAsync();
+                    }
+
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deleting order: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
@@ -327,7 +393,7 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void OnSaveOrder()
+        private async Task OnSaveOrderAsync()
         {
             if (Detail == null)
                 return;
@@ -335,26 +401,32 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
-                // TODO: Call API to save order
-                // For now, just update the list
-                var existingOrder = Orders.FirstOrDefault(o => o.OrderId == Detail.OrderId);
-                if (existingOrder != null)
+                // Calculate total amount
+                Detail.FinalTotal = Detail.OrderItems.Sum(item => item.Total);
+
+                bool success;
+                if (Detail.OrderId == -1)
                 {
-                    // Update existing
-                    existingOrder.Date = Detail.Date;
-                    existingOrder.Status = Detail.Status;
-                    existingOrder.TotalAmount = Detail.OrderItems.Sum(i => i.Total);
-                    existingOrder.OrderItems = Detail.OrderItems;
+                    // Create new order
+                    success = await _orderService.CreateAsync(Detail);
                 }
                 else
                 {
-                    // Add new
-                    Detail.TotalAmount = Detail.OrderItems.Sum(i => i.Total);
-                    Orders.Add(Detail);
+                    // Update existing order
+                    success = await _orderService.UpdateAsync(Detail);
                 }
 
-                Detail = null;
-                SelectedOrder = null;
+                if (success)
+                {
+                    // Reload list after save
+                    await ReloadOrdersAsync();
+                    Detail = null;
+                    SelectedOrder = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving order: {ex.Message}");
             }
             finally
             {
@@ -368,21 +440,50 @@ namespace MyShop.Client.ViewModels
             SelectedOrder = null;
         }
 
-        private void OnPrevPage()
+        private async Task OnPrevPageAsync()
         {
             if (PageIndex > 1)
             {
                 PageIndex--;
-                UpdatePaginationInfo();
-                // TODO: Load previous page data
+                await OnSearchAsync();
             }
         }
 
-        private void OnNextPage()
+        private async Task OnNextPageAsync()
         {
-            PageIndex++;
-            UpdatePaginationInfo();
-            // TODO: Load next page data
+            if (PageIndex < TotalPages)
+            {
+                PageIndex++;
+                await OnSearchAsync();
+            }
+        }
+
+        private async Task ReloadOrdersAsync()
+        {
+            IsLoading = true;
+            try
+            {
+                // Load all orders from service
+                var orders = await _orderService.GetAllAsync();
+
+                Orders.Clear();
+                foreach (var order in orders)
+                {
+                    Orders.Add(order);
+                }
+
+                // Recalculate pagination based on loaded data
+                TotalPages = Math.Max(1, (int)Math.Ceiling(Orders.Count / (double)PageSize));
+                UpdatePaginationInfo();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reloading orders: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private void UpdatePaginationInfo()
