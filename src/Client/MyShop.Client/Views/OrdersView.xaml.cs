@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using MyShop.Client.ViewModels;
 
 namespace MyShop.Client.Views
@@ -11,7 +12,8 @@ namespace MyShop.Client.Views
         public OrdersView()
         {
             InitializeComponent();
-            this.DataContext = new OrdersViewModel();
+            // Get OrdersViewModel from DI container
+            this.DataContext = DIContainer.ServiceProvider.GetRequiredService<OrdersViewModel>();
         }
     }
 }

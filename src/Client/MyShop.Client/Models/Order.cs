@@ -1,12 +1,13 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json.Serialization;
 
 namespace MyShop.Client.Models
 {
     public class Order : INotifyPropertyChanged
     {
-        private string _orderId = string.Empty;
-        public string OrderId
+        private int _orderId;
+        public int OrderId
         {
             get => _orderId;
             set
@@ -19,36 +20,37 @@ namespace MyShop.Client.Models
             }
         }
 
-        private DateTime _date;
-        public DateTime Date
+        private int? _accountId;
+        public int? AccountId
         {
-            get => _date;
+            get => _accountId;
             set
             {
-                if (_date != value)
+                if (_accountId != value)
                 {
-                    _date = value;
+                    _accountId = value;
+                    OnPropertyChanged(nameof(AccountId));
+                }
+            }
+        }
+
+        private DateTime? _createdAt;
+        public DateTime? CreatedAt
+        {
+            get => _createdAt;
+            set
+            {
+                if (_createdAt != value)
+                {
+                    _createdAt = value;
+                    OnPropertyChanged(nameof(CreatedAt));
                     OnPropertyChanged(nameof(Date));
                 }
             }
         }
 
-        private decimal _totalAmount;
-        public decimal TotalAmount
-        {
-            get => _totalAmount;
-            set
-            {
-                if (_totalAmount != value)
-                {
-                    _totalAmount = value;
-                    OnPropertyChanged(nameof(TotalAmount));
-                }
-            }
-        }
-
-        private string _status = "Pending";
-        public string Status
+        private byte? _status;
+        public byte? Status
         {
             get => _status;
             set
@@ -57,6 +59,92 @@ namespace MyShop.Client.Models
                 {
                     _status = value;
                     OnPropertyChanged(nameof(Status));
+                    OnPropertyChanged(nameof(StatusText));
+                }
+            }
+        }
+
+        private byte? _paymentMethod;
+        public byte? PaymentMethod
+        {
+            get => _paymentMethod;
+            set
+            {
+                if (_paymentMethod != value)
+                {
+                    _paymentMethod = value;
+                    OnPropertyChanged(nameof(PaymentMethod));
+                }
+            }
+        }
+
+        private decimal? _subTotal;
+        public decimal? SubTotal
+        {
+            get => _subTotal;
+            set
+            {
+                if (_subTotal != value)
+                {
+                    _subTotal = value;
+                    OnPropertyChanged(nameof(SubTotal));
+                }
+            }
+        }
+
+        private string? _voucherCode;
+        public string? VoucherCode
+        {
+            get => _voucherCode;
+            set
+            {
+                if (_voucherCode != value)
+                {
+                    _voucherCode = value;
+                    OnPropertyChanged(nameof(VoucherCode));
+                }
+            }
+        }
+
+        private decimal? _discountAmount;
+        public decimal? DiscountAmount
+        {
+            get => _discountAmount;
+            set
+            {
+                if (_discountAmount != value)
+                {
+                    _discountAmount = value;
+                    OnPropertyChanged(nameof(DiscountAmount));
+                }
+            }
+        }
+
+        private decimal? _finalTotal;
+        public decimal? FinalTotal
+        {
+            get => _finalTotal;
+            set
+            {
+                if (_finalTotal != value)
+                {
+                    _finalTotal = value;
+                    OnPropertyChanged(nameof(FinalTotal));
+                    OnPropertyChanged(nameof(TotalAmount));
+                }
+            }
+        }
+
+        private string? _note;
+        public string? Note
+        {
+            get => _note;
+            set
+            {
+                if (_note != value)
+                {
+                    _note = value;
+                    OnPropertyChanged(nameof(Note));
                 }
             }
         }
@@ -71,6 +159,59 @@ namespace MyShop.Client.Models
                 {
                     _orderItems = value;
                     OnPropertyChanged(nameof(OrderItems));
+                }
+            }
+        }
+
+        /// <summary>
+        /// UI-only computed property: Maps CreatedAt to Date for backward compatibility
+        /// </summary>
+        [JsonIgnore]
+        public DateTime? Date
+        {
+            get => CreatedAt;
+            set => CreatedAt = value;
+        }
+
+        /// <summary>
+        /// UI-only computed property: Maps FinalTotal to TotalAmount for backward compatibility
+        /// </summary>
+        [JsonIgnore]
+        public decimal? TotalAmount
+        {
+            get => FinalTotal;
+            set => FinalTotal = value;
+        }
+
+        /// <summary>
+        /// UI-only computed property: Converts byte Status to human-readable text
+        /// Supports two-way binding for status selection
+        /// </summary>
+        [JsonIgnore]
+        public string StatusText
+        {
+            get
+            {
+                return Status switch
+                {
+                    (byte)OrderStatus.Pending => "Chờ thanh toán",
+                    (byte)OrderStatus.Paid => "Đã thanh toán",
+                    (byte)OrderStatus.Cancelled => "Đã hủy",
+                    _ => "Không xác định"
+                };
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    var newStatus = value switch
+                    {
+                        "Chờ thanh toán" => (byte)OrderStatus.Pending,
+                        "Đã thanh toán" => (byte)OrderStatus.Paid,
+                        "Đã hủy" => (byte)OrderStatus.Cancelled,
+                        _ => Status
+                    };
+                    Status = newStatus;
                 }
             }
         }
