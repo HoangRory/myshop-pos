@@ -26,21 +26,41 @@ namespace MyShop.Client.Services
 
         public async Task<Order> GetByIdAsync(long id)
         {
-            return await _http.GetFromJsonAsync<Order>($"{BaseUrl}/{id}") ?? new();
-        }
-
-        public async Task<bool> CreateAsync(Order model)
-        {
-            var json = JsonSerializer.Serialize(model, new JsonSerializerOptions
+            var json = $$"""
             {
-                PropertyNamingPolicy = null
+                "OrderId": {{id}}
+            }
+            """;
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}/id")
+            {
+                Content = new StringContent(
+                    json,
+                    Encoding.UTF8,
+                    "application/json")
+            };
+
+            Console.WriteLine(json);
+
+            var response = await _http.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<Order>() ?? new();
+        }
+        public async Task<bool> CreateAsync(List<OrderItem> items)
+        {
+            var json = JsonSerializer.Serialize(items, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await _http.PostAsync(BaseUrl, content);
             var result = await response.Content.ReadAsStringAsync();
 
-            return response.IsSuccessStatusCode && result == "Success";
+            return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> UpdateAsync(Order model)

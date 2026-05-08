@@ -8,7 +8,7 @@ namespace MyShop.Client.Services.Interfaces
     {
         Task<List<Order>> GetAllAsync();
         Task<Order> GetByIdAsync(long id);
-        Task<bool> CreateAsync(Order model);
+        Task<bool> CreateAsync(List<OrderItem> items);
         Task<bool> UpdateAsync(Order model);
         Task<bool> DeleteAsync(long id);
 

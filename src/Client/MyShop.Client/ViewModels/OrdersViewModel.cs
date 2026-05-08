@@ -378,7 +378,7 @@ namespace MyShop.Client.ViewModels
                 {
                     ProductName = string.Empty,
                     Quantity = 1,
-                    Price = 0,
+                    UnitPrice = 0,
                     IsEditing = true
                 };
                 Detail.OrderItems.Add(newItem);
@@ -401,18 +401,17 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
-                // Calculate total amount
-                Detail.FinalTotal = Detail.OrderItems.Sum(item => item.Total);
-
                 bool success;
                 if (Detail.OrderId == -1)
                 {
-                    // Create new order
-                    success = await _orderService.CreateAsync(Detail);
+                    // Create new order - send only order items (backend API expects List<OrderItem>)
+                    var orderItems = Detail.OrderItems.ToList();
+                    success = await _orderService.CreateAsync(orderItems);
                 }
                 else
                 {
-                    // Update existing order
+                    // Update existing order - send full order object
+                    Detail.FinalTotal = Detail.OrderItems.Sum(item => item.Total);
                     success = await _orderService.UpdateAsync(Detail);
                 }
 
