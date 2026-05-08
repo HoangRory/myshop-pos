@@ -40,7 +40,7 @@ public static class AppLicense
         }
         else
         {
-            var daysLeft = 15 - (DateTime.Now - LicenseShield.GetInstallDate()).TotalDays;
+            var daysLeft = Math.Max(15 - (DateTime.Now - LicenseShield.GetInstallDate()).TotalDays, 0);
             typeof(AppLicense).LogConsole($"License: [Trial] {Math.Round(daysLeft, 1)} days remaining. Please enter License Key to continue using after trial expires.");
             IsValid = daysLeft > 0;
         }
