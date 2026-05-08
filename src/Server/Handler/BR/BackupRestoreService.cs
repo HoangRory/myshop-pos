@@ -103,13 +103,13 @@ public class BackupRestoreService
 
             var files = new DirectoryInfo(folderPath)
                 .GetFiles("*.bak")
-                .Select(f => new
+                .Select(f => new BackupRestore()
                 {
                     Name = f.Name,
-                    UpdateAt = f.LastWriteTime,
+                    CreateAt = f.CreationTime,
                     Size = $"{f.Length / 1024} KB"
                 })
-                .OrderByDescending(x => x.UpdateAt)
+                .OrderByDescending(x => x.CreateAt)
                 .ToList();
 
             // Serialize dữ liệu sang JSON byte array
@@ -156,7 +156,7 @@ public class BackupRestoreService
         return response;
     }
 
-    public async Task<ResponseModel> SetAutoBackup(HttpModel request)
+    public async Task<ResponseModel> SetAutoBackup()
     {
         var response = Lucifer.Rent<ResponseModel>();
 
