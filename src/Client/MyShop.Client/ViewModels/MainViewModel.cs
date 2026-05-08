@@ -1,10 +1,11 @@
-using System;
-using System.Windows.Input;
+using LuciferCore.Attributes;
 using MyShop.Client.Helpers;
 using MyShop.Client.Services;
+using System.Windows.Input;
 
 namespace MyShop.Client.ViewModels
 {
+    [Plugin("ViewModel", "Main")]
     public class MainViewModel : BaseViewModel
     {
         private readonly INavigationService _navigationService;
