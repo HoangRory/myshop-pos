@@ -622,5 +622,14 @@ namespace MyShop.Client.ViewModels
             DeleteProductCommand.NotifyCanExecuteChanged();
             ClearFormCommand.NotifyCanExecuteChanged();
         }
+
+        public void LoadData()
+        {
+            if (!IsLoaded)
+            {
+                if (LoadProductsCommand.CanExecute(null))
+                    LoadProductsCommand.Execute(null);
+            }
+        }
     }
 }
