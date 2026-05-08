@@ -19,9 +19,12 @@ public class OrderService
             return response;
         }
 
-        var db = Lucifer.GetModelT<IRepository<Models.Order>>();
+        using var context = Lucifer.GetModelT<DbContext>();
 
-        var orderData = await db.GetByIdAsync(order.OrderId);
+        var orderData = await context.Set<Models.Order>()
+                        .Include(o => o.OrderItems)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(o => o.OrderId == order.OrderId);
 
         if (orderData == null)
         {

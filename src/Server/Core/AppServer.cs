@@ -1,8 +1,9 @@
-﻿using System;
-using LuciferCore.Attributes;
+﻿using LuciferCore.Attributes;
+using LuciferCore.Main;
 using LuciferCore.NetCoreServer.Server;
 using LuciferCore.NetCoreServer.Transport.SSL;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -25,38 +26,21 @@ public class AppServer : WssServer
             { "/404", "/404.html" },
         };
         Mapping.Freeze();
-
-        // Informational message showing the address and port the server is listening on and a convenient base URL.
-        try
-        {
-            string host;
-            if (address == IPAddress.IPv6Any || address == IPAddress.Any)
-            {
-                host = "localhost";
-            }
-            else
-            {
-                host = address.ToString();
-            }
-
-            string baseUrl = host.Contains(":") ? $"https://[{host}]:{port}" : $"https://{host}:{port}";
-            Console.WriteLine($"[Server] Started successfully and listening on {address}:{port} - base url: {baseUrl}");
-        }
-        catch
-        {
-            // Swallow any logging errors to avoid affecting server flow
-        }
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public AppServer(int port) : this(CreateSslContext(), IPAddress.Any, port)
+    public AppServer(int port) : this(CreateSslContext(), IPAddress.IPv6Any, port)
     {
         OptionDualMode = true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected override AppSession CreateSession() => new(this);
+
+    private IPAddress? IPLocal = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+
+    private string UrlLocal => $"https://{IPLocal}:{Port}";
 
     [Config("WWWROOT", "assets/wwwroot")]
     private static string _staticContentPath { get; set; } = string.Empty;
@@ -76,5 +60,11 @@ public class AppServer : WssServer
 #endif
         var cert = X509CertificateLoader.LoadPkcs12FromFile(s_certPath, s_certPassword);
         return new(SslProtocols.Tls12, cert);
+    }
+
+    protected override void OnStarted()
+    {
+        Lucifer.Log(this, $"Started successfully and listening on {Endpoint}");
+        Lucifer.Log(this, $"Local URL: {UrlLocal}");
     }
 }
