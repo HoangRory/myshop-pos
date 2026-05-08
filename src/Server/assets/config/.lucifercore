@@ -2,12 +2,13 @@
 
 CERTIFICATE = assets/tools/certificates/server.pfx
 
+# LicenseKey = LUCIFER-PRO-2026
+
 # Static web content
 WWWROOT = assets/wwwroot
 
 # Maximum number of concurrent worker threads
 LIMITER_WORKERS = 20
-
 
 # DB configuration
 
