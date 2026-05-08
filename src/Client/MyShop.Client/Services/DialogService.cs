@@ -1,5 +1,5 @@
-using System.Windows;
 using MyShop.Client.Services.Interfaces;
+using System.Windows;
 
 namespace MyShop.Client.Services
 {
@@ -15,6 +15,11 @@ namespace MyShop.Client.Services
         public void Success(string title, string message)
         {
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        public void Error(string title, string message)
+        {
+            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
