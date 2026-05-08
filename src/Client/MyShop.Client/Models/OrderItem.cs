@@ -5,8 +5,8 @@ namespace MyShop.Client.Models
 {
     public class OrderItem : INotifyPropertyChanged
     {
-        private int _orderItemId;
-        public int OrderItemId
+        private int? _orderItemId;
+        public int? OrderItemId
         {
             get => _orderItemId;
             set
@@ -19,8 +19,8 @@ namespace MyShop.Client.Models
             }
         }
 
-        private int _orderId;
-        public int OrderId
+        private int? _orderId;
+        public int? OrderId
         {
             get => _orderId;
             set
@@ -33,8 +33,8 @@ namespace MyShop.Client.Models
             }
         }
 
-        private int _productId;
-        public int ProductId
+        private int? _productId;
+        public int? ProductId
         {
             get => _productId;
             set
@@ -47,7 +47,13 @@ namespace MyShop.Client.Models
             }
         }
 
+        /// <summary>
+        /// UI-only property: Product name for display
+        /// Not serialized to JSON
+        /// </summary>
+        [JsonIgnore]
         private string _productName = string.Empty;
+        [JsonIgnore]
         public string ProductName
         {
             get => _productName;
@@ -61,8 +67,8 @@ namespace MyShop.Client.Models
             }
         }
 
-        private int _quantity;
-        public int Quantity
+        private int? _quantity;
+        public int? Quantity
         {
             get => _quantity;
             set
@@ -76,17 +82,31 @@ namespace MyShop.Client.Models
             }
         }
 
-        private decimal _price;
-        public decimal Price
+        private decimal? _unitPrice;
+        public decimal? UnitPrice
         {
-            get => _price;
+            get => _unitPrice;
             set
             {
-                if (_price != value)
+                if (_unitPrice != value)
                 {
-                    _price = value;
-                    OnPropertyChanged(nameof(Price));
+                    _unitPrice = value;
+                    OnPropertyChanged(nameof(UnitPrice));
                     OnPropertyChanged(nameof(Total));
+                }
+            }
+        }
+
+        private decimal? _totalItemPrice;
+        public decimal? TotalItemPrice
+        {
+            get => _totalItemPrice;
+            set
+            {
+                if (_totalItemPrice != value)
+                {
+                    _totalItemPrice = value;
+                    OnPropertyChanged(nameof(TotalItemPrice));
                 }
             }
         }
@@ -112,7 +132,7 @@ namespace MyShop.Client.Models
                     {
                         ProductId = product.ProductId;
                         ProductName = product.Name;
-                        Price = product.SalePrice;
+                        UnitPrice = product.SalePrice;
                         IsEditing = false;
                     }
                 }
@@ -160,11 +180,11 @@ namespace MyShop.Client.Models
         }
 
         /// <summary>
-        /// UI-only computed property: Total price for this item
+        /// UI-only computed property: Total price for this item (Quantity * UnitPrice)
         /// Not serialized to JSON
         /// </summary>
         [JsonIgnore]
-        public decimal Total => Quantity * Price;
+        public decimal Total => (Quantity ?? 0) * (UnitPrice ?? 0);
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

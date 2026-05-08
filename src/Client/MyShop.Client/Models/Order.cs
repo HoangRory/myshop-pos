@@ -44,7 +44,6 @@ namespace MyShop.Client.Models
                 {
                     _createdAt = value;
                     OnPropertyChanged(nameof(CreatedAt));
-                    OnPropertyChanged(nameof(Date));
                 }
             }
         }
@@ -130,7 +129,6 @@ namespace MyShop.Client.Models
                 {
                     _finalTotal = value;
                     OnPropertyChanged(nameof(FinalTotal));
-                    OnPropertyChanged(nameof(TotalAmount));
                 }
             }
         }
@@ -163,31 +161,6 @@ namespace MyShop.Client.Models
             }
         }
 
-        /// <summary>
-        /// UI-only computed property: Maps CreatedAt to Date for backward compatibility
-        /// </summary>
-        [JsonIgnore]
-        public DateTime? Date
-        {
-            get => CreatedAt;
-            set => CreatedAt = value;
-        }
-
-        /// <summary>
-        /// UI-only computed property: Maps FinalTotal to TotalAmount for backward compatibility
-        /// </summary>
-        [JsonIgnore]
-        public decimal? TotalAmount
-        {
-            get => FinalTotal;
-            set => FinalTotal = value;
-        }
-
-        /// <summary>
-        /// UI-only computed property: Converts byte Status to human-readable text
-        /// Supports two-way binding for status selection
-        /// </summary>
-        [JsonIgnore]
         public string StatusText
         {
             get
