@@ -30,7 +30,7 @@ namespace MyShop.Client
                     ViewModels[attr.Name] = plugin;
                     services.AddSingleton(plugin);
 
-                    if (plugin.Name == "MainViewModel") continue;
+                    if (plugin.Name == "MainViewModel" || plugin.Name == "AuthViewModel") continue;
 
                     var viewName = plugin.Name.Replace("ViewModel", "View");
                     var viewType = allTypes.FirstOrDefault(t => t.Name == viewName);
@@ -71,9 +71,11 @@ namespace MyShop.Client
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IBRService, BackupService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();
+
 
             ServiceProvider = services.BuildServiceProvider();
         }
