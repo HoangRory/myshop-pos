@@ -1,7 +1,5 @@
-﻿using System.Configuration;
-using System.Data;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MyShop.Client
 {
@@ -12,7 +10,7 @@ namespace MyShop.Client
             base.OnStartup(e);
             DIContainer.ConfigureServices();
             var nav = DIContainer.ServiceProvider.GetRequiredService<Services.INavigationService>();
-            nav.NavigateTo<ViewModels.MainViewModel>();
+            nav.NavigateTo("Main");
             var mainWindow = DIContainer.ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
