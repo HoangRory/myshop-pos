@@ -7,4 +7,6 @@ public class OrderFilter
     public int? Status { get; set; } // 0: Pending, 1: Paid, 2: Canceled    
     public int PageIndex { get; set; } = 1;
     public int PageSize { get; set; } = 20;
+    public string SortBy { get; set; } = "Id"; // Id, Price, Name, Stock
+    public bool IsAscending { get; set; } = true;
 }
