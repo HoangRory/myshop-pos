@@ -2,7 +2,8 @@
 
 CERTIFICATE = assets/tools/certificates/server.pfx
 
-# LicenseKey = LUCIFER-PRO-2026
+# Set the real license key securely outside source control.
+# LicenseKey = YOUR_LICENSE_KEY_HERE
 
 # Static web content
 WWWROOT = assets/wwwroot
