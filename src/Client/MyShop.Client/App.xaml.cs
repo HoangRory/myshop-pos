@@ -9,9 +9,12 @@ namespace MyShop.Client
         {
             base.OnStartup(e);
             DIContainer.ConfigureServices();
-            var nav = DIContainer.ServiceProvider.GetRequiredService<Services.INavigationService>();
-            nav.NavigateTo("Main");
+
             var mainWindow = DIContainer.ServiceProvider.GetRequiredService<MainWindow>();
+            var mainVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
+            mainWindow.DataContext = mainVM;
+
+            this.MainWindow = mainWindow;
             mainWindow.Show();
         }
     }
