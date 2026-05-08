@@ -13,7 +13,7 @@ public static class AppLicense
     // Giả sử Key xịn là một chuỗi Hash nào đó liên quan đến tên máy/CPU
     private static string ValidKey = "LUCIFER-PRO-2026";
 
-    public static bool IsValid = false;
+    public static bool IsValid { get; private set; } = false;
     public static bool IsTrialExpired()
     {
         // Nếu đã nhập đúng Key thì không cần check ngày Trial nữa
