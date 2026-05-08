@@ -10,8 +10,19 @@
         Title="MyShop" Height="600" Width="1200" >
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <!-- DataTemplate: "Bản đồ" để WPF biết View nào đi với ViewModel nào -->
+        <DataTemplate DataType="{x:Type vm:AuthViewModel}">
+            <views:AuthView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MainViewModel}">
+            <!-- Giả sử bạn có MainView, nếu chưa có hãy thay bằng một TextBlock để test -->
+            <views:MainView />
+        </DataTemplate>
     </Window.Resources>
 
-    <views:MainView />
+    <Grid>
+        <!-- ContentControl sẽ tự động hiển thị View tương ứng với DataContext -->
+        <ContentControl Content="{Binding}" />
+    </Grid>
 </Window>
