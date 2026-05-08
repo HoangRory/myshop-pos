@@ -24,7 +24,7 @@ namespace MyShop.Client.Services
             return await _http.GetFromJsonAsync<List<Order>>(BaseUrl) ?? new();
         }
 
-        public async Task<Order> GetByIdAsync(long id)
+        public async Task<Order?> GetByIdAsync(long id)
         {
             var json = $$"""
             {
@@ -48,33 +48,63 @@ namespace MyShop.Client.Services
 
             return await response.Content.ReadFromJsonAsync<Order>() ?? new();
         }
-        public async Task<bool> CreateAsync(List<OrderItem> items)
+        public async Task<Order?> CreateAsync(List<OrderItem> items)
         {
-            var json = JsonSerializer.Serialize(items, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = null,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-            });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var json = JsonSerializer.Serialize(
+                items,
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = null,
+                    DefaultIgnoreCondition =
+                        System.Text.Json.Serialization
+                            .JsonIgnoreCondition.WhenWritingNull
+                });
 
-            var response = await _http.PostAsync(BaseUrl, content);
+            var content = new StringContent(
+                json,
+                Encoding.UTF8,
+                "application/json");
+
+            var response = await _http.PostAsync(
+                BaseUrl,
+                content);
+
+            response.EnsureSuccessStatusCode();
+
             var result = await response.Content.ReadAsStringAsync();
 
-            return response.IsSuccessStatusCode;
+            return JsonSerializer.Deserialize<Order>(
+                result,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
         }
 
-        public async Task<bool> UpdateAsync(Order model)
+        public async Task<Order?> UpdateAsync(Order model)
         {
             var json = JsonSerializer.Serialize(model, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = null
             });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var content = new StringContent(
+                json,
+                Encoding.UTF8,
+                "application/json");
 
             var response = await _http.PutAsync(BaseUrl, content);
+
+            response.EnsureSuccessStatusCode();
+
             var result = await response.Content.ReadAsStringAsync();
 
-            return response.IsSuccessStatusCode && result == "Updated";
+            return JsonSerializer.Deserialize<Order>(
+                result,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
         }
 
         public async Task<bool> DeleteAsync(long id)

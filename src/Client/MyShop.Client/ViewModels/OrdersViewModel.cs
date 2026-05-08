@@ -399,33 +399,46 @@ namespace MyShop.Client.ViewModels
                 return;
 
             IsLoading = true;
+
             try
             {
-                bool success;
                 if (Detail.OrderId == -1)
                 {
-                    // Create new order - send only order items (backend API expects List<OrderItem>)
                     var orderItems = Detail.OrderItems.ToList();
-                    success = await _orderService.CreateAsync(orderItems);
+
+                    var createdOrder =
+                        await _orderService.CreateAsync(orderItems);
+
+                    if (createdOrder != null)
+                    {
+                        Detail = createdOrder;
+
+                        SelectedOrder = createdOrder;
+
+                        await ReloadOrdersAsync();
+                    }
                 }
                 else
                 {
-                    // Update existing order - send full order object
-                    Detail.FinalTotal = Detail.OrderItems.Sum(item => item.Total);
-                    success = await _orderService.UpdateAsync(Detail);
-                }
+                    var updatedOrder = await _orderService.UpdateAsync(Detail);
 
-                if (success)
-                {
-                    // Reload list after save
-                    await ReloadOrdersAsync();
-                    Detail = null;
-                    SelectedOrder = null;
+                    if (updatedOrder != null)
+                    {
+                        // Update current detail
+                        Detail = updatedOrder;
+
+                        // Update selected order
+                        SelectedOrder = updatedOrder;
+
+                        // Reload list from server
+                        await ReloadOrdersAsync();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving order: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(
+                    $"Error saving order: {ex.Message}");
             }
             finally
             {

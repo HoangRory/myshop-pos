@@ -7,9 +7,9 @@ namespace MyShop.Client.Services.Interfaces
     public interface IOrderService
     {
         Task<List<Order>> GetAllAsync();
-        Task<Order> GetByIdAsync(long id);
-        Task<bool> CreateAsync(List<OrderItem> items);
-        Task<bool> UpdateAsync(Order model);
+        Task<Order?> GetByIdAsync(long id);
+        Task<Order?> CreateAsync(List<OrderItem> items);
+        Task<Order?> UpdateAsync(Order model);
         Task<bool> DeleteAsync(long id);
 
         Task<(List<Order>, int)> SearchAsync(OrderQuery query);
