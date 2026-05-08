@@ -14,12 +14,11 @@ namespace MyShop.Client
 
         public static IEnumerable<Type> Plugins { get; private set; } = Lucifer.GetTypesWithAttribute<PluginAttribute>();
 
+        public static Dictionary<string, Type> ViewModels { get; private set; } = [];
+
         public static void ConfigureServices()
         {
             var services = new ServiceCollection();
-
-            // Automatically load plugins with PluginAttribute
-
 
             // Register ViewModels
             foreach (var plugin in Plugins)
@@ -27,6 +26,7 @@ namespace MyShop.Client
                 var attr = plugin.GetCustomAttribute<PluginAttribute>();
                 if (attr != null && Lucifer.Equals<char>(attr.PluginType, "ViewModel"))
                 {
+                    ViewModels[attr.Name] = plugin;
                     services.AddSingleton(plugin);
                 }
             }
