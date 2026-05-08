@@ -22,6 +22,13 @@ namespace MyShop.Client.ViewModels
             set { _currentViewModel = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentViewModel))); }
         }
 
+        private string _selectedSection = "Dashboard";
+        public string SelectedSection
+        {
+            get => _selectedSection;
+            set { _selectedSection = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedSection))); }
+        }
+
         public ICommand NavigateCommand { get; }
 
         public MainViewModel(INavigationService navigationService)
@@ -82,13 +89,6 @@ namespace MyShop.Client.ViewModels
             {
                 item.IsSelected = item.Name.Equals(viewName, StringComparison.OrdinalIgnoreCase);
             }
-        }
-
-        private string _selectedSection = "Dashboard";
-        public string SelectedSection
-        {
-            get => _selectedSection;
-            set { _selectedSection = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedSection))); }
         }
     }
 }
