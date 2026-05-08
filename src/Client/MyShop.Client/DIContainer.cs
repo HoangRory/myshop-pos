@@ -70,6 +70,7 @@ namespace MyShop.Client
             });
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IBRService, BackupService>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();
