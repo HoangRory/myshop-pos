@@ -31,7 +31,7 @@ public class OrderHandler : RouteHandler
 #else 
     [Authorize(UserRole.User)]
 #endif
-    [HttpGet("/id")]
+    [HttpPost("/id")]
     private async Task GetOrderDetail([Session] AppSession session, [Data] RequestModel request)
     {
         var order = request.BodySpan.FromJson<Models.Order>();
