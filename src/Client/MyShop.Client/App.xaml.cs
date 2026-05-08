@@ -11,8 +11,11 @@ namespace MyShop.Client
             DIContainer.ConfigureServices();
 
             var mainWindow = DIContainer.ServiceProvider.GetRequiredService<MainWindow>();
-            var mainVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
-            mainWindow.DataContext = mainVM;
+            //var mainVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
+            //mainWindow.DataContext = mainVM;
+
+            var authVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.AuthViewModel>();
+            mainWindow.DataContext = authVM; // Bây giờ AuthView sẽ tìm thấy các property của nó
 
             this.MainWindow = mainWindow;
             mainWindow.Show();
