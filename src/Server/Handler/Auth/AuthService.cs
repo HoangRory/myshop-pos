@@ -31,7 +31,7 @@ public class AuthService
             return response;
         }
 
-        response.MakeCustomResponse<byte, char, byte>(200, StorageData.Http11Protocol, "Login successful.", StorageData.TextPlainCharset);
+        response.MakeCustomResponse<byte, char, byte>(200, StorageData.Http11Protocol, accountFromDb.AccountId.ToString(), StorageData.TextPlainCharset);
 
         return response;
     }
