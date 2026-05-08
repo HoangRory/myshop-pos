@@ -101,7 +101,7 @@ public class OrderService
                 else
                     orderedQuery = filter.IsAscending ? orderedQuery.ThenBy(keySelector) : orderedQuery.ThenByDescending(keySelector);
             }
-            if (orderedQuery != null) query = orderedQuery;
+            query = orderedQuery ?? (filter.IsAscending ? query.OrderBy(o => o.OrderId) : query.OrderByDescending(o => o.OrderId));
         }
         else
         {
