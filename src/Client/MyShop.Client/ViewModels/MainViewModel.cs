@@ -51,7 +51,7 @@ namespace MyShop.Client.ViewModels
             foreach (var vm in DIContainer.ViewModels)
             {
                 // Loại bỏ "Main" vì Main không thể điều hướng đến chính nó
-                if (vm.Key == "Main") continue;
+                if (vm.Key == "Main" || vm.Key == "Auth") continue;
 
                 MenuItems.Add(new PluginMetadata
                 {
