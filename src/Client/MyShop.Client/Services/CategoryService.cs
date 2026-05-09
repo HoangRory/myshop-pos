@@ -1,3 +1,4 @@
+using LuciferCore.Attributes;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.Net.Http;
@@ -7,7 +8,8 @@ using System.Text.Json;
 
 namespace MyShop.Client.Services
 {
-    public class CategoryService : ICategoryService, IAPI
+    [Plugin("Service", "Category")]
+    public class CategoryService : ICategoryService
     {
         private readonly HttpClient _http;
         private const string ApiPath = "v1/api/category";
