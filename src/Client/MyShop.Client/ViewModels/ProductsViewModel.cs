@@ -1,11 +1,12 @@
+using CommunityToolkit.Mvvm.Input;
+using LuciferCore.Attributes;
 using Microsoft.Win32;
-using System.Collections.ObjectModel;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
-using MyShop.Client.Services;
-using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 namespace MyShop.Client.ViewModels
 {
+    [Plugin("ViewModel", "Products")]
     public class ProductsViewModel : BaseViewModel
     {
         private readonly IProductService _productService;
@@ -18,7 +19,6 @@ namespace MyShop.Client.ViewModels
             get => _isLoaded;
             private set => SetProperty(ref _isLoaded, value);
         }
-
 
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
         public ObservableCollection<Category> FilterCategories { get; } = new ObservableCollection<Category>();
@@ -95,29 +95,31 @@ namespace MyShop.Client.ViewModels
 
         // Query/filter state
         private int _pageIndex = 1;
-        public int PageIndex {
-            get => _pageIndex; 
-            set 
-            { 
+        public int PageIndex
+        {
+            get => _pageIndex;
+            set
+            {
                 if (SetProperty(ref _pageIndex, value))
                 {
                     OnPropertyChanged(nameof(TotalPages));
-                    LoadProductsCommand.Execute(null); 
+                    LoadProductsCommand.Execute(null);
                 }
-            } 
+            }
         }
 
         private int _pageSize = 10;
-        public int PageSize { 
-            get => _pageSize; 
-            set 
+        public int PageSize
+        {
+            get => _pageSize;
+            set
             {
-                if (SetProperty(ref _pageSize, value)) 
+                if (SetProperty(ref _pageSize, value))
                 {
                     OnPropertyChanged(nameof(TotalPages));
                     PageIndex = 1;
                     LoadProductsCommand.Execute(null);
-                } 
+                }
             }
         }
 
@@ -324,7 +326,7 @@ namespace MyShop.Client.ViewModels
             {
                 bool result;
                 bool isCreate = EditingProduct.ProductId == 0;
-                if(EditingProduct.CategoryId == -1)
+                if (EditingProduct.CategoryId == -1)
                 {
                     EditingProduct.CategoryId = null; // Gán null nếu chọn "(Không có)"
                 }
@@ -532,7 +534,7 @@ namespace MyShop.Client.ViewModels
             var confirm = _dialogService.Confirm(
                         "Xác nhận",
                         $"Bạn có chắc muốn xóa sản phẩm '{SelectedProduct.Name}' không?");
-            if ( !confirm ) 
+            if (!confirm)
             {
                 IsLoading = false;
                 return;
@@ -619,6 +621,15 @@ namespace MyShop.Client.ViewModels
             // UpdateProductCommand removed
             DeleteProductCommand.NotifyCanExecuteChanged();
             ClearFormCommand.NotifyCanExecuteChanged();
+        }
+
+        public void LoadData()
+        {
+            if (!IsLoaded)
+            {
+                if (LoadProductsCommand.CanExecute(null))
+                    LoadProductsCommand.Execute(null);
+            }
         }
     }
 }

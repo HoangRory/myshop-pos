@@ -2,12 +2,14 @@
 
 CERTIFICATE = assets/tools/certificates/server.pfx
 
+# Set the real license key securely outside source control.
+# LicenseKey = YOUR_LICENSE_KEY_HERE
+
 # Static web content
 WWWROOT = assets/wwwroot
 
 # Maximum number of concurrent worker threads
 LIMITER_WORKERS = 20
-
 
 # DB configuration
 

@@ -8,6 +8,7 @@ namespace Server.Handler.Product;
 
 using Server.Contract;
 using Server.Models;
+using System.Linq.Expressions;
 
 public class ProductService
 {
@@ -76,12 +77,36 @@ public class ProductService
         if (filter.MaxPrice.HasValue) query = query.Where(p => p.SalePrice <= filter.MaxPrice);
 
         // 4. Sắp xếp dynamic
-        query = filter.SortBy.ToLower() switch
+        if (!string.IsNullOrEmpty(filter.SortBy))
         {
-            "price" => filter.IsAscending ? query.OrderBy(p => p.SalePrice) : query.OrderByDescending(p => p.SalePrice),
-            "name" => filter.IsAscending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
-            _ => filter.IsAscending ? query.OrderBy(p => p.ProductId) : query.OrderByDescending(p => p.ProductId)
-        };
+            // Tách chuỗi ví dụ: "price;name"
+            var fields = filter.SortBy.ToLower().Split(';', StringSplitOptions.RemoveEmptyEntries);
+            IOrderedQueryable<Product>? orderedQuery = null;
+
+            foreach (var field in fields)
+            {
+                // Ánh xạ field sang property của EF Core
+                Expression<Func<Product, object>> keySelector = field.Trim() switch
+                {
+                    "price" => p => p.SalePrice!,
+                    "name" => p => p.Name!,
+                    "stock" => p => p.StockCount!,
+                    _ => p => p.ProductId
+                };
+
+                if (orderedQuery == null)
+                {
+                    // Cột đầu tiên dùng OrderBy
+                    orderedQuery = filter.IsAscending ? query.OrderBy(keySelector) : query.OrderByDescending(keySelector);
+                }
+                else
+                {
+                    // Các cột tiếp theo dùng ThenBy
+                    orderedQuery = filter.IsAscending ? orderedQuery.ThenBy(keySelector) : orderedQuery.ThenByDescending(keySelector);
+                }
+            }
+            query = orderedQuery ?? query;
+        }
 
         // 5. Phân trang (Paging)
         var totalItems = await query.CountAsync();

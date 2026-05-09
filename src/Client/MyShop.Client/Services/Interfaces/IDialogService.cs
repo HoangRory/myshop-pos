@@ -4,5 +4,6 @@ namespace MyShop.Client.Services.Interfaces
     {
         bool Confirm(string title, string message);
         void Success(string title, string message);
+        void Error(string title, string message);
     }
 }

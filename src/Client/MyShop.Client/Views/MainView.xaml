@@ -1,4 +1,5 @@
 <UserControl x:Class="MyShop.Client.Views.MainView"
+             xmlns:helpers="clr-namespace:MyShop.Client.Helpers"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:MyShop.Client.Views"
@@ -7,25 +8,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
-    <!-- DataTemplates moved to App.xaml (global). Templates here removed to avoid duplication. -->
-    <!-- No resources: sidebar is fixed and not animated -->
 
+    <UserControl.Resources>
+        <helpers:PluginTemplateSelector x:Key="PluginSelector" />
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150" />
+            <!-- Giữ nguyên 150 nhưng Sidebar thực tế là 260 nên cột này nên khớp 260 -->
+            <ColumnDefinition Width="260" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Main Content -->
-        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
+        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" ContentTemplateSelector="{StaticResource PluginSelector}" />
 
-        <!-- Sidebar: fixed and always visible -->
-        <Border
-            x:Name="Sidebar"
-            Grid.Column="0"
-            Width="260"
-            Background="#2D2D30"
-            Panel.ZIndex="2">
+        <!-- Sidebar: Layout nguyên bản của bạn -->
+        <Border x:Name="Sidebar"
+                Grid.Column="0"
+                Width="260"
+                Background="#2D2D30"
+                Panel.ZIndex="2">
 
             <Grid>
                 <Grid.RowDefinitions>
@@ -33,21 +36,17 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Header with title -->
-                <DockPanel Grid.Row="0"
-                           Margin="12,8,12,8"
-                           LastChildFill="True">
+                <!-- Header: Giữ nguyên -->
+                <DockPanel Grid.Row="0" Margin="12,8,12,8" LastChildFill="True">
                     <TextBlock Text="Menu" Foreground="White" FontSize="16" DockPanel.Dock="Left" VerticalAlignment="Center" />
                 </DockPanel>
 
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 
-                <ScrollViewer Grid.Row="1"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-
-                    <StackPanel Margin="8,8,8,12">
-                        <!-- Base style for sidebar menu buttons -->
-                        <StackPanel.Resources>
+                    <!-- TỰ ĐỘNG LOAD ITEM TẠI ĐÂY -->
+                    <ItemsControl ItemsSource="{Binding MenuItems}" Margin="8,8,8,12">
+                        <ItemsControl.Resources>
+                            <!-- Style Gốc của bạn - Không đổi một thông số nào -->
                             <Style x:Key="SidebarMenuButtonBase" TargetType="Button">
                                 <Setter Property="Background" Value="Transparent" />
                                 <Setter Property="BorderThickness" Value="0" />
@@ -60,8 +59,8 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}">
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}">
                                                 <ContentPresenter VerticalAlignment="Center" Margin="12,0" />
                                             </Border>
                                         </ControlTemplate>
@@ -77,91 +76,35 @@
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
-                        </StackPanel.Resources>
+                        </ItemsControl.Resources>
 
-                        <Button Content="Dashboard" Margin="8,4" Command="{Binding NavigateDashboardCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDashboardSelected}" Value="True">
-                                            <Setter Property="Background" Value="#27272A" />
-                                            <Setter Property="Foreground" Value="White" />
-                                            <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                            <Setter Property="BorderBrush" Value="#0078D7" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Products" Margin="8,4" Command="{Binding NavigateProductsCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsProductsSelected}" Value="True">
-                                            <Setter Property="Background" Value="#27272A" />
-                                            <Setter Property="Foreground" Value="White" />
-                                            <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                            <Setter Property="BorderBrush" Value="#0078D7" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Orders" Margin="8,4" Command="{Binding NavigateOrdersCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsOrdersSelected}" Value="True">
-                                            <Setter Property="Background" Value="#27272A" />
-                                            <Setter Property="Foreground" Value="White" />
-                                            <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                            <Setter Property="BorderBrush" Value="#0078D7" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Reports" Margin="8,4" Command="{Binding NavigateReportsCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsReportsSelected}" Value="True">
-                                            <Setter Property="Background" Value="#27272A" />
-                                            <Setter Property="Foreground" Value="White" />
-                                            <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                            <Setter Property="BorderBrush" Value="#0078D7" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-
-                        <Button Content="Settings" Margin="8,4" Command="{Binding NavigateSettingsCommand}">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSettingsSelected}" Value="True">
-                                            <Setter Property="Background" Value="#27272A" />
-                                            <Setter Property="Foreground" Value="White" />
-                                            <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                            <Setter Property="BorderBrush" Value="#0078D7" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </StackPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- Mỗi Button được sinh ra tương ứng với 1 Plugin trong MenuItems -->
+                                <Button Content="{Binding Name}" 
+                                        Margin="8,4" 
+                                        Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding Name}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
+                                            <Style.Triggers>
+                                                <!-- Bind vào IsSelected của PluginMetadata -->
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="#27272A" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                    <Setter Property="BorderThickness" Value="4,0,0,0" />
+                                                    <Setter Property="BorderBrush" Value="#0078D7" />
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </ScrollViewer>
             </Grid>
         </Border>
-
     </Grid>
 </UserControl>

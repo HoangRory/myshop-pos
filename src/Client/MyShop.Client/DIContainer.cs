@@ -1,29 +1,47 @@
-using System.Net.Http;
+using LuciferCore.Attributes;
+using LuciferCore.Main;
 using Microsoft.Extensions.DependencyInjection;
 using MyShop.Client.Services;
 using MyShop.Client.Services.Interfaces;
+using System.Net.Http;
+using System.Reflection;
 
 namespace MyShop.Client
 {
     public static class DIContainer
     {
         public static ServiceProvider ServiceProvider { get; private set; } = null!;
+        public static IEnumerable<Type> Plugins { get; private set; } = Lucifer.GetTypesWithAttribute<PluginAttribute>();
+        public static Dictionary<string, Type> ViewModels { get; private set; } = [];
+        public static Dictionary<Type, Type> ViewMapping { get; private set; } = [];
 
         public static void ConfigureServices()
         {
             var services = new ServiceCollection();
 
+            var allTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes()).ToList();
+
             // Register ViewModels
-            services.AddSingleton<ViewModels.MainViewModel>();
-            services.AddSingleton<ViewModels.ProductsViewModel>();
+            foreach (var plugin in Plugins)
+            {
+                var attr = plugin.GetCustomAttribute<PluginAttribute>();
+                if (attr != null && Lucifer.Equals<char>(attr.PluginType, "ViewModel"))
+                {
+                    ViewModels[attr.Name] = plugin;
+                    services.AddSingleton(plugin);
+
+                    if (plugin.Name == "MainViewModel" || plugin.Name == "AuthViewModel") continue;
+
+                    var viewName = plugin.Name.Replace("ViewModel", "View");
+                    var viewType = allTypes.FirstOrDefault(t => t.Name == viewName);
+                    if (viewType != null)
+                    {
+                        ViewMapping[plugin] = viewType;
+                    }
+                }
+            }
 
             services.AddSingleton<Services.Interfaces.IDialogService, Services.DialogService>();
-            services.AddSingleton<ViewModels.OrdersViewModel>();
-            services.AddSingleton<ViewModels.ReportsViewModel>();
-            services.AddSingleton<ViewModels.SettingsViewModel>();
-            services.AddSingleton<ViewModels.DashboardViewModel>();
-            // Đăng ký các ViewModel khác nếu có
-
 
             // Register NavigationService as INavigationService
             services.AddSingleton<Services.INavigationService, Services.NavigationService>();
@@ -50,11 +68,14 @@ namespace MyShop.Client
                 var factory = sp.GetRequiredService<IHttpClientFactory>();
                 return factory.CreateClient("MyShopAPI");
             });
-            services.AddScoped<IProductService, ProductService>(); 
+            services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IBRService, BackupService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             // Register MainWindow
             services.AddSingleton<MainWindow>();
+
 
             ServiceProvider = services.BuildServiceProvider();
         }

@@ -58,7 +58,7 @@ public class AuthHandler : RouteHandler
 
     [RateLimiter(100, 60)]
     [Authorize(UserRole.User)]
-    [HttpPost("/logout")]
+    [HttpGet("/logout")]
     private void Logout([Session] AppSession session, [Data] RequestModel request)
     {
         var response = Lucifer.Rent<ResponseModel>();

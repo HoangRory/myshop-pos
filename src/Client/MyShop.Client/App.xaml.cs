@@ -1,7 +1,5 @@
-﻿using System.Configuration;
-using System.Data;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MyShop.Client
 {
@@ -11,9 +9,15 @@ namespace MyShop.Client
         {
             base.OnStartup(e);
             DIContainer.ConfigureServices();
-            var nav = DIContainer.ServiceProvider.GetRequiredService<Services.INavigationService>();
-            nav.NavigateTo<ViewModels.MainViewModel>();
+
             var mainWindow = DIContainer.ServiceProvider.GetRequiredService<MainWindow>();
+            //var mainVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
+            //mainWindow.DataContext = mainVM;
+
+            var authVM = DIContainer.ServiceProvider.GetRequiredService<ViewModels.AuthViewModel>();
+            mainWindow.DataContext = authVM; // Bây giờ AuthView sẽ tìm thấy các property của nó
+
+            this.MainWindow = mainWindow;
             mainWindow.Show();
         }
     }

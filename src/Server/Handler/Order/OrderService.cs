@@ -5,6 +5,7 @@ using LuciferCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using Server.Contract;
 using Server.Database.EFcore;
+using System.Linq.Expressions;
 
 namespace Server.Handler.Order;
 
@@ -80,6 +81,34 @@ public class OrderService
         if (filter.Status.HasValue)
             query = query.Where(o => (int?)o.Status == filter.Status);
 
+        if (!string.IsNullOrEmpty(filter.SortBy))
+        {
+            var fields = filter.SortBy.ToLower().Split(';', StringSplitOptions.RemoveEmptyEntries);
+            IOrderedQueryable<Models.Order>? orderedQuery = null;
+
+            foreach (var field in fields)
+            {
+                Expression<Func<Models.Order, object>> keySelector = field.Trim() switch
+                {
+                    "final" => o => o.FinalTotal!,
+                    "sub" => o => o.SubTotal!,
+                    "date" => o => o.CreatedAt!,
+                    _ => o => o.OrderId // Mặc định trả về Id nếu field lạ
+                };
+
+                if (orderedQuery == null)
+                    orderedQuery = filter.IsAscending ? query.OrderBy(keySelector) : query.OrderByDescending(keySelector);
+                else
+                    orderedQuery = filter.IsAscending ? orderedQuery.ThenBy(keySelector) : orderedQuery.ThenByDescending(keySelector);
+            }
+            query = orderedQuery ?? (filter.IsAscending ? query.OrderBy(o => o.OrderId) : query.OrderByDescending(o => o.OrderId));
+        }
+        else
+        {
+            // FIX: Nếu không truyền gì, dùng OrderId để tận dụng Clustered Index như bạn nói
+            query = filter.IsAscending ? query.OrderBy(o => o.OrderId) : query.OrderByDescending(o => o.OrderId);
+        }
+
         // Phân trang
         const int maxPageSize = 100;
         var pageIndex = filter.PageIndex < 1 ? 1 : filter.PageIndex;
@@ -87,10 +116,9 @@ public class OrderService
         var skip = (pageIndex - 1) * pageSize;
 
         var totalItems = await query.CountAsync();
-        var items = await query.OrderByDescending(o => o.CreatedAt)
-                               .Skip(skip)
-                               .Take(pageSize)
-                               .ToListAsync();
+        var items = await query.Skip(skip)
+                                    .Take(pageSize)
+                                    .ToListAsync();
 
         var result = new { Total = totalItems, Data = items };
         response.MakeCustomResponse<byte, char, byte>(200, StorageData.Http11Protocol, result.ToJson(), StorageData.ApplicationJson);

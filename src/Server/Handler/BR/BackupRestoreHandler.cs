@@ -48,7 +48,7 @@ public class BackupRestoreHandler : RouteHandler
     [HttpGet("auto-backup")]
     private async Task AutoBackup([Session] AppSession session, [Data] RequestModel request)
     {
-        using var response = await _backupRestoreService.SetAutoBackup(request);
+        using var response = await _backupRestoreService.SetAutoBackup();
         session.SendResponseAsync(response);
     }
 

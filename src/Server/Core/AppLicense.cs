@@ -1,4 +1,5 @@
 ﻿using LuciferCore.Attributes;
+using LuciferCore.Extensions;
 using System.Text;
 
 
@@ -12,6 +13,7 @@ public static class AppLicense
     // Giả sử Key xịn là một chuỗi Hash nào đó liên quan đến tên máy/CPU
     private static string ValidKey = "LUCIFER-PRO-2026";
 
+    public static bool IsValid { get; private set; } = false;
     public static bool IsTrialExpired()
     {
         // Nếu đã nhập đúng Key thì không cần check ngày Trial nữa
@@ -28,16 +30,19 @@ public static class AppLicense
     {
         if (_licenseKey == ValidKey)
         {
-            Console.WriteLine("License: [Activated] Professional Version.");
+            typeof(AppLicense).LogConsole("License: [Activated] Professional Version.");
+            IsValid = true;
         }
         else if (IsTrialExpired())
         {
-            Console.WriteLine("License: [Expired] Trial period ended. Please enter License Key.");
+            typeof(AppLicense).LogConsole("License: [Expired] Trial period ended. Please enter License Key.");
+            IsValid = false;
         }
         else
         {
-            var daysLeft = 15 - (DateTime.Now - LicenseShield.GetInstallDate()).TotalDays;
-            Console.WriteLine($"License: [Trial] {Math.Round(daysLeft, 1)} days remaining.");
+            var daysLeft = Math.Max(15 - (DateTime.Now - LicenseShield.GetInstallDate()).TotalDays, 0);
+            typeof(AppLicense).LogConsole($"License: [Trial] {Math.Round(daysLeft, 1)} days remaining. Please enter License Key to continue using after trial expires.");
+            IsValid = daysLeft > 0;
         }
     }
 }

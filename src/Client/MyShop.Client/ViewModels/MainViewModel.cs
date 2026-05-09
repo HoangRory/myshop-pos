@@ -1,113 +1,108 @@
-using System;
-using System.Windows.Input;
+using LuciferCore.Attributes;
 using MyShop.Client.Helpers;
 using MyShop.Client.Services;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Input;
 
 namespace MyShop.Client.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    [Plugin("ViewModel", "Main")]
+    public class MainViewModel : INotifyPropertyChanged
     {
         private readonly INavigationService _navigationService;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        private BaseViewModel _currentViewModel;
-        public BaseViewModel CurrentViewModel
+        public ObservableCollection<PluginMetadata> MenuItems { get; } = new();
+
+        private object? _currentViewModel;
+        public object? CurrentViewModel
         {
             get => _currentViewModel;
-            set
-            {
-                _currentViewModel = value;
-                OnPropertyChanged();
-            }
+            set { _currentViewModel = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentViewModel))); }
         }
 
-        public ICommand NavigateDashboardCommand { get; }
-        public ICommand NavigateProductsCommand { get; }
-        public ICommand NavigateOrdersCommand { get; }
-        public ICommand NavigateReportsCommand { get; }
-        public ICommand NavigateSettingsCommand { get; }
+        private string _selectedSection = "Dashboard";
+        public string SelectedSection
+        {
+            get => _selectedSection;
+            set { _selectedSection = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedSection))); }
+        }
 
+        public ICommand NavigateCommand { get; }
 
         public MainViewModel(INavigationService navigationService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
-            NavigateDashboardCommand = new RelayCommand(_ => NavigateTo<DashboardViewModel>());
-            NavigateProductsCommand = new RelayCommand(_ => NavigateTo<ProductsViewModel>());
-            NavigateOrdersCommand = new RelayCommand(_ => NavigateTo<OrdersViewModel>());
-            NavigateReportsCommand = new RelayCommand(_ => NavigateTo<ReportsViewModel>());
-            NavigateSettingsCommand = new RelayCommand(_ => NavigateTo<SettingsViewModel>());
-
-
-            // Listen for navigation changes
-            if (_navigationService is BaseViewModel navVm)
+            if (_navigationService is INotifyPropertyChanged navService)
             {
-                navVm.PropertyChanged += (s, e) =>
+                navService.PropertyChanged += (s, e) =>
                 {
                     if (e.PropertyName == nameof(_navigationService.CurrentViewModel))
                     {
                         CurrentViewModel = _navigationService.CurrentViewModel;
-                        TryLoadProductsViewModel();
+                        TryAutoLoad(CurrentViewModel);
                     }
                 };
             }
 
-            // Set default view
-            NavigateTo<DashboardViewModel>();
-
-        }
-
-        private void NavigateTo<TViewModel>() where TViewModel : BaseViewModel
-        {
-            _navigationService.NavigateTo<TViewModel>();
-            CurrentViewModel = _navigationService.CurrentViewModel;
-            TryLoadProductsViewModel();
-            UpdateSelectedSection<TViewModel>();
-        }
-
-        private void UpdateSelectedSection<TViewModel>() where TViewModel : BaseViewModel
-        {
-            // Reset all
-            IsDashboardSelected = false;
-            IsProductsSelected = false;
-            IsOrdersSelected = false;
-            IsReportsSelected = false;
-            IsSettingsSelected = false;
-
-            var t = typeof(TViewModel);
-            if (t == typeof(DashboardViewModel))
-                IsDashboardSelected = true;
-            else if (t == typeof(ProductsViewModel))
-                IsProductsSelected = true;
-            else if (t == typeof(OrdersViewModel))
-                IsOrdersSelected = true;
-            else if (t == typeof(ReportsViewModel))
-                IsReportsSelected = true;
-            else if (t == typeof(SettingsViewModel))
-                IsSettingsSelected = true;
-        }
-
-        private bool _isDashboardSelected;
-        public bool IsDashboardSelected { get => _isDashboardSelected; set => SetProperty(ref _isDashboardSelected, value); }
-
-        private bool _isProductsSelected;
-        public bool IsProductsSelected { get => _isProductsSelected; set => SetProperty(ref _isProductsSelected, value); }
-
-        private bool _isOrdersSelected;
-        public bool IsOrdersSelected { get => _isOrdersSelected; set => SetProperty(ref _isOrdersSelected, value); }
-
-        private bool _isReportsSelected;
-        public bool IsReportsSelected { get => _isReportsSelected; set => SetProperty(ref _isReportsSelected, value); }
-
-        private bool _isSettingsSelected;
-        public bool IsSettingsSelected { get => _isSettingsSelected; set => SetProperty(ref _isSettingsSelected, value); }
-
-        private void TryLoadProductsViewModel()
-        {
-            if (CurrentViewModel is ProductsViewModel productsVm && !productsVm.IsLoaded)
+            // Lấy toàn bộ Plugin là ViewModel từ DIContainer để tạo Menu
+            foreach (var vm in DIContainer.ViewModels)
             {
-                if (productsVm.LoadProductsCommand.CanExecute(null))
-                    productsVm.LoadProductsCommand.Execute(null);
+                // Loại bỏ "Main" vì Main không thể điều hướng đến chính nó
+                if (vm.Key == "Main" || vm.Key == "Auth") continue;
+
+                MenuItems.Add(new PluginMetadata
+                {
+                    Name = vm.Key,
+                });
+            }
+
+            NavigateCommand = new RelayCommand(p => Navigate(p?.ToString()));
+
+            // Set default view
+            Navigate(SelectedSection);
+
+        }
+
+        private void Navigate(string? viewName)
+        {
+            if (string.IsNullOrEmpty(viewName)) return;
+
+            _navigationService.NavigateTo(viewName);
+            UpdateSelection(viewName);
+        }
+
+        private void TryAutoLoad(object? viewModel)
+        {
+            // Dùng Reflection hoặc Dynamic để gọi hàm Load nếu tồn tại (duck typing)
+            var loadMethod = viewModel?.GetType().GetMethod("LoadData");
+            loadMethod?.Invoke(viewModel, null);
+        }
+
+        private void UpdateSelection(string viewName)
+        {
+            SelectedSection = viewName;
+            // Cập nhật trạng thái cho từng Item để XAML tự sáng đèn
+            foreach (var item in MenuItems)
+            {
+                item.IsSelected = item.Name.Equals(viewName, StringComparison.OrdinalIgnoreCase);
             }
         }
     }
+}
+
+public class PluginMetadata : INotifyPropertyChanged
+{
+    public string Name { get; set; } = "";
+
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { _isSelected = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected))); }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
