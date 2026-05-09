@@ -53,6 +53,7 @@ namespace MyShop.Client
                         HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                 };
             });
+
             services.AddSingleton(sp =>
             {
                 var factory = sp.GetRequiredService<IHttpClientFactory>();
