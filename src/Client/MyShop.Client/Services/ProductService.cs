@@ -1,3 +1,4 @@
+using LuciferCore.Attributes;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.IO;
@@ -8,7 +9,8 @@ using System.Text;
 using System.Text.Json;
 namespace MyShop.Client.Services
 {
-    public class ProductService : IProductService, IAPI
+    [Plugin("Service", "Product")]
+    public class ProductService : IProductService
     {
         private readonly HttpClient _http;
         private const string ApiPath = "v1/api/product";
