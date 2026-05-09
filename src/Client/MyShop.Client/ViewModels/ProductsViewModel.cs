@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Products")]
@@ -23,6 +24,37 @@ namespace MyShop.Client.ViewModels
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
         public ObservableCollection<Category> FilterCategories { get; } = new ObservableCollection<Category>();
         public ObservableCollection<Category> EditCategories { get; } = new ObservableCollection<Category>();
+        public ObservableCollection<Category> DeletableCategories { get; } = new ObservableCollection<Category>();
+
+        private bool _isAddCategoryPanelVisible;
+        public bool IsAddCategoryPanelVisible
+        {
+            get => _isAddCategoryPanelVisible;
+            set
+            {
+                if (SetProperty(ref _isAddCategoryPanelVisible, value))
+                {
+                    OnPropertyChanged(nameof(AddCategoryButtonText));
+                }
+            }
+        }
+
+        private bool _isDeleteCategoryPanelVisible;
+        public bool IsDeleteCategoryPanelVisible
+        {
+            get => _isDeleteCategoryPanelVisible;
+            set
+            {
+                if (SetProperty(ref _isDeleteCategoryPanelVisible, value))
+                {
+                    OnPropertyChanged(nameof(DeleteCategoryButtonText));
+                }
+            }
+        }
+
+        public string AddCategoryButtonText => IsAddCategoryPanelVisible ? "Hủy" : "Thêm danh mục";
+        public string DeleteCategoryButtonText => IsDeleteCategoryPanelVisible ? "Hủy" : "Xóa danh mục";
+
         private Category? _selectedCategory;
         public Category? SelectedCategory
         {
@@ -103,6 +135,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _pageIndex, value))
                 {
                     OnPropertyChanged(nameof(TotalPages));
+                    NotifyPagingCommands();
                     LoadProductsCommand.Execute(null);
                 }
             }
@@ -117,6 +150,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _pageSize, value))
                 {
                     OnPropertyChanged(nameof(TotalPages));
+                    NotifyPagingCommands();
                     PageIndex = 1;
                     LoadProductsCommand.Execute(null);
                 }
@@ -132,6 +166,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _totalCount, value))
                 {
                     OnPropertyChanged(nameof(TotalPages));
+                    NotifyPagingCommands();
                 }
             }
         }
@@ -261,12 +296,16 @@ namespace MyShop.Client.ViewModels
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
         public AsyncRelayCommand CancelEditCommand { get; }
-        public System.Windows.Input.ICommand NextPageCommand { get; }
-        public System.Windows.Input.ICommand PrevPageCommand { get; }
-        public System.Windows.Input.ICommand ApplyFiltersCommand { get; }
+        public RelayCommand NextPageCommand { get; }
+        public RelayCommand PrevPageCommand { get; }
+        public ICommand ApplyFiltersCommand { get; }
         public AsyncRelayCommand ImportExcelCommand { get; }
-        public System.Windows.Input.ICommand ImportAccessCommand { get; }
-        public System.Windows.Input.ICommand AddProductTypeCommand { get; }
+        public ICommand ImportAccessCommand { get; }
+        public ICommand AddProductTypeCommand { get; }
+        public AsyncRelayCommand AddCategoryCommand { get; }
+        public AsyncRelayCommand DeleteCategoryCommand { get; }
+        public RelayCommand ToggleAddCategoryPanelCommand { get; }
+        public RelayCommand ToggleDeleteCategoryPanelCommand { get; }
 
         public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService)
         {
@@ -275,63 +314,88 @@ namespace MyShop.Client.ViewModels
             _categoryService = categoryService;
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
+            AddCategoryCommand = new AsyncRelayCommand(AddCategoryAsync, CanExecuteAddCategory);
+            DeleteCategoryCommand = new AsyncRelayCommand(DeleteCategoryAsync, CanExecuteDeleteCategory);
+            ToggleAddCategoryPanelCommand = new RelayCommand(ToggleAddCategoryPanel, CanExecuteToggleCategoryPanel);
+            ToggleDeleteCategoryPanelCommand = new RelayCommand(ToggleDeleteCategoryPanel, CanExecuteToggleCategoryPanel);
             SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
-            ClearFormCommand = new AsyncRelayCommand(_ => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
+            ClearFormCommand = new AsyncRelayCommand(() => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
 
             // ===============================
             // STEP 4: Sửa NextPageCommand
             // ===============================
-            NextPageCommand = new MyShop.Client.Helpers.RelayCommand(
-                _ =>
+            NextPageCommand = new RelayCommand(
+                () => TryChangeState(() =>
                 {
-                    TryChangeState(() =>
+                    if (PageIndex < TotalPages)
                     {
-                        if (PageIndex < TotalPages)
-                        {
-                            PageIndex++;
-                        }
-                    });
-                },
-                _ => PageIndex < TotalPages
+                        PageIndex++;
+                    }
+                }),
+                () => PageIndex < TotalPages
             );
 
             // ===============================
             // STEP 5: Sửa PrevPageCommand
             // ===============================
-            PrevPageCommand = new MyShop.Client.Helpers.RelayCommand(
-                _ =>
+            PrevPageCommand = new RelayCommand(
+                () => TryChangeState(() =>
                 {
-                    TryChangeState(() =>
+                    if (PageIndex > 1)
                     {
-                        if (PageIndex > 1)
-                        {
-                            PageIndex--;
-                        }
-                    });
-                },
-                _ => PageIndex > 1
+                        PageIndex--;
+                    }
+                }),
+                () => PageIndex > 1
             );
 
             // ===============================
             // STEP 6: Sửa ApplyFiltersCommand
             // ===============================
-            ApplyFiltersCommand = new MyShop.Client.Helpers.RelayCommand(
-                _ =>
+            ApplyFiltersCommand = new RelayCommand(
+                () => TryChangeState(() =>
                 {
-                    TryChangeState(() =>
-                    {
-                        _pageIndex = 1;
-                        OnPropertyChanged(nameof(PageIndex));
-                        LoadProductsCommand.Execute(null);
-                    });
-                }
+                    _pageIndex = 1;
+                    OnPropertyChanged(nameof(PageIndex));
+                    LoadProductsCommand.Execute(null);
+                })
             );
             ImportExcelCommand = new AsyncRelayCommand(ImportFromExcelAsync, CanExecuteImportExcel);
-            ImportAccessCommand = new MyShop.Client.Helpers.RelayCommand(_ => ImportFromAccess());
+            ImportAccessCommand = new RelayCommand(ImportFromAccess);
         }
 
+        private bool CanExecuteToggleCategoryPanel() => !IsLoading;
 
+        private void NotifyPagingCommands()
+        {
+            NextPageCommand?.NotifyCanExecuteChanged();
+            PrevPageCommand?.NotifyCanExecuteChanged();
+        }
+
+        private void ToggleAddCategoryPanel()
+        {
+            var next = !IsAddCategoryPanelVisible;
+            IsAddCategoryPanelVisible = next;
+            if (next)
+            {
+                IsDeleteCategoryPanelVisible = false;
+            }
+        }
+
+        private void ToggleDeleteCategoryPanel()
+        {
+            var next = !IsDeleteCategoryPanelVisible;
+            IsDeleteCategoryPanelVisible = next;
+            if (next)
+            {
+                IsAddCategoryPanelVisible = false;
+                if (SelectedCategoryToDelete == null)
+                {
+                    SelectedCategoryToDelete = DeletableCategories.FirstOrDefault();
+                }
+            }
+        }
 
         private void ClearForm()
         {
@@ -408,6 +472,7 @@ namespace MyShop.Client.ViewModels
         {
             FilterCategories.Clear();
             EditCategories.Clear();
+            DeletableCategories.Clear();
 
             var allCategories = await _categoryService.GetAllAsync();
 
@@ -427,10 +492,142 @@ namespace MyShop.Client.ViewModels
             {
                 EditCategories.Add(c);
                 FilterCategories.Add(c);
+                DeletableCategories.Add(c);
             }
 
             if (SelectedCategory == null)
                 SelectedCategory = FilterCategories.FirstOrDefault();
+
+            if (SelectedCategoryToDelete != null)
+            {
+                SelectedCategoryToDelete = DeletableCategories
+                    .FirstOrDefault(c => c.CategoryId == SelectedCategoryToDelete.CategoryId);
+            }
+        }
+
+        private string _newCategoryName;
+        public string NewCategoryName
+        {
+            get => _newCategoryName;
+            set
+            {
+                if (SetProperty(ref _newCategoryName, value))
+                {
+                    AddCategoryCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        private bool CanExecuteAddCategory() => !IsLoading && !string.IsNullOrWhiteSpace(NewCategoryName);
+
+        private async Task AddCategoryAsync()
+        {
+            if (IsLoading) return;
+
+            if (string.IsNullOrWhiteSpace(NewCategoryName))
+            {
+                ErrorMessage = "Tên danh mục không được để trống.";
+                return;
+            }
+
+            IsLoading = true;
+            try
+            {
+                var model = new Category { Name = NewCategoryName };
+                var result = await _categoryService.CreateAsync(model);
+                if (result)
+                {
+                    _dialogService.Success("Thành công", "Thêm danh mục thành công.");
+                    await LoadCategoriesAsync();
+                    // Select the created category if possible
+                    var created = EditCategories.FirstOrDefault(c => c.Name == NewCategoryName);
+                    if (created != null && EditingProduct != null)
+                    {
+                        EditingProduct.CategoryId = created.CategoryId;
+                        OnPropertyChanged(nameof(EditingProduct));
+                    }
+                    SelectedCategoryToDelete = created;
+                    NewCategoryName = string.Empty;
+                }
+                else
+                {
+                    ErrorMessage = "Thêm danh mục thất bại.";
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private Category? _selectedCategoryToDelete;
+        public Category? SelectedCategoryToDelete
+        {
+            get => _selectedCategoryToDelete;
+            set
+            {
+                if (SetProperty(ref _selectedCategoryToDelete, value))
+                {
+                    DeleteCategoryCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        private bool CanExecuteDeleteCategory() => !IsLoading && SelectedCategoryToDelete != null;
+
+        private async Task DeleteCategoryAsync()
+        {
+            if (IsLoading || SelectedCategoryToDelete == null) return;
+
+            var category = SelectedCategoryToDelete;
+            bool shouldReloadProducts = false;
+            var confirm = _dialogService.Confirm(
+                "Xác nhận",
+                $"Bạn có chắc muốn xóa danh mục '{category.Name}' không?");
+
+            if (!confirm)
+                return;
+
+            IsLoading = true;
+            try
+            {
+                var result = await _categoryService.DeleteAsync(category.CategoryId);
+                if (result)
+                {
+                    _dialogService.Success("Thành công", "Xóa danh mục thành công.");
+
+                    if (EditingProduct != null && EditingProduct.CategoryId == category.CategoryId)
+                    {
+                        EditingProduct.CategoryId = -1;
+                        OnPropertyChanged(nameof(EditingProduct));
+                    }
+
+                    SelectedCategoryToDelete = null;
+                    await LoadCategoriesAsync();
+                    shouldReloadProducts = true;
+                }
+                else
+                {
+                    ErrorMessage = "Xóa danh mục thất bại.";
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+
+            if (shouldReloadProducts)
+            {
+                await LoadProductsAsync();
+            }
         }
 
         private async Task EnsureCategoriesLoadedAsync()
@@ -454,8 +651,8 @@ namespace MyShop.Client.ViewModels
                 string sortByField = _sortBy switch
                 {
                     "Tên" => "Name",
-                    "Giá" => "SalePrice",
-                    "Tồn kho" => "StockCount",
+                    "Giá" => "Price",
+                    "Tồn kho" => "Stock",
                     _ => "Name"
                 };
 
@@ -659,6 +856,11 @@ namespace MyShop.Client.ViewModels
             // UpdateProductCommand removed
             DeleteProductCommand.NotifyCanExecuteChanged();
             ClearFormCommand.NotifyCanExecuteChanged();
+            AddCategoryCommand?.NotifyCanExecuteChanged();
+            DeleteCategoryCommand?.NotifyCanExecuteChanged();
+            ToggleAddCategoryPanelCommand?.NotifyCanExecuteChanged();
+            ToggleDeleteCategoryPanelCommand?.NotifyCanExecuteChanged();
+            NotifyPagingCommands();
         }
 
         public void LoadData()
