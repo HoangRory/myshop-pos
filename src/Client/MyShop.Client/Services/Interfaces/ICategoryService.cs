@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MyShop.Client.Models;
 
 namespace MyShop.Client.Services.Interfaces
 {
-    public interface ICategoryService
+    public interface ICategoryService : IAPI
     {
         Task<List<Category>> GetAllAsync();
         Task<Category?> GetCategoryAsync(int CategoryId);
