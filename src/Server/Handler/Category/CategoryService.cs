@@ -3,6 +3,7 @@ using LuciferCore.Main;
 using LuciferCore.Model;
 using LuciferCore.Storage;
 using Server.Contract;
+using System.Linq.Expressions;
 
 namespace Server.Handler.Category;
 
@@ -34,7 +35,11 @@ public class CategoryService
     {
         var response = Lucifer.Rent<ResponseModel>();
         var db = Lucifer.GetModelT<IRepository<Models.Category>>();
-        var result = await db.GetAsync();
+
+        Expression<Func<Models.Category, bool>> filter = x => x.IsActive == true;
+
+        var result = await db.GetAsync(filter);
+
         response.MakeCustomResponse<byte, char, byte>(200, StorageData.Http11Protocol, result.ToJson(), StorageData.ApplicationJson);
         return response;
     }
@@ -70,6 +75,7 @@ public class CategoryService
 
         var db = Lucifer.GetModelT<IRepository<Models.Category>>();
 
+        category.IsActive = true;
         var result = await db.AddAsync(category);
         if (result <= 0)
         {
@@ -91,7 +97,17 @@ public class CategoryService
         }
 
         var db = Lucifer.GetModelT<IRepository<Models.Category>>();
-        var result = await db.DeleteByIdAsync(category.CategoryId);
+
+        // Lấy bản ghi thực tế từ DB
+        var existing = await db.GetByIdAsync(category.CategoryId);
+        if (existing == null)
+        {
+            response.MakeCustomResponse<byte, byte, byte>(404, StorageData.Http11Protocol, "Not Found"u8, StorageData.TextPlainCharset);
+            return response;
+        }
+
+        existing.IsActive = false;
+        var result = await db.UpdateAsync(existing);
 
         if (result <= 0)
         {

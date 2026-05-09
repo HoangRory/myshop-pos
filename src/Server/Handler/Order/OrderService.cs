@@ -41,6 +41,7 @@ public class OrderService
     {
         var response = Lucifer.Rent<ResponseModel>();
         var db = Lucifer.GetModelT<IRepository<Models.Order>>();
+
         var orders = await db.GetAsync();
 
         if (orders == null)
@@ -64,6 +65,8 @@ public class OrderService
 
         using var db = Lucifer.GetModelT<DbContext>();
         var query = db.Set<Models.Order>().AsNoTracking().AsQueryable();
+
+        query = query.Where(o => o.IsActive == true);
 
         // Lọc theo ngày
         if (filter.FromDate.HasValue)
@@ -178,6 +181,7 @@ public class OrderService
 
                 newOrder.SubTotal = subTotal;
                 newOrder.FinalTotal = subTotal; // Tạm thời bằng subTotal, client sẽ update voucher sau
+                newOrder.IsActive = true;
 
                 await db.Set<Models.Order>().AddAsync(newOrder);
                 await db.SaveChangesAsync();
@@ -255,10 +259,14 @@ public class OrderService
                 if (!string.IsNullOrEmpty(updateData.VoucherCode))
                 {
                     var voucher = await db.Set<Models.DiscountVoucher>()
-                        .FirstOrDefaultAsync(v => v.VoucherCode == updateData.VoucherCode);
+                        .FirstOrDefaultAsync(v => v.VoucherCode == updateData.VoucherCode && v.IsActive == true);
 
                     if (voucher == null || !voucher.ExpiryDate.HasValue || voucher.ExpiryDate.Value < DateTime.Now)
-                        throw new Exception("Mã giảm giá không tồn tại hoặc đã hết hạn");
+                    {
+                        response.MakeCustomResponse<byte, byte, byte>(400, StorageData.Http11Protocol, "Invalid or Expired Voucher"u8, StorageData.TextPlainCharset);
+                        return response;
+                    }
+
 
                     if (voucher.DiscountType == 1) // Giảm tiền mặt
                         discount = voucher.DiscountValue ?? 0;
@@ -293,7 +301,6 @@ public class OrderService
         });
     }
 
-
     public async Task<ResponseModel> DeleteOrder(Models.Order? order)
     {
         var response = Lucifer.Rent<ResponseModel>();
@@ -318,24 +325,41 @@ public class OrderService
                                     .Include(o => o.OrderItems)
                                     .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
-                if (order == null)
+                if (order == null || order.IsActive == false)
                 {
-                    response.MakeCustomResponse<byte, byte, byte>(404, StorageData.Http11Protocol, "Not Found"u8, StorageData.TextPlainCharset);
+                    response.MakeCustomResponse<byte, byte, byte>(404, StorageData.Http11Protocol, "Not Found or Already Deleted"u8, StorageData.TextPlainCharset);
                     return response;
                 }
 
                 // 2. Nếu đơn hàng chưa bị hủy (nghĩa là đang giữ hàng), thì xóa đơn phải hoàn kho
-                if (order.Status != 2) // Giả sử 2 là trạng thái Đã Hủy
+                // Chỉ hoàn kho cho đơn hàng Đang chờ (Status == 0).
+                // Nếu đơn đã Thanh toán (Status == 1) hoặc đã Hủy (Status == 2), KHÔNG hoàn kho lần nữa.
+                if (order.Status == 0)
                 {
+                    var productIds = order.OrderItems.Select(i => i.ProductId).Distinct().ToList();
+                    var productsToUpdate = await db.Set<Models.Product>()
+                                             .Where(p => productIds.Contains(p.ProductId))
+                                             .ToListAsync();
+
                     foreach (var item in order.OrderItems)
                     {
-                        var p = await db.Set<Models.Product>().FindAsync(item.ProductId);
-                        if (p != null) p.StockCount += item.Quantity;
+                        var product = productsToUpdate.FirstOrDefault(p => p.ProductId == item.ProductId);
+                        if (product != null)
+                        {
+                            product.StockCount += item.Quantity; // Hoàn kho hợp lệ cho đơn chưa thanh toán
+                        }
                     }
+                }
+                else if (order.Status == 1)
+                {
+                    response.MakeCustomResponse<byte, byte, byte>(403, StorageData.Http11Protocol, "Cannot delete a paid order"u8, StorageData.TextPlainCharset);
+                    // Lưu ý: Không nên xóa đơn đã thanh toán để đảm bảo báo cáo doanh thu luôn đúng.
+                    return response;
                 }
 
                 // 3. Xóa đơn hàng (EF sẽ tự xóa OrderItems nếu bạn cấu hình Cascade Delete)
-                db.Set<Models.Order>().Remove(order);
+                order.IsActive = false;
+                db.UpdateNoNull(order);
                 await db.SaveChangesAsync();
                 await trans.CommitAsync();
 
