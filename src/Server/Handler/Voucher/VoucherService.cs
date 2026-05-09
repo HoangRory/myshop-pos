@@ -64,6 +64,7 @@ public class VoucherService
             return response;
         }
         var db = Lucifer.GetModelT<IRepository<Models.DiscountVoucher>>();
+        voucher.IsActive = true;
         var result = await db.AddAsync(voucher);
         if (result <= 0)
         {
@@ -83,12 +84,23 @@ public class VoucherService
             return response;
         }
         var db = Lucifer.GetModelT<IRepository<Models.DiscountVoucher>>();
-        var result = await db.DeleteByIdAsync(voucher.VoucherCode);
+
+        var existingVoucher = await db.GetByIdAsync(voucher.VoucherCode);
+        if (existingVoucher == null || existingVoucher.IsActive == false)
+        {
+            response.MakeCustomResponse<byte, byte, byte>(404, StorageData.Http11Protocol, "Not Found or Already Deleted"u8, StorageData.TextPlainCharset);
+            return response;
+        }
+
+        existingVoucher.IsActive = false; // Soft delete
+        var result = await db.UpdateAsync(existingVoucher);
+
         if (result <= 0)
         {
             response.MakeCustomResponse<byte, byte, byte>(500, StorageData.Http11Protocol, "Delete Failed"u8, StorageData.TextPlainCharset);
             return response;
         }
+
         response.MakeCustomResponse<byte, byte, byte>(200, StorageData.Http11Protocol, "OK"u8, StorageData.TextPlainCharset);
         return response;
     }
