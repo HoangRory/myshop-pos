@@ -153,6 +153,40 @@ namespace MyShop.Client.ViewModels
         private bool _sortDescending = false;
         public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) LoadProductsCommand.Execute(null); } }
 
+        // Sort Options for UI
+        private ObservableCollection<string> _sortOptions = new ObservableCollection<string> { "Tên", "Giá", "Tồn kho" };
+        public ObservableCollection<string> SortOptions
+        {
+            get => _sortOptions;
+            private set => SetProperty(ref _sortOptions, value);
+        }
+
+        private string _sortBy = "Tên";
+        public string SortBy
+        {
+            get => _sortBy;
+            set
+            {
+                if (SetProperty(ref _sortBy, value))
+                {
+                    LoadProductsCommand.Execute(null);
+                }
+            }
+        }
+
+        private bool _isAscending = true;
+        public bool IsAscending
+        {
+            get => _isAscending;
+            set
+            {
+                if (SetProperty(ref _isAscending, value))
+                {
+                    LoadProductsCommand.Execute(null);
+                }
+            }
+        }
+
         private string _selectedProductType;
         public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) PageIndex = 1; } }
 
@@ -413,14 +447,18 @@ namespace MyShop.Client.ViewModels
 
             await EnsureCategoriesLoadedAsync();
 
-
-            // ===============================
-            // STEP 7: XÓA đoạn này khỏi LoadProductsAsync()
-            // ===============================
-
             IsLoading = true;
             try
             {
+                // Map UI SortBy display names to API field names
+                string sortByField = _sortBy switch
+                {
+                    "Tên" => "Name",
+                    "Giá" => "SalePrice",
+                    "Tồn kho" => "StockCount",
+                    _ => "Name"
+                };
+
                 var query = new ProductQuery
                 {
                     PageIndex = PageIndex,
@@ -428,8 +466,8 @@ namespace MyShop.Client.ViewModels
                     Keyword = SearchKeyword,
                     MinPrice = MinPrice,
                     MaxPrice = MaxPrice,
-                    SortBy = SelectedSortField,
-                    IsAscending = !SortDescending,
+                    SortBy = sortByField,
+                    IsAscending = IsAscending,
                     CategoryId = SelectedCategory?.CategoryId == 0
                     ? null
                     : SelectedCategory?.CategoryId
