@@ -1,5 +1,6 @@
 using LuciferCore.Attributes;
 using MyShop.Client.Helpers;
+using MyShop.Client.Models;
 using MyShop.Client.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -61,6 +62,9 @@ namespace MyShop.Client.ViewModels
 
             NavigateCommand = new RelayCommand(p => Navigate(p?.ToString()));
 
+            var config = AppConfig.Load();
+            _selectedSection = config.LastViewModel;
+
             // Set default view
             Navigate(SelectedSection);
 
@@ -72,6 +76,10 @@ namespace MyShop.Client.ViewModels
 
             _navigationService.NavigateTo(viewName);
             UpdateSelection(viewName);
+
+            var config = AppConfig.Load(); // Load để giữ lại IP/Port cũ
+            config.LastViewModel = viewName;
+            config.Save();
         }
 
         private void TryAutoLoad(object? viewModel)

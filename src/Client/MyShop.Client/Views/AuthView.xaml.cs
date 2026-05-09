@@ -27,5 +27,20 @@ namespace MyShop.Client.Views
             VisualStateManager.GoToState(this, "LoginState", true);
             if (DataContext is AuthViewModel vm) vm.IsLoginMode = true;
         }
+
+        // Khi View (Giao diện) đã sẵn sàng
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Ép kiểu DataContext về AuthViewModel của bạn
+            if (DataContext is AuthViewModel vm)
+            {
+                // Kiểm tra nếu ViewModel đã có chuỗi Dummy từ hàm TryAutoLogin
+                if (!string.IsNullOrEmpty(vm.Password))
+                {
+                    // Đẩy giá trị từ ViewModel vào Control thủ công
+                    PassBox.Password = vm.Password;
+                }
+            }
+        }
     }
 }

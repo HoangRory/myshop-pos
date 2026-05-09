@@ -8,17 +8,19 @@ using System.Text.Json;
 
 namespace MyShop.Client.Services
 {
-    public class BackupService : IBRService
+    public class BackupService : IBRService, IAPI
     {
         private readonly HttpClient _http;
-        private const string BaseUrl = "/v1/api/backup-restore";
+        private const string ApiPath = "/v1/api/backup-restore";
         public BackupService(HttpClient http)
         {
             _http = http;
         }
+        private string Url(string endpoint = "") => ((IAPI)this).GetFullUrl(ApiPath, endpoint);
+
         public async Task<bool> CreateBackupAsync()
         {
-            var response = await _http.GetAsync($"{BaseUrl}/backup");
+            var response = await _http.GetAsync(Url("backup"));
             return response.IsSuccessStatusCode;
         }
 
@@ -26,7 +28,7 @@ namespace MyShop.Client.Services
         {
             var json = JsonSerializer.Serialize(new { Name = bkName });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Delete, BaseUrl)
+            var request = new HttpRequestMessage(HttpMethod.Delete, Url())
             {
                 Content = content
             };
@@ -36,20 +38,20 @@ namespace MyShop.Client.Services
         }
 
         public async Task<List<BackupRestore>> GetAllBackupsAsync()
-            => await _http.GetFromJsonAsync<List<BackupRestore>>(BaseUrl) ?? [];
+            => await _http.GetFromJsonAsync<List<BackupRestore>>(Url()) ?? [];
 
         public async Task<bool> RestoreAsync(string bkName)
         {
             var payload = new { Name = bkName }.ToJson();
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync($"{BaseUrl}/restore", content);
+            var response = await _http.PostAsync(Url("restore"), content);
             return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> SetAutoBackupAsync()
         {
-            var response = await _http.GetAsync($"{BaseUrl}/auto-backup");
+            var response = await _http.GetAsync(Url("auto-backup"));
             return response.IsSuccessStatusCode;
         }
     }
