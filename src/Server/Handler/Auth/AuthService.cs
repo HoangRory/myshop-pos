@@ -20,7 +20,7 @@ public class AuthService
 
         var repo = Lucifer.GetModelT<IRepository<Account>>();
 
-        Expression<Func<Account, bool>> filter = a => a.Username == account.Username;
+        Expression<Func<Account, bool>> filter = a => a.Username == account.Username && a.IsActive == true;
 
         var accounts = await repo.GetAsync(filter);
         var accountFromDb = accounts.FirstOrDefault();
