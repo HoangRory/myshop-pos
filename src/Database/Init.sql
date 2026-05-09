@@ -35,7 +35,8 @@ CREATE TABLE product (
     description NVARCHAR(MAX),
     images NVARCHAR(MAX), -- Cột lưu danh sách ảnh (nên lưu dạng JSON array hoặc string cách nhau dấu ;)
     category_id INT FOREIGN KEY REFERENCES category(category_id),
-    updated_at DATETIME DEFAULT GETDATE()
+    updated_at DATETIME DEFAULT GETDATE(),
+    is_active BIT DEFAULT 1
 );
 GO
 
@@ -60,7 +61,8 @@ CREATE TABLE [order] (
     voucher_code VARCHAR(20) FOREIGN KEY REFERENCES discount_voucher(voucher_code),
     discount_amount DECIMAL(18, 2) DEFAULT 0, -- Số tiền thực tế được giảm
     final_total DECIMAL(18, 2) NOT NULL, -- Tổng tiền khách trả thực tế
-    note NVARCHAR(MAX)
+    note NVARCHAR(MAX),
+    is_active BIT DEFAULT 1
 );
 GO
 
@@ -70,7 +72,8 @@ CREATE TABLE order_item (
     product_id INT FOREIGN KEY REFERENCES product(product_id),
     quantity INT NOT NULL,
     unit_price DECIMAL(18, 2) NOT NULL, -- Giá bán tại thời điểm chốt đơn
-    total_item_price AS (quantity * unit_price) -- Cột tính toán tự động
+    total_item_price AS (quantity * unit_price), -- Cột tính toán tự động
+    is_active BIT DEFAULT 1
 );
 GO
 
