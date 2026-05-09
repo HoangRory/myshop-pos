@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Input;
 using MyShop.Client.Helpers;
 using MyShop.Client.Models;
@@ -13,6 +14,7 @@ namespace MyShop.Client.ViewModels
     {
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
+        private readonly IDialogService _dialogService;
         private bool _isLoading;
         public bool IsLoading
         {
@@ -86,6 +88,13 @@ namespace MyShop.Client.ViewModels
         {
             get => _detail;
             set => SetProperty(ref _detail, value);
+        }
+
+        private OrderItem? _pendingNewOrderItem;
+        public OrderItem? PendingNewOrderItem
+        {
+            get => _pendingNewOrderItem;
+            set => SetProperty(ref _pendingNewOrderItem, value);
         }
 
         private Order? _selectedOrder;
@@ -174,10 +183,11 @@ namespace MyShop.Client.ViewModels
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
 
-        public OrdersViewModel(IOrderService orderService, IProductService productService)
+        public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService)
         {
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
             // Initialize status options
                 StatusOptions.Add("All");
@@ -442,6 +452,8 @@ namespace MyShop.Client.ViewModels
 
                 if (fullOrder != null)
                 {
+                    SyncOrderItemProductNames(fullOrder.OrderItems);
+
                     // Clone the order for safe editing
                     Detail = new Order
                     {
@@ -466,6 +478,28 @@ namespace MyShop.Client.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        private void SyncOrderItemProductNames(IEnumerable<OrderItem> orderItems)
+        {
+            if (orderItems == null)
+            {
+                return;
+            }
+
+            foreach (var item in orderItems)
+            {
+                if (item == null || item.ProductId == null || !string.IsNullOrWhiteSpace(item.ProductName))
+                {
+                    continue;
+                }
+
+                var product = AvailableProducts.FirstOrDefault(x => x.ProductId == item.ProductId.Value);
+                if (product != null)
+                {
+                    item.ProductName = product.Name;
+                }
             }
         }
 
@@ -532,6 +566,7 @@ namespace MyShop.Client.ViewModels
                     IsEditing = true
                 };
                 Detail.OrderItems.Add(newItem);
+                PendingNewOrderItem = newItem;
             }
         }
 
@@ -566,6 +601,11 @@ namespace MyShop.Client.ViewModels
                         SelectedOrder = createdOrder;
 
                         await ReloadOrdersAsync();
+                        _dialogService.Success("Thành công", "Tạo đơn hàng thành công.");
+                    }
+                    else
+                    {
+                        _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
                     }
                 }
                 else
@@ -582,6 +622,11 @@ namespace MyShop.Client.ViewModels
 
                         // Reload list from server
                         await ReloadOrdersAsync();
+                        _dialogService.Success("Thành công", "Cập nhật đơn hàng thành công.");
+                    }
+                    else
+                    {
+                        _dialogService.Error("Thất bại", "Cập nhật đơn hàng thất bại.");
                     }
                 }
             }
@@ -589,6 +634,7 @@ namespace MyShop.Client.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine(
                     $"Error saving order: {ex.Message}");
+                _dialogService.Error("Lỗi", "Có lỗi xảy ra khi lưu đơn hàng.");
             }
             finally
             {

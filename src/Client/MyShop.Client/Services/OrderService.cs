@@ -32,7 +32,7 @@ namespace MyShop.Client.Services
             }
             """;
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}/id")
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUrl}/id")
             {
                 Content = new StringContent(
                     json,
