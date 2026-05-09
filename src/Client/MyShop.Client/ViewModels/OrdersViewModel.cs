@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
@@ -29,6 +30,17 @@ namespace MyShop.Client.ViewModels
             set => SetProperty(ref _isDetailPanelOpen, value);
         }
 
+        public bool ShowPaymentDetails =>
+            Detail != null &&
+            (IsPaymentMode || Detail.Status == (byte)OrderStatus.Paid);
+        private bool _isPaymentMode;
+        public bool IsPaymentMode
+        {
+            get => _isPaymentMode;
+            set => SetProperty(ref _isPaymentMode, value);
+        }
+        public bool IsPaidOrder =>
+            Detail?.Status == (byte)OrderStatus.Paid;
         private string _searchKeyword = string.Empty;
         public string SearchKeyword
         {
@@ -87,7 +99,28 @@ namespace MyShop.Client.ViewModels
         public Order? Detail
         {
             get => _detail;
-            set => SetProperty(ref _detail, value);
+            set
+            {
+                if (ReferenceEquals(_detail, value))
+                {
+                    return;
+                }
+
+                if (_detail != null)
+                {
+                    _detail.PropertyChanged -= Detail_PropertyChanged;
+                }
+
+                if (SetProperty(ref _detail, value))
+                {
+                    if (_detail != null)
+                    {
+                        _detail.PropertyChanged += Detail_PropertyChanged;
+                    }
+
+                    UpdateDetailState();
+                }
+            }
         }
 
         private OrderItem? _pendingNewOrderItem;
@@ -178,7 +211,9 @@ namespace MyShop.Client.ViewModels
         public ICommand DeleteOrderCommand { get; }
         public ICommand AddProductCommand { get; }
         public ICommand RemoveItemCommand { get; }
-        public ICommand SaveOrderCommand { get; }
+        public ICommand EnterPaymentModeCommand { get; }
+        public ICommand ApplyPaymentCommand { get; }
+        public ICommand ExitPaymentModeCommand { get; }
         public ICommand CancelEditCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
@@ -190,10 +225,10 @@ namespace MyShop.Client.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
             // Initialize status options
-                StatusOptions.Add("All");
-                StatusOptions.Add("Chờ thanh toán");
-                StatusOptions.Add("Đã thanh toán");
-                StatusOptions.Add("Đã hủy");
+            StatusOptions.Add("All");
+            StatusOptions.Add("Chờ thanh toán");
+            StatusOptions.Add("Đã thanh toán");
+            StatusOptions.Add("Đã hủy");
 
             // Initialize commands with async support
             SearchCommand = new AsyncRelayCommand(_ => OnSearchAsync());
@@ -204,7 +239,9 @@ namespace MyShop.Client.ViewModels
             DeleteOrderCommand = new AsyncRelayCommand<Order>(OnDeleteOrderAsync);
             AddProductCommand = new RelayCommand(_ => OnAddProduct());
             RemoveItemCommand = new RelayCommand(param => OnRemoveItem(param));
-            SaveOrderCommand = new AsyncRelayCommand(_ => OnSaveOrderAsync(), _ => Detail != null);
+            EnterPaymentModeCommand = new RelayCommand(_ => OnEnterPaymentMode());
+            ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null);
+            ExitPaymentModeCommand = new RelayCommand(_ => OnExitPaymentMode());
             CancelEditCommand = new RelayCommand(_ => OnCancelEdit());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
@@ -435,8 +472,11 @@ namespace MyShop.Client.ViewModels
                 OrderId = -1, // Temporary ID for new order
                 CreatedAt = DateTime.Now,
                 Status = (byte)OrderStatus.Pending,
+                PaymentMethod = null,
                 OrderItems = new ObservableCollection<OrderItem>()
             };
+
+            IsPaymentMode = false;
         }
 
         private async Task LoadOrderDetailAsync(Order order)
@@ -469,6 +509,8 @@ namespace MyShop.Client.ViewModels
                         Note = fullOrder.Note,
                         OrderItems = new ObservableCollection<OrderItem>(fullOrder.OrderItems)
                     };
+
+                    IsPaymentMode = false;
                 }
             }
             catch (Exception ex)
@@ -529,19 +571,19 @@ namespace MyShop.Client.ViewModels
             {
                 // Parse order ID for API call
 
-                    var success = await _orderService.DeleteAsync(order.OrderId);
+                var success = await _orderService.DeleteAsync(order.OrderId);
 
-                    if (success)
+                if (success)
+                {
+                    Orders.Remove(order);
+                    if (Detail?.OrderId == order.OrderId)
                     {
-                        Orders.Remove(order);
-                        if (Detail?.OrderId == order.OrderId)
-                        {
-                            Detail = null;
-                        }
-
-                        // Reload list to sync with server
-                        await ReloadOrdersAsync();
+                        Detail = null;
                     }
+
+                    // Reload list to sync with server
+                    await ReloadOrdersAsync();
+                }
 
             }
             catch (Exception ex)
@@ -556,7 +598,8 @@ namespace MyShop.Client.ViewModels
 
         private void OnAddProduct()
         {
-            if (Detail != null)
+            // Allow adding products only when Detail exists and payment has not been applied (PaymentMethod == null) and not paid
+            if (Detail != null && Detail.PaymentMethod == null && Detail.Status != (byte)OrderStatus.Paid)
             {
                 var newItem = new OrderItem
                 {
@@ -572,69 +615,50 @@ namespace MyShop.Client.ViewModels
 
         private void OnRemoveItem(object? param)
         {
-            if (Detail != null && param is OrderItem item)
+            if (Detail != null && Detail.PaymentMethod == null && Detail.Status != (byte)OrderStatus.Paid && param is OrderItem item)
             {
                 Detail.OrderItems.Remove(item);
             }
         }
 
-        private async Task OnSaveOrderAsync()
+        private async void OnEnterPaymentMode()
         {
-            if (Detail == null)
+            if (Detail == null || Detail.Status == (byte)OrderStatus.Paid)
                 return;
 
             IsLoading = true;
 
             try
             {
+                // If order is new, create it on server first so it has an OrderId
                 if (Detail.OrderId == -1)
                 {
                     var orderItems = Detail.OrderItems.ToList();
-
-                    var createdOrder =
-                        await _orderService.CreateAsync(orderItems);
-
+                    var createdOrder = await _orderService.CreateAsync(orderItems);
                     if (createdOrder != null)
                     {
                         Detail = createdOrder;
-
                         SelectedOrder = createdOrder;
-
                         await ReloadOrdersAsync();
-                        _dialogService.Success("Thành công", "Tạo đơn hàng thành công.");
                     }
                     else
                     {
                         _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
+                        return;
                     }
                 }
-                else
-                {
-                    var updatedOrder = await _orderService.UpdateAsync(Detail);
 
-                    if (updatedOrder != null)
-                    {
-                        // Update current detail
-                        Detail = updatedOrder;
+                // Recalculate subtotal and default final total
+                Detail.SubTotal = Detail.OrderItems.Sum(i => i.UnitPrice * i.Quantity);
+                Detail.FinalTotal = (Detail.SubTotal ?? 0m) - (Detail.DiscountAmount ?? 0m);
 
-                        // Update selected order
-                        SelectedOrder = updatedOrder;
-
-                        // Reload list from server
-                        await ReloadOrdersAsync();
-                        _dialogService.Success("Thành công", "Cập nhật đơn hàng thành công.");
-                    }
-                    else
-                    {
-                        _dialogService.Error("Thất bại", "Cập nhật đơn hàng thất bại.");
-                    }
-                }
+                // Enter payment mode (lock editing via XAML bindings)
+                IsPaymentMode = true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Error saving order: {ex.Message}");
-                _dialogService.Error("Lỗi", "Có lỗi xảy ra khi lưu đơn hàng.");
+                System.Diagnostics.Debug.WriteLine($"Error entering payment mode: {ex.Message}");
+                _dialogService.Error("Lỗi", "Không thể vào chế độ thanh toán.");
             }
             finally
             {
@@ -642,10 +666,76 @@ namespace MyShop.Client.ViewModels
             }
         }
 
+        private async Task OnApplyPaymentAsync()
+        {
+            if (Detail == null || Detail.Status == (byte)OrderStatus.Paid)
+                return;
+
+            IsLoading = true;
+
+            try
+            {
+                // Ensure order exists on server
+                if (Detail.OrderId == -1)
+                {
+                    var orderItems = Detail.OrderItems.ToList();
+                    var createdOrder = await _orderService.CreateAsync(orderItems);
+                    if (createdOrder != null)
+                    {
+                        Detail = createdOrder;
+                        SelectedOrder = createdOrder;
+                        await ReloadOrdersAsync();
+                    }
+                    else
+                    {
+                        _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
+                        return;
+                    }
+                }
+
+                // Calculate totals
+                Detail.SubTotal = Detail.OrderItems.Sum(i => i.UnitPrice * i.Quantity);
+                var discount = Detail.DiscountAmount ?? 0m;
+                Detail.FinalTotal = Detail.SubTotal - discount;
+
+                // Mark as paid
+                Detail.Status = (byte)OrderStatus.Paid;
+
+                var updatedOrder = await _orderService.UpdateAsync(Detail);
+
+                if (updatedOrder != null)
+                {
+                    Detail = updatedOrder;
+                    SelectedOrder = updatedOrder;
+                    await ReloadOrdersAsync();
+                    _dialogService.Success("Thành công", "Thanh toán thành công.");
+                }
+                else
+                {
+                    _dialogService.Error("Thất bại", "Thanh toán thất bại.");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error applying payment: {ex.Message}");
+                _dialogService.Error("Lỗi", "Có lỗi xảy ra khi xử lý thanh toán.");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void OnExitPaymentMode()
+        {
+            IsPaymentMode = false;
+        }
+
         private void OnCancelEdit()
         {
             Detail = null;
             SelectedOrder = null;
+            IsPaymentMode = false;
         }
 
         private async Task OnPrevPageAsync()
@@ -700,6 +790,22 @@ namespace MyShop.Client.ViewModels
             CanPrevPage = PageIndex > 1;
             CanNextPage = PageIndex < TotalPages;
             PageInfo = $"Page {PageIndex}";
+        }
+
+        private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(Order.Status) or nameof(Order.StatusText) or nameof(Order.PaymentMethod) or null)
+            {
+                UpdateDetailState();
+            }
+        }
+
+        private void UpdateDetailState()
+        {
+
+            OnPropertyChanged(nameof(ShowPaymentDetails));
+            OnPropertyChanged(nameof(IsPaidOrder));
+            OnPropertyChanged(nameof(IsPaymentMode));
         }
     }
 }
