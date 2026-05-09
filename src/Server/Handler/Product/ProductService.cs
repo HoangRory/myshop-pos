@@ -39,6 +39,7 @@ public class ProductService
     {
         var response = Lucifer.Rent<ResponseModel>();
         var db = Lucifer.GetModelT<IRepository<Product>>();
+
         var products = await db.GetAsync();
 
         if (products == null)
@@ -63,6 +64,8 @@ public class ProductService
         using var db = Lucifer.GetModelT<DbContext>();
 
         var query = db.Set<Product>().AsNoTracking().AsQueryable();
+
+        query = query.Where(p => p.IsActive == true && p.Category != null && p.Category.IsActive == true);
 
         // 1. Lọc theo loại
         if (filter.CategoryId.HasValue)
@@ -132,6 +135,7 @@ public class ProductService
         var repo = Lucifer.GetModelT<IRepository<Product>>();
 
         product.UpdatedAt = DateTime.Now;
+        product.IsActive = true;
         var result = await repo.AddAsync(product);
 
         response.MakeCustomResponse<byte, byte, byte>(result > 0 ? 201 : 500, StorageData.Http11Protocol,
@@ -170,7 +174,17 @@ public class ProductService
 
         var repo = Lucifer.GetModelT<IRepository<Product>>();
 
-        var result = await repo.DeleteByIdAsync(product.ProductId);
+        var existingProduct = await repo.GetByIdAsync(product.ProductId);
+
+        if (existingProduct == null || existingProduct.IsActive == false)
+        {
+            response.MakeCustomResponse<byte, byte, byte>(404, StorageData.Http11Protocol, "Not Found or Already Deleted"u8, StorageData.TextPlainCharset);
+            return response;
+        }
+
+        existingProduct.IsActive = false; // Soft delete
+
+        var result = await repo.UpdateAsync(existingProduct);
 
         response.MakeCustomResponse<byte, byte, byte>(result > 0 ? 200 : 404, StorageData.Http11Protocol,
             result > 0 ? "Deleted"u8 : "Not Found"u8, StorageData.TextPlainCharset);
@@ -201,6 +215,7 @@ public class ProductService
                     // Reset ID để DB tự tạo mới nếu là import hàng mới
                     p.ProductId = 0;
                     p.UpdatedAt = now;
+                    p.IsActive = true;
                 }
 
                 await db.Set<Product>().AddRangeAsync(products);
