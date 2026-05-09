@@ -19,7 +19,7 @@ GO
 
 CREATE TABLE category (
     category_id INT PRIMARY KEY IDENTITY(1,1),
-    name NVARCHAR(100) NOT NULL,
+    name NVARCHAR(100) UNIQUE NOT NULL,
     description NVARCHAR(MAX),
     is_active BIT DEFAULT 1 -- Thêm để quản lý ẩn/hiện loại SP
 );
@@ -28,7 +28,7 @@ GO
 CREATE TABLE product (
     product_id INT PRIMARY KEY IDENTITY(1,1),
     sku VARCHAR(50) UNIQUE NOT NULL, -- Mã định danh sản phẩm
-    name NVARCHAR(200) NOT NULL,
+    name NVARCHAR(200) UNIQUE NOT NULL,
     import_price DECIMAL(18, 2) NOT NULL,
     sale_price DECIMAL(18, 2) NOT NULL,
     stock_count INT DEFAULT 0,
