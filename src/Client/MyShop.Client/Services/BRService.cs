@@ -1,4 +1,5 @@
-﻿using LuciferCore.Extensions;
+﻿using LuciferCore.Attributes;
+using LuciferCore.Extensions;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.Net.Http;
@@ -8,11 +9,12 @@ using System.Text.Json;
 
 namespace MyShop.Client.Services
 {
-    public class BackupService : IBRService, IAPI
+    [Plugin("Service", "BR")]
+    public class BRService : IBRService
     {
         private readonly HttpClient _http;
         private const string ApiPath = "/v1/api/backup-restore";
-        public BackupService(HttpClient http)
+        public BRService(HttpClient http)
         {
             _http = http;
         }

@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MyShop.Client.Models;
 
 namespace MyShop.Client.Services.Interfaces
 {
-    public interface IProductService
+    public interface IProductService : IAPI
     {
         Task<List<Product>> GetAllAsync();
         Task<bool> CreateAsync(Product model);

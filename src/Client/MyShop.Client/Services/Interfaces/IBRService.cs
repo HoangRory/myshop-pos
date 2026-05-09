@@ -2,7 +2,7 @@
 
 namespace MyShop.Client.Services.Interfaces
 {
-    public interface IBRService
+    public interface IBRService : IAPI
     {
         Task<List<BackupRestore>> GetAllBackupsAsync();
         Task<bool> RestoreAsync(string bkName);
