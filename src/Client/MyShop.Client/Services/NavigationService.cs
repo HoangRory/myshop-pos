@@ -1,8 +1,10 @@
+using LuciferCore.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 
 namespace MyShop.Client.Services
 {
+    [Plugin("Services", "Navigation")]
     public class NavigationService : INotifyPropertyChanged, INavigationService
     {
         private readonly IServiceProvider _serviceProvider;
