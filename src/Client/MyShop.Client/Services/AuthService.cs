@@ -1,4 +1,5 @@
-﻿using LuciferCore.Extensions;
+﻿using LuciferCore.Attributes;
+using LuciferCore.Extensions;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.Net.Http;
@@ -6,7 +7,8 @@ using System.Text;
 
 namespace MyShop.Client.Services
 {
-    public class AuthService : IAuthService, IAPI
+    [Plugin("Service", "Auth")]
+    public class AuthService : IAuthService
     {
         private readonly HttpClient _http;
         private const string ApiPath = "v1/api/auth";
