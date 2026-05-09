@@ -1,8 +1,10 @@
+using LuciferCore.Attributes;
 using MyShop.Client.Services.Interfaces;
 using System.Windows;
 
 namespace MyShop.Client.Services
 {
+    [Plugin("Services", "Dialog")]
     public class DialogService : IDialogService
     {
         public bool Confirm(string title, string message)
