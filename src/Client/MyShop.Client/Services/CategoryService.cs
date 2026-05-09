@@ -12,8 +12,8 @@ namespace MyShop.Client.Services
     public class CategoryService : ICategoryService
     {
         private readonly HttpClient _http;
-        private const string ApiPath = "v1/api/category";
-        private string Url(string endpoint = "") => ((IAPI)this).GetFullUrl(ApiPath, endpoint);
+        private const string BaseUrl = "v1/api/category";
+        private string Url(string endpoint = "") => ((IAPI)this).GetFullUrl(BaseUrl, endpoint);
         public CategoryService(HttpClient http)
         {
             _http = http;

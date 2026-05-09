@@ -1,14 +1,15 @@
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
-
+using LuciferCore.Attributes;
+using LuciferCore.Extensions;
 namespace MyShop.Client.Services
+
 {
+    [Plugin("Service", "Order")]
     public class OrderService : IOrderService
     {
         private readonly HttpClient _http;
