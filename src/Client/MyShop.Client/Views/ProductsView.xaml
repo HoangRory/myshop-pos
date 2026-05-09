@@ -110,7 +110,8 @@
         <helpers:StringNullOrEmptyToVisibilityConverter x:Key="StringToVisibility"/>
         <helpers:SafeDecimalConverter x:Key="SafeDecimalConverter"/>
         <helpers:DetailPanelWidthConverter x:Key="DetailPanelWidthConverter"/>        
-        <helpers:BoolToSortDirectionConverter x:Key="BoolToSortDirectionConverter"/>    
+        <helpers:BoolToSortDirectionConverter x:Key="BoolToSortDirectionConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
 
     <Grid Background="{StaticResource AppBackground}">
@@ -119,7 +120,7 @@
             <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Right}" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="56" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -129,10 +130,44 @@
                 <TextBlock Text="Sản phẩm" FontSize="16" FontWeight="SemiBold" />
                 <TextBlock Text="  •  Quản lý sản phẩm" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="0,8,12,0">
-                <Button Content="Import" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
-                <Button Content="Thêm sản phẩm" Command="{Binding AddProductCommand}" Style="{StaticResource PrimaryButton}" />
+            <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="0,8,12,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Import" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                    <Button Content="{Binding AddCategoryButtonText}" Command="{Binding ToggleAddCategoryPanelCommand}" Style="{StaticResource CancelOutlineButton}" Margin="0,0,8,0" />
+                    <Button Content="{Binding DeleteCategoryButtonText}" Command="{Binding ToggleDeleteCategoryPanelCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,0" />
+                    <Button Content="Thêm sản phẩm" Command="{Binding AddProductCommand}" Style="{StaticResource PrimaryButton}" />
                 </StackPanel>
+                <DockPanel Margin="0,8,0,0"
+                           HorizontalAlignment="Right"
+                           Visibility="{Binding IsAddCategoryPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBox DockPanel.Dock="Left"
+                             Width="200"
+                             Height="28"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding NewCategoryName, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Content="Lưu danh mục"
+                            Command="{Binding AddCategoryCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            Height="28"
+                            Margin="8,0,0,0" />
+                </DockPanel>
+                <DockPanel Margin="0,8,0,0"
+                           HorizontalAlignment="Right"
+                           Visibility="{Binding IsDeleteCategoryPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ComboBox DockPanel.Dock="Left"
+                              Width="200"
+                              Height="28"
+                              VerticalContentAlignment="Center"
+                              ItemsSource="{Binding DeletableCategories}"
+                              SelectedItem="{Binding SelectedCategoryToDelete, Mode=TwoWay}"
+                              DisplayMemberPath="Name" />
+                    <Button Content="Xóa danh mục"
+                            Command="{Binding DeleteCategoryCommand}"
+                            Style="{StaticResource DangerOutlineButton}"
+                            Height="28"
+                            Margin="8,0,0,0" />
+                </DockPanel>
+            </StackPanel>
         </DockPanel>
 
         <!-- Left column: Filters + DataGrid + Pager -->
@@ -202,10 +237,9 @@
                     <Grid VerticalAlignment="Center" Grid.Row="1" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="1.5*" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="1.5*" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <!-- Sort By Label -->
                         <TextBlock Grid.Column="0" Text="Sắp xếp:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
@@ -213,6 +247,7 @@
                         <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding SortOptions}"
                                   SelectedItem="{Binding SortBy, Mode=TwoWay}"
+                                  Width="100"
                                   Height="30"
                                   VerticalContentAlignment="Center"
                                   Margin="6,0,0,0" />
@@ -222,6 +257,7 @@
                         <ComboBox Grid.Column="3"
                                   SelectedValuePath="Content"
                                   SelectedValue="{Binding IsAscending, Converter={StaticResource BoolToSortDirectionConverter}, Mode=TwoWay}"
+                                  Width="120"
                                   Height="30"
                                   VerticalContentAlignment="Center"
                                   Margin="6,0,0,0">
@@ -379,8 +415,7 @@
                                 SelectedValuePath="CategoryId"
                                 DisplayMemberPath="Name"
                                 Height="30"
-                                VerticalContentAlignment="Center"
-                                />
+                                VerticalContentAlignment="Center" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
