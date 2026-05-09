@@ -23,13 +23,6 @@ namespace MyShop.Client.ViewModels
             set => SetProperty(ref _isLoading, value);
         }
 
-        private bool _isDetailPanelOpen;
-        public bool IsDetailPanelOpen
-        {
-            get => _isDetailPanelOpen;
-            set => SetProperty(ref _isDetailPanelOpen, value);
-        }
-
         public bool ShowPaymentDetails =>
             Detail != null &&
             (IsPaymentMode || Detail.Status == (byte)OrderStatus.Paid);
@@ -37,16 +30,18 @@ namespace MyShop.Client.ViewModels
         public bool IsPaymentMode
         {
             get => _isPaymentMode;
-            set => SetProperty(ref _isPaymentMode, value);
+            set
+            {
+                if (SetProperty(ref _isPaymentMode, value))
+                {
+                    OnPropertyChanged(nameof(ShowPaymentDetails));
+                }
+            }
         }
         public bool IsPaidOrder =>
             Detail?.Status == (byte)OrderStatus.Paid;
-        private string _searchKeyword = string.Empty;
-        public string SearchKeyword
-        {
-            get => _searchKeyword;
-            set => SetProperty(ref _searchKeyword, value);
-        }
+        public bool IsNewOrder =>
+            Detail?.OrderId == -1;
 
         private string? _selectedStatus;
         public string? SelectedStatus
@@ -118,7 +113,7 @@ namespace MyShop.Client.ViewModels
                         _detail.PropertyChanged += Detail_PropertyChanged;
                     }
 
-                    UpdateDetailState();
+                    OnPropertyChanged(nameof(IsNewOrder));
                 }
             }
         }
@@ -204,17 +199,14 @@ namespace MyShop.Client.ViewModels
 
         // Commands
         public ICommand SearchCommand { get; }
-        public ICommand ResetCommand { get; }
         public ICommand CreateOrderCommand { get; }
-        public ICommand ViewOrderCommand { get; }
-        public ICommand EditOrderCommand { get; }
         public ICommand DeleteOrderCommand { get; }
         public ICommand AddProductCommand { get; }
         public ICommand RemoveItemCommand { get; }
         public ICommand EnterPaymentModeCommand { get; }
         public ICommand ApplyPaymentCommand { get; }
-        public ICommand ExitPaymentModeCommand { get; }
-        public ICommand CancelEditCommand { get; }
+        public ICommand ApplyVoucherCommand { get; }
+        public ICommand GoBackCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
 
@@ -232,28 +224,19 @@ namespace MyShop.Client.ViewModels
 
             // Initialize commands with async support
             SearchCommand = new AsyncRelayCommand(_ => OnSearchAsync());
-            ResetCommand = new RelayCommand(_ => OnReset());
             CreateOrderCommand = new RelayCommand(_ => OnCreateOrder());
-            ViewOrderCommand = new RelayCommand(param => OnViewOrder(param));
-            EditOrderCommand = new RelayCommand(param => OnEditOrder(param));
-            DeleteOrderCommand = new AsyncRelayCommand<Order>(OnDeleteOrderAsync);
+            DeleteOrderCommand = new AsyncRelayCommand<Order>(param => OnDeleteOrderAsync(param));
             AddProductCommand = new RelayCommand(_ => OnAddProduct());
             RemoveItemCommand = new RelayCommand(param => OnRemoveItem(param));
             EnterPaymentModeCommand = new RelayCommand(_ => OnEnterPaymentMode());
             ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null);
-            ExitPaymentModeCommand = new RelayCommand(_ => OnExitPaymentMode());
-            CancelEditCommand = new RelayCommand(_ => OnCancelEdit());
+            ApplyVoucherCommand = new AsyncRelayCommand<Order>(param => OnApplyVoucherAsync(param), param => param != null && IsPaymentMode);
+            GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
 
             // Load initial data
             InitializeDataAsync();
-        }
-
-        private void OnInitializeCommandsIfNeeded()
-        {
-            // This method ensures commands can be reconstructed if needed
-            // Not typically needed, but available for dynamic command updates
         }
 
         private async void InitializeDataAsync()
@@ -269,7 +252,7 @@ namespace MyShop.Client.ViewModels
                 }
 
                 // Load all orders
-                await ReloadOrdersAsync();
+                await OnSearchAsync();
 
                 SelectedStatus = "All";
             }
@@ -289,6 +272,11 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
+                if (!await RollbackDetailToDraftAsync(false))
+                {
+                    return;
+                }
+
                 PageIndex = 1;
 
                 // Convert SelectedStatus string to byte? status
@@ -324,9 +312,7 @@ namespace MyShop.Client.ViewModels
                     Orders.Add(order);
                 }
 
-                // Calculate total pages based on total count
-                TotalPages = total > 0 ? (int)Math.Ceiling(total / (double)PageSize) : 1;
-                UpdatePaginationInfo();
+                UpdatePaginationInfo(total);
             }
             catch (Exception ex)
             {
@@ -338,25 +324,103 @@ namespace MyShop.Client.ViewModels
                 IsLoading = false;
             }
         }
-
-        private void OnReset()
+        private async Task<bool> RollbackDetailToDraftAsync(bool forceRollback)
         {
-            SearchKeyword = string.Empty;
-            SelectedStatus = "All";
-            FromDate = null;
-            ToDate = null;
-            PageIndex = 1;
-            Orders.Clear();
-            Detail = null;
-            SelectedOrder = null;
+            if (Detail == null)
+            {
+                return true;
+            }
 
-            // Reload all orders after reset
-            _ = ReloadOrdersAsync();
+            var shouldRollback = Detail.Status != (byte)OrderStatus.Paid && (Detail.OrderId == -1 || IsPaymentMode);
+
+            if (!forceRollback && !shouldRollback)
+            {
+                return true;
+            }
+
+            var backupOrderItems = CloneOrderItems(Detail.OrderItems);
+
+            // Auto-save current draft instead of deleting
+            if (!await AutoSaveCurrentDetailAsync())
+            {
+                return false;
+            }
+
+            RestoreDraftDetail(backupOrderItems);
+            return true;
+        }
+
+        private static List<OrderItem> CloneOrderItems(IEnumerable<OrderItem> orderItems)
+        {
+            return orderItems.Select(i => new OrderItem
+            {
+                ProductId = i.ProductId,
+                ProductName = i.ProductName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                IsEditing = i.IsEditing
+            }).ToList();
+        }
+
+        private async Task<bool> AutoSaveCurrentDetailAsync()
+        {
+            if (Detail == null || Detail.OrderItems.Count == 0 || Detail.Status == (byte)OrderStatus.Paid)
+            {
+                return true;
+            }
+
+            try
+            {
+                // Backup current order items
+                var orderItems = Detail.OrderItems.ToList();
+
+                // Delete old order from server if it exists
+                if (Detail.OrderId != -1)
+                {
+                    var deleteSuccess = await _orderService.DeleteAsync(Detail.OrderId);
+                    if (!deleteSuccess)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Failed to delete old order during auto-save");
+                        return false;
+                    }
+                }
+
+                // Create new order with backed up items
+                var createdOrder = await _orderService.CreateAsync(orderItems);
+                if (createdOrder != null)
+                {
+                    return true;
+                }
+
+                await OnSearchAsync();
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error auto-saving order: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void RestoreDraftDetail(IEnumerable<OrderItem> backupOrderItems)
+        {
+            Detail = new Order
+            {
+                OrderId = -1,
+                CreatedAt = DateTime.Now,
+                Status = (byte)OrderStatus.Pending,
+                PaymentMethod = null,
+                OrderItems = new ObservableCollection<OrderItem>(backupOrderItems)
+            };
+
+            IsPaymentMode = false;
+            SelectedOrder = null;
         }
 
         private void SetDateText(string? input, bool isFromDate)
         {
-            var normalized = NormalizeDateInput(input);
+            var normalized = string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
 
             if (_isSyncingDateText)
             {
@@ -455,18 +519,11 @@ namespace MyShop.Client.ViewModels
             return date.HasValue ? date.Value.ToString(DisplayDateFormat, DateCulture) : string.Empty;
         }
 
-        private static string NormalizeDateInput(string? input)
+        private async void OnCreateOrder()
         {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return string.Empty;
-            }
+            // Auto-save current draft before creating a new order
+            await AutoSaveCurrentDetailAsync();
 
-            return input.Trim();
-        }
-
-        private void OnCreateOrder()
-        {
             Detail = new Order
             {
                 OrderId = -1, // Temporary ID for new order
@@ -477,13 +534,11 @@ namespace MyShop.Client.ViewModels
             };
 
             IsPaymentMode = false;
+            OnPropertyChanged(nameof(IsNewOrder));
         }
 
         private async Task LoadOrderDetailAsync(Order order)
         {
-            if (order == null)
-                return;
-
             IsLoading = true;
             try
             {
@@ -545,22 +600,6 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void OnViewOrder(object? param)
-        {
-            if (param is Order order)
-            {
-                _ = LoadOrderDetailAsync(order);
-            }
-        }
-
-        private void OnEditOrder(object? param)
-        {
-            if (param is Order order)
-            {
-                _ = LoadOrderDetailAsync(order);
-            }
-        }
-
         private async Task OnDeleteOrderAsync(Order? order)
         {
             if (order == null)
@@ -581,8 +620,8 @@ namespace MyShop.Client.ViewModels
                         Detail = null;
                     }
 
-                    // Reload list to sync with server
-                    await ReloadOrdersAsync();
+                    // Refresh list to sync with server
+                    await OnSearchAsync();
                 }
 
             }
@@ -598,8 +637,8 @@ namespace MyShop.Client.ViewModels
 
         private void OnAddProduct()
         {
-            // Allow adding products only when Detail exists and payment has not been applied (PaymentMethod == null) and not paid
-            if (Detail != null && Detail.PaymentMethod == null && Detail.Status != (byte)OrderStatus.Paid)
+            // Allow adding products only when not in payment mode and order is not paid
+            if (Detail != null && !IsPaymentMode && Detail.Status != (byte)OrderStatus.Paid)
             {
                 var newItem = new OrderItem
                 {
@@ -615,7 +654,7 @@ namespace MyShop.Client.ViewModels
 
         private void OnRemoveItem(object? param)
         {
-            if (Detail != null && Detail.PaymentMethod == null && Detail.Status != (byte)OrderStatus.Paid && param is OrderItem item)
+            if (Detail != null && !IsPaymentMode && Detail.Status != (byte)OrderStatus.Paid && param is OrderItem item)
             {
                 Detail.OrderItems.Remove(item);
             }
@@ -630,29 +669,16 @@ namespace MyShop.Client.ViewModels
 
             try
             {
-                // If order is new, create it on server first so it has an OrderId
-                if (Detail.OrderId == -1)
+                if (!await EnsureDetailOrderExistsAsync())
                 {
-                    var orderItems = Detail.OrderItems.ToList();
-                    var createdOrder = await _orderService.CreateAsync(orderItems);
-                    if (createdOrder != null)
-                    {
-                        Detail = createdOrder;
-                        SelectedOrder = createdOrder;
-                        await ReloadOrdersAsync();
-                    }
-                    else
-                    {
-                        _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
-                        return;
-                    }
+                    return;
                 }
 
                 // Recalculate subtotal and default final total
                 Detail.SubTotal = Detail.OrderItems.Sum(i => i.UnitPrice * i.Quantity);
                 Detail.FinalTotal = (Detail.SubTotal ?? 0m) - (Detail.DiscountAmount ?? 0m);
 
-                // Enter payment mode (lock editing via XAML bindings)
+                // Enter payment mode (show payment input fields)
                 IsPaymentMode = true;
             }
             catch (Exception ex)
@@ -675,22 +701,9 @@ namespace MyShop.Client.ViewModels
 
             try
             {
-                // Ensure order exists on server
-                if (Detail.OrderId == -1)
+                if (!await EnsureDetailOrderExistsAsync())
                 {
-                    var orderItems = Detail.OrderItems.ToList();
-                    var createdOrder = await _orderService.CreateAsync(orderItems);
-                    if (createdOrder != null)
-                    {
-                        Detail = createdOrder;
-                        SelectedOrder = createdOrder;
-                        await ReloadOrdersAsync();
-                    }
-                    else
-                    {
-                        _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
-                        return;
-                    }
+                    return;
                 }
 
                 // Calculate totals
@@ -706,8 +719,10 @@ namespace MyShop.Client.ViewModels
                 if (updatedOrder != null)
                 {
                     Detail = updatedOrder;
-                    SelectedOrder = updatedOrder;
-                    await ReloadOrdersAsync();
+                    _selectedOrder = updatedOrder;
+                    OnPropertyChanged(nameof(SelectedOrder));
+                    IsPaymentMode = false;
+                    await OnSearchAsync();
                     _dialogService.Success("Thành công", "Thanh toán thành công.");
                 }
                 else
@@ -726,16 +741,97 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void OnExitPaymentMode()
+        private async Task<bool> EnsureDetailOrderExistsAsync()
         {
-            IsPaymentMode = false;
+            if (Detail == null)
+            {
+                return false;
+            }
+
+            if (Detail.OrderId != -1)
+            {
+                return true;
+            }
+
+            var orderItems = Detail.OrderItems.ToList();
+            var createdOrder = await _orderService.CreateAsync(orderItems);
+            if (createdOrder == null)
+            {
+                _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
+                return false;
+            }
+
+            Detail = createdOrder;
+            _selectedOrder = createdOrder;
+            OnPropertyChanged(nameof(SelectedOrder));
+            await OnSearchAsync();
+            return true;
         }
 
-        private void OnCancelEdit()
+        private async Task OnApplyVoucherAsync(Order? order)
         {
-            Detail = null;
-            SelectedOrder = null;
-            IsPaymentMode = false;
+            if (order == null || string.IsNullOrWhiteSpace(order.VoucherCode))
+            {
+                _dialogService.Error("Cảnh báo", "Vui lòng nhập mã voucher.");
+                return;
+            }
+
+            IsLoading = true;
+
+            try
+            {
+                // Call API to apply voucher - PUT request
+                var result = await _orderService.ApplyVoucherAsync(order.OrderId, order.VoucherCode);
+
+                if (result != null)
+                {
+                    // Update order with new discount and final total
+                    order.DiscountAmount = result.DiscountAmount;
+                    order.FinalTotal = result.FinalTotal;
+                    _dialogService.Success("Thành công", "Áp dụng voucher thành công.");
+                }
+                else
+                {
+                    _dialogService.Error("Thất bại", "Không thể áp dụng voucher.");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error applying voucher: {ex.Message}");
+                _dialogService.Error("Lỗi", $"Có lỗi xảy ra: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+
+
+        private async Task OnGoBackAsync()
+        {
+            if (Detail == null)
+                return;
+
+            IsLoading = true;
+
+            try
+            {
+                var rolledBack = await RollbackDetailToDraftAsync(forceRollback: true);
+                if (!rolledBack)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error going back: {ex.Message}");
+                _dialogService.Error("Lỗi", "Có lỗi xảy ra khi quay lại.");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task OnPrevPageAsync()
@@ -756,56 +852,25 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private async Task ReloadOrdersAsync()
+        private void UpdatePaginationInfo(int totalItems)
         {
-            IsLoading = true;
-            try
-            {
-                // Load all orders from service
-                var orders = await _orderService.GetAllAsync();
-
-                Orders.Clear();
-                foreach (var order in orders)
-                {
-                    Orders.Add(order);
-                }
-
-                // Recalculate pagination based on loaded data
-                TotalPages = Math.Max(1, (int)Math.Ceiling(Orders.Count / (double)PageSize));
-                UpdatePaginationInfo();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error reloading orders: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private void UpdatePaginationInfo()
-        {
-            TotalPages = Math.Max(1, (int)Math.Ceiling(Orders.Count / (double)PageSize));
+            TotalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
             CanPrevPage = PageIndex > 1;
             CanNextPage = PageIndex < TotalPages;
-            PageInfo = $"Page {PageIndex}";
+            PageInfo = $"Page {PageIndex} / {TotalPages}";
         }
 
         private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(Order.Status) or nameof(Order.StatusText) or nameof(Order.PaymentMethod) or null)
             {
-                UpdateDetailState();
+                OnPropertyChanged(nameof(ShowPaymentDetails));
+                OnPropertyChanged(nameof(IsPaidOrder));
             }
-        }
-
-        private void UpdateDetailState()
-        {
-
-            OnPropertyChanged(nameof(ShowPaymentDetails));
-            OnPropertyChanged(nameof(IsPaidOrder));
-            OnPropertyChanged(nameof(IsPaymentMode));
+            if (e.PropertyName is nameof(Order.OrderId))
+            {
+                OnPropertyChanged(nameof(IsNewOrder));
+            }
         }
     }
 }

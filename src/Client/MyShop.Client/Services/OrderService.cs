@@ -122,6 +122,28 @@ namespace MyShop.Client.Services
             return response.IsSuccessStatusCode && result == "Deleted";
         }
 
+        public async Task<Order?> ApplyVoucherAsync(int orderId, string voucherCode)
+        {
+            var json = JsonSerializer.Serialize(new 
+            { 
+                OrderId = orderId, 
+                VoucherCode = voucherCode 
+            });
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _http.PutAsync(BaseUrl, content);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<Order>(
+                result,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+        }
+
         public async Task<(List<Order>, int)> SearchAsync(OrderQuery query)
         {
             var json = JsonSerializer.Serialize(query);

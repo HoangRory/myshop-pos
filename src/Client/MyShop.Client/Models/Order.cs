@@ -59,6 +59,7 @@ namespace MyShop.Client.Models
                     _status = value;
                     OnPropertyChanged(nameof(Status));
                     OnPropertyChanged(nameof(StatusText));
+                    OnPropertyChanged(nameof(DisplayOrderId));
                 }
             }
         }
@@ -186,6 +187,15 @@ namespace MyShop.Client.Models
                     };
                     Status = newStatus;
                 }
+            }
+        }
+
+        public int DisplayOrderId
+        {
+            get
+            {
+                // Return -1 for pending orders, actual ID for paid/cancelled orders
+                return Status == (byte)OrderStatus.Pending ? -1 : OrderId;
             }
         }
 

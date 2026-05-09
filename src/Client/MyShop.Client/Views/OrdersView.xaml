@@ -445,7 +445,7 @@
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               ScrollViewer.CanContentScroll="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Mã đơn" Binding="{Binding OrderId}" Width="1.2*" />
+                            <DataGridTextColumn Header="Mã đơn" Binding="{Binding DisplayOrderId}" Width="1.2*" />
                             <DataGridTextColumn Header="Ngày" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy}" Width="1*" />
                             <DataGridTextColumn Header="Tổng tiền" Binding="{Binding FinalTotal, StringFormat=N0}" Width="1.2*" />
                             <DataGridTemplateColumn Header="Trạng thái" Width="1*">
@@ -533,18 +533,21 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Mã đơn" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding Detail.OrderId, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
+                            <TextBox Text="{Binding Detail.DisplayOrderId, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
                             <TextBlock Text="Ngày tạo" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
                             <DatePicker SelectedDate="{Binding Detail.CreatedAt, Mode=TwoWay}">
                                 <DatePicker.Style>
                                     <Style TargetType="DatePicker" BasedOn="{StaticResource InputDatePickerStyle}">
                                         <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsNewOrder}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
                                                 <Setter Property="IsEnabled" Value="False" />
                                             </DataTrigger>
-                                                        <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
-                                                            <Setter Property="IsEnabled" Value="False" />
-                                                        </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </DatePicker.Style>
@@ -711,16 +714,21 @@
                     <StackPanel>
                         <TextBlock Text="Thông tin thanh toán" Style="{StaticResource SectionTitleText}" Margin="0,0,0,10" />
                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Mã voucher" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                                <TextBox Text="{Binding Detail.VoucherCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsPaymentMode}"
-                                         Style="{StaticResource InputTextBoxStyle}" />
-                                <TextBlock Text="Phương thức thanh toán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                            
+                            <!-- Hàng 1: Phương thức thanh toán và Ghi chú -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Phương thức thanh toán" FontSize="12" Foreground="{StaticResource MutedBrush}" />
                                 <ComboBox SelectedValue="{Binding Detail.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           SelectedValuePath="Tag"
                                           IsEnabled="{Binding IsPaymentMode}"
@@ -728,40 +736,111 @@
                                     <ComboBoxItem Tag="1">Tiền mặt</ComboBoxItem>
                                     <ComboBoxItem Tag="2">Chuyển khoản</ComboBoxItem>
                                 </ComboBox>
-                                <TextBlock Text="Giảm giá (VNĐ)" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                                <TextBox Text="{Binding Detail.DiscountAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                         IsEnabled="{Binding IsPaymentMode}"
-                                         Style="{StaticResource InputTextBoxStyle}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="Tổng phụ" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                                <TextBox Text="{Binding Detail.SubTotal, StringFormat=N0, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
-                                <TextBlock Text="Tổng cuối" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                                <TextBox Text="{Binding Detail.FinalTotal, StringFormat=N0, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
-                                <TextBlock Text="Ghi chú" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="Ghi chú" FontSize="12" Foreground="{StaticResource MutedBrush}" />
                                 <TextBox Text="{Binding Detail.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          IsEnabled="{Binding IsPaymentMode}"
                                          Style="{StaticResource InputTextBoxStyle}" />
+                            </StackPanel>
+
+                            <!-- Hàng 2: Voucher input và nút gửi -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12,0,0">
+                                <TextBlock Text="Mã voucher" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" 
+                                             Text="{Binding Detail.VoucherCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding IsPaymentMode}"
+                                             Style="{StaticResource InputTextBoxStyle}" />
+                                    <Button Grid.Column="1" 
+                                            Content="Áp dụng voucher" 
+                                            Command="{Binding ApplyVoucherCommand}"
+                                            CommandParameter="{Binding Detail}"
+                                            IsEnabled="{Binding IsPaymentMode}"
+                                            Style="{StaticResource PrimaryButton}"
+                                            Margin="8,0,0,0"
+                                            Padding="12,7"
+                                            MinWidth="0" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Hàng 3: Tổng số tiền (text only) -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12,0,0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Tổng số tiền:" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock DockPanel.Dock="Right" 
+                                               Text="{Binding Detail.SubTotal, StringFormat=N0}" 
+                                               FontSize="12" 
+                                               Foreground="#1F2937"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
+                            </StackPanel>
+
+                            <!-- Hàng 4: Giảm giá (text only với màu đỏ) -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Giảm giá:" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <TextBlock DockPanel.Dock="Right" 
+                                               FontSize="12" 
+                                               Foreground="#DC2626"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="-{0:N0}">
+                                                <Binding Path="Detail.DiscountAmount" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </DockPanel>
+                            </StackPanel>
+
+                            <!-- Hàng 5: Tổng cuối (text only) -->
+                            <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Tổng cuối:" FontSize="12" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock DockPanel.Dock="Right" 
+                                               Text="{Binding Detail.FinalTotal, StringFormat=N0}" 
+                                               FontSize="13" 
+                                               Foreground="#1F2937"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Xóa" Command="{Binding DeleteOrderCommand}" Margin="0,0,8,0">
+                    <Button Content="Xóa" Command="{Binding DeleteOrderCommand}" CommandParameter="{Binding Detail}" Margin="0,0,8,0">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource DangerOutlineButton}">
                                 <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Button Command="{Binding CancelEditCommand}" Margin="0,0,8,0">
+                    <Button Command="{Binding GoBackCommand}" Margin="0,0,8,0">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource CancelOutlineButton}">
-                                <Setter Property="Content" Value="Hủy" />
+                                <Setter Property="Content" Value="Hủy thanh toán" />
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -806,23 +885,6 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Exit payment mode without discarding -->
-                    <Button Command="{Binding ExitPaymentModeCommand}" Visibility="Collapsed">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource CancelOutlineButton}">
-                                <Setter Property="Content" Value="Hủy thanh toán" />
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
                 </StackPanel>
             </StackPanel>
         </StackPanel>
