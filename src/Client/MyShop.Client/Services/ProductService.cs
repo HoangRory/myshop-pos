@@ -1,20 +1,19 @@
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Security.Policy;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
 using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.IO;
+using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 namespace MyShop.Client.Services
 {
-    public class ProductService : IProductService
+    public class ProductService : IProductService, IAPI
     {
         private readonly HttpClient _http;
-        private const string BaseUrl = "v1/api/product";
+        private const string ApiPath = "v1/api/product";
+
+        private string Url(string endpoint = "") => ((IAPI)this).GetFullUrl(ApiPath, endpoint);
 
         public ProductService(HttpClient http)
         {
@@ -23,7 +22,7 @@ namespace MyShop.Client.Services
 
         public async Task<List<Product>> GetAllAsync()
         {
-            return await _http.GetFromJsonAsync<List<Product>>(BaseUrl) ?? new();
+            return await _http.GetFromJsonAsync<List<Product>>(Url()) ?? new();
         }
 
         public async Task<bool> CreateAsync(Product model)
@@ -43,7 +42,7 @@ namespace MyShop.Client.Services
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync(BaseUrl, content);
+            var response = await _http.PostAsync(Url(), content);
             var result = await response.Content.ReadAsStringAsync();
 
             return response.IsSuccessStatusCode && result == "Success";
@@ -57,7 +56,7 @@ namespace MyShop.Client.Services
             });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PutAsync($"{BaseUrl}", content);
+            var response = await _http.PutAsync(Url(), content);
             var result = await response.Content.ReadAsStringAsync();
             return response.IsSuccessStatusCode && result == "Updated";
         }
@@ -66,13 +65,13 @@ namespace MyShop.Client.Services
         {
             var json = JsonSerializer.Serialize(new { ProductId = id });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Delete, BaseUrl)
+            var request = new HttpRequestMessage(HttpMethod.Delete, Url())
             {
                 Content = content
             };
             var response = await _http.SendAsync(request);
             var result = await response.Content.ReadAsStringAsync();
-            return response.IsSuccessStatusCode &&  result == "Deleted";
+            return response.IsSuccessStatusCode && result == "Deleted";
         }
 
         public async Task<(List<Product>, int)> SearchAsync(ProductQuery query)
@@ -81,7 +80,7 @@ namespace MyShop.Client.Services
 
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync($"{BaseUrl}/search", content);
+            var response = await _http.PostAsync(Url("search"), content);
 
             var raw = await response.Content.ReadAsStringAsync();
             var doc = JsonDocument.Parse(raw);
@@ -105,7 +104,7 @@ namespace MyShop.Client.Services
             using var content = new ByteArrayContent(fileBytes);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-            var response = await _http.PostAsync($"{BaseUrl}/import", content);
+            var response = await _http.PostAsync(Url("import"), content);
             return response.IsSuccessStatusCode;
         }
     }
