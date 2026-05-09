@@ -568,7 +568,9 @@
                             </Button>
                         </Border>
                     </DockPanel>
-                    <DataGrid ItemsSource="{Binding Detail.OrderItems}"
+                    <DataGrid x:Name="OrderItemsGrid"
+                              ItemsSource="{Binding Detail.OrderItems}"
+                              helpers:DataGridFocusBehavior.PendingFocusItem="{Binding PendingNewOrderItem}"
                               AutoGenerateColumns="False"
                               IsReadOnly="False"
                               RowHeaderWidth="0"
@@ -578,6 +580,7 @@
                               SelectionMode="Single"
                               MaxHeight="250"
                               Background="White"
+                              CanUserAddRows="False"
                               ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Sản phẩm" Width="2*">
@@ -650,13 +653,6 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Total Amount -->
-                    <TextBlock Text="{Binding Detail.OrderItems, Converter={StaticResource OrderItemsToTotalConverter}, StringFormat=Tổng: {0:N0}}"
-                               FontWeight="Bold"
-                               FontSize="13"
-                               HorizontalAlignment="Right"
-                               Margin="0,12,0,0"
-                               Foreground="{StaticResource AccentBrush}" />
                 </StackPanel>
             </Border>
 
