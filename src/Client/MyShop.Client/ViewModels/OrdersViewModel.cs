@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using MyShop.Client.Helpers;
 using MyShop.Client.Models;
@@ -41,17 +42,43 @@ namespace MyShop.Client.ViewModels
         }
 
         private DateTime? _fromDate;
+        private string _fromDateText = string.Empty;
         public DateTime? FromDate
         {
             get => _fromDate;
-            set => SetProperty(ref _fromDate, value);
+            set
+            {
+                if (SetProperty(ref _fromDate, value?.Date))
+                {
+                    SyncDateTextFromDate(isFromDate: true);
+                }
+            }
+        }
+
+        public string FromDateText
+        {
+            get => _fromDateText;
+            set => SetDateText(value, isFromDate: true);
         }
 
         private DateTime? _toDate;
+        private string _toDateText = string.Empty;
         public DateTime? ToDate
         {
             get => _toDate;
-            set => SetProperty(ref _toDate, value);
+            set
+            {
+                if (SetProperty(ref _toDate, value?.Date))
+                {
+                    SyncDateTextFromDate(isFromDate: false);
+                }
+            }
+        }
+
+        public string ToDateText
+        {
+            get => _toDateText;
+            set => SetDateText(value, isFromDate: false);
         }
 
         private Order? _detail;
@@ -116,6 +143,18 @@ namespace MyShop.Client.ViewModels
             get => _canNextPage;
             set => SetProperty(ref _canNextPage, value);
         }
+
+        private bool _isSyncingDateText;
+        private const string DisplayDateFormat = "dd/MM/yyyy";
+        private static readonly string[] AcceptedDateFormats =
+        {
+            "dd/MM/yyyy",
+            "d/M/yyyy",
+            "dd-MM-yyyy",
+            "d-M-yyyy",
+            "yyyy-MM-dd"
+        };
+        private static readonly CultureInfo DateCulture = new("vi-VN");
 
         public ObservableCollection<Order> Orders { get; } = new();
         public ObservableCollection<string> StatusOptions { get; } = new();
@@ -266,6 +305,117 @@ namespace MyShop.Client.ViewModels
 
             // Reload all orders after reset
             _ = ReloadOrdersAsync();
+        }
+
+        private void SetDateText(string? input, bool isFromDate)
+        {
+            var normalized = NormalizeDateInput(input);
+
+            if (_isSyncingDateText)
+            {
+                if (isFromDate)
+                {
+                    SetProperty(ref _fromDateText, normalized, nameof(FromDateText));
+                }
+                else
+                {
+                    SetProperty(ref _toDateText, normalized, nameof(ToDateText));
+                }
+
+                return;
+            }
+
+            var changed = isFromDate
+                ? SetProperty(ref _fromDateText, normalized, nameof(FromDateText))
+                : SetProperty(ref _toDateText, normalized, nameof(ToDateText));
+
+            if (!changed)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                if (isFromDate)
+                {
+                    FromDate = null;
+                }
+                else
+                {
+                    ToDate = null;
+                }
+
+                return;
+            }
+
+            if (TryParseFlexibleDate(normalized, out var parsedDate))
+            {
+                if (isFromDate)
+                {
+                    FromDate = parsedDate;
+                }
+                else
+                {
+                    ToDate = parsedDate;
+                }
+            }
+        }
+
+        private void SyncDateTextFromDate(bool isFromDate)
+        {
+            var targetText = isFromDate ? FormatDate(FromDate) : FormatDate(ToDate);
+            var currentText = isFromDate ? _fromDateText : _toDateText;
+
+            if (string.Equals(currentText, targetText, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _isSyncingDateText = true;
+            if (isFromDate)
+            {
+                _fromDateText = targetText;
+                OnPropertyChanged(nameof(FromDateText));
+            }
+            else
+            {
+                _toDateText = targetText;
+                OnPropertyChanged(nameof(ToDateText));
+            }
+            _isSyncingDateText = false;
+        }
+
+        private static bool TryParseFlexibleDate(string input, out DateTime date)
+        {
+            if (DateTime.TryParseExact(input, AcceptedDateFormats, DateCulture, DateTimeStyles.None, out var parsed))
+            {
+                date = parsed.Date;
+                return true;
+            }
+
+            if (DateTime.TryParse(input, DateCulture, DateTimeStyles.AllowWhiteSpaces, out parsed))
+            {
+                date = parsed.Date;
+                return true;
+            }
+
+            date = default;
+            return false;
+        }
+
+        private static string FormatDate(DateTime? date)
+        {
+            return date.HasValue ? date.Value.ToString(DisplayDateFormat, DateCulture) : string.Empty;
+        }
+
+        private static string NormalizeDateInput(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return string.Empty;
+            }
+
+            return input.Trim();
         }
 
         private void OnCreateOrder()
