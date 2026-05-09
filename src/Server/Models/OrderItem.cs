@@ -28,6 +28,9 @@ public partial class OrderItem
     [DatabaseGenerated(DatabaseGeneratedOption.Computed)] // Thêm dòng này
     public decimal? TotalItemPrice { get; set; }
 
+    [Column("is_active")]
+    public bool? IsActive { get; set; }
+
     [ForeignKey("OrderId")]
     [InverseProperty("OrderItems")]
     [JsonIgnore]

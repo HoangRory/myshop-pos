@@ -44,6 +44,9 @@ public partial class Product
     [Column("updated_at", TypeName = "datetime")]
     public DateTime? UpdatedAt { get; set; }
 
+    [Column("is_active")]
+    public bool? IsActive { get; set; }
+
     [ForeignKey("CategoryId")]
     [InverseProperty("Products")]
     [JsonIgnore]

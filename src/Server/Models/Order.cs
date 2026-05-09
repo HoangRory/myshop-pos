@@ -42,6 +42,9 @@ public partial class Order
     [Column("note")]
     public string? Note { get; set; }
 
+    [Column("is_active")]
+    public bool? IsActive { get; set; }
+
     [ForeignKey("AccountId")]
     [InverseProperty("Orders")]
     [JsonIgnore]
