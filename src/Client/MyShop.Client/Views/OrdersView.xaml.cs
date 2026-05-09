@@ -12,8 +12,6 @@ namespace MyShop.Client.Views
         public OrdersView()
         {
             InitializeComponent();
-            // Get OrdersViewModel from DI container
-            this.DataContext = DIContainer.ServiceProvider.GetRequiredService<OrdersViewModel>();
         }
     }
 }
