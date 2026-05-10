@@ -25,7 +25,7 @@ namespace MyShop.Client.ViewModels
 
         public bool ShowPaymentDetails =>
             Detail != null &&
-            (IsPaymentMode || Detail.Status == (byte)OrderStatus.Paid);
+            (IsPaymentMode || IsPaidOrder);
         private bool _isPaymentMode;
         public bool IsPaymentMode
         {
@@ -40,6 +40,10 @@ namespace MyShop.Client.ViewModels
         }
         public bool IsPaidOrder =>
             Detail?.Status == (byte)OrderStatus.Paid;
+        public bool IsCancelledOrder =>
+            Detail?.Status == (byte)OrderStatus.Cancelled;
+        public bool IsFinalizedOrder =>
+            IsPaidOrder || IsCancelledOrder;
         public bool IsNewOrder =>
             Detail?.OrderId == -1;
 
@@ -114,6 +118,10 @@ namespace MyShop.Client.ViewModels
                     }
 
                     OnPropertyChanged(nameof(IsNewOrder));
+                    OnPropertyChanged(nameof(ShowPaymentDetails));
+                    OnPropertyChanged(nameof(IsPaidOrder));
+                    OnPropertyChanged(nameof(IsCancelledOrder));
+                    OnPropertyChanged(nameof(IsFinalizedOrder));
                 }
             }
         }
@@ -206,6 +214,7 @@ namespace MyShop.Client.ViewModels
         public ICommand EnterPaymentModeCommand { get; }
         public ICommand ApplyPaymentCommand { get; }
         public ICommand ApplyVoucherCommand { get; }
+        public ICommand CancelOrderCommand { get; }
         public ICommand GoBackCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
@@ -229,8 +238,9 @@ namespace MyShop.Client.ViewModels
             AddProductCommand = new RelayCommand(_ => OnAddProduct());
             RemoveItemCommand = new RelayCommand(param => OnRemoveItem(param));
             EnterPaymentModeCommand = new RelayCommand(_ => OnEnterPaymentMode());
-            ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null);
+            ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null && (Detail.PaymentMethod ?? 0) > 0);
             ApplyVoucherCommand = new AsyncRelayCommand<Order>(param => OnApplyVoucherAsync(param), param => param != null && IsPaymentMode);
+            CancelOrderCommand = new AsyncRelayCommand(_ => OnCancelOrderAsync(), _ => Detail != null && Detail.OrderId != -1 && Detail.Status != (byte)OrderStatus.Paid);
             GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
@@ -413,6 +423,9 @@ namespace MyShop.Client.ViewModels
                 PaymentMethod = null,
                 OrderItems = new ObservableCollection<OrderItem>(backupOrderItems)
             };
+
+            // Ensure product names match product IDs for the restored draft
+            SyncOrderItemProductNames(Detail.OrderItems);
 
             IsPaymentMode = false;
             SelectedOrder = null;
@@ -718,11 +731,10 @@ namespace MyShop.Client.ViewModels
 
                 if (updatedOrder != null)
                 {
-                    Detail = updatedOrder;
-                    _selectedOrder = updatedOrder;
-                    OnPropertyChanged(nameof(SelectedOrder));
-                    IsPaymentMode = false;
                     await OnSearchAsync();
+                    ResetPaymentState();
+                    Detail = null;
+                    SelectedOrder = null;
                     _dialogService.Success("Thành công", "Thanh toán thành công.");
                 }
                 else
@@ -741,19 +753,126 @@ namespace MyShop.Client.ViewModels
             }
         }
 
+        private void ResetPaymentState()
+        {
+            IsPaymentMode = false;
+            PendingNewOrderItem = null;
+        }
+
+        private async Task OnCancelOrderAsync()
+        {
+            if (Detail == null || Detail.OrderId == -1)
+                return;
+
+            IsLoading = true;
+
+            try
+            {
+                var orderId = Detail.OrderId;
+                var success = await _orderService.CancelAsync(orderId);
+
+                if (success)
+                {
+                    Detail = null;
+                    SelectedOrder = null;
+                    await OnSearchAsync();
+                    _dialogService.Success("Thành công", "Hủy đơn hàng thành công.");
+                }
+                else
+                {
+                    _dialogService.Error("Thất bại", "Hủy đơn hàng thất bại.");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error cancelling order: {ex.Message}");
+                _dialogService.Error("Lỗi", $"Có lỗi xảy ra: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private async Task<bool> EnsureDetailOrderExistsAsync()
         {
             if (Detail == null)
             {
                 return false;
             }
+            // Build current items list from Detail (aggregate duplicates before sending)
+            var orderItems = AggregateOrderItems(Detail.OrderItems);
 
+            // If order already exists on server, check whether items changed
             if (Detail.OrderId != -1)
             {
-                return true;
+                try
+                {
+                    var serverOrder = await _orderService.GetByIdAsync(Detail.OrderId);
+
+                    if (serverOrder != null)
+                    {
+                        var serverItems = serverOrder.OrderItems.ToList();
+
+                        // If items are identical, nothing to do
+                        if (!OrderItemsDiffer(serverItems, orderItems))
+                        {
+                            return true;
+                        }
+
+                        // Items changed: delete old order then create new one
+                        var deleteSuccess = await _orderService.DeleteAsync(Detail.OrderId);
+                        if (!deleteSuccess)
+                        {
+                            _dialogService.Error("Thất bại", "Không thể xóa đơn cũ để tái tạo.");
+                            return false;
+                        }
+
+                        var recreated = await _orderService.CreateAsync(orderItems);
+                        if (recreated == null)
+                        {
+                            _dialogService.Error("Thất bại", "Cập nhật đơn hàng thất bại.");
+                            return false;
+                        }
+
+                        // Ensure product names are synced to product IDs
+                        SyncOrderItemProductNames(recreated.OrderItems);
+
+                        Detail = recreated;
+                        _selectedOrder = recreated;
+                        OnPropertyChanged(nameof(SelectedOrder));
+                        await OnSearchAsync();
+                        return true;
+                    }
+                    else
+                    {
+                        // Server order missing; create a new one
+                        var created = await _orderService.CreateAsync(orderItems);
+                        if (created == null)
+                        {
+                            _dialogService.Error("Thất bại", "Tạo đơn hàng thất bại.");
+                            return false;
+                        }
+
+                        // Ensure product names are synced to product IDs
+                        SyncOrderItemProductNames(created.OrderItems);
+
+                        Detail = created;
+                        _selectedOrder = created;
+                        OnPropertyChanged(nameof(SelectedOrder));
+                        await OnSearchAsync();
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error ensuring order exists: {ex.Message}");
+                    _dialogService.Error("Lỗi", "Có lỗi xảy ra khi kiểm tra đơn trên server.");
+                    return false;
+                }
             }
 
-            var orderItems = Detail.OrderItems.ToList();
+            // If order is new locally (OrderId == -1), create it on server
             var createdOrder = await _orderService.CreateAsync(orderItems);
             if (createdOrder == null)
             {
@@ -761,11 +880,70 @@ namespace MyShop.Client.ViewModels
                 return false;
             }
 
+            // Ensure product names are synced to product IDs
+            SyncOrderItemProductNames(createdOrder.OrderItems);
+
             Detail = createdOrder;
             _selectedOrder = createdOrder;
             OnPropertyChanged(nameof(SelectedOrder));
             await OnSearchAsync();
             return true;
+        }
+
+        private static bool OrderItemsDiffer(List<OrderItem> a, List<OrderItem> b)
+        {
+            if (a == null && b == null) return false;
+            if (a == null || b == null) return true;
+            if (a.Count != b.Count) return true;
+
+            // Compare by exact items without aggregating: handle duplicates by consuming matches
+            var bCopy = new List<OrderItem>(b);
+
+            foreach (var item in a)
+            {
+                var idx = bCopy.FindIndex(x => x.ProductId == item.ProductId
+                                               && (x.Quantity ?? 0) == (item.Quantity ?? 0)
+                                               && (x.UnitPrice ?? 0m) == (item.UnitPrice ?? 0m));
+                if (idx == -1) return true;
+                bCopy.RemoveAt(idx);
+            }
+
+            return bCopy.Count != 0;
+        }
+
+        private List<OrderItem> AggregateOrderItems(IEnumerable<OrderItem> items)
+        {
+            if (items == null)
+            {
+                return new List<OrderItem>();
+            }
+
+            var grouped = items
+                .Where(i => i != null && i.ProductId != null)
+                .GroupBy(i => i.ProductId)
+                .Select(g => new OrderItem
+                {
+                    ProductId = g.Key,
+                    ProductName = g.Select(x => x.ProductName).FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? string.Empty,
+                    Quantity = g.Sum(x => x.Quantity ?? 0),
+                    UnitPrice = g.Select(x => x.UnitPrice ?? 0m).FirstOrDefault(),
+                    IsEditing = false
+                })
+                .ToList();
+
+            // Include any items without ProductId (treat them individually)
+            var withoutId = items.Where(i => i == null || i.ProductId == null).Select(i => new OrderItem
+            {
+                ProductId = i?.ProductId,
+                ProductName = i?.ProductName ?? string.Empty,
+                Quantity = i?.Quantity ?? 0,
+                UnitPrice = i?.UnitPrice ?? 0m,
+                IsEditing = false
+            });
+
+            grouped.AddRange(withoutId);
+
+            return grouped;
         }
 
         private async Task OnApplyVoucherAsync(Order? order)
@@ -776,16 +954,21 @@ namespace MyShop.Client.ViewModels
                 return;
             }
 
+            var voucherCode = order.VoucherCode.Trim();
+            order.VoucherCode = voucherCode;
+
             IsLoading = true;
 
             try
             {
                 // Call API to apply voucher - PUT request
-                var result = await _orderService.ApplyVoucherAsync(order.OrderId, order.VoucherCode);
+                var result = await _orderService.ApplyVoucherAsync(order.OrderId, voucherCode);
 
                 if (result != null)
                 {
-                    // Update order with new discount and final total
+                    // Apply server-calculated values so users can retry with another voucher immediately.
+                    order.VoucherCode = result.VoucherCode;
+                    order.SubTotal = result.SubTotal;
                     order.DiscountAmount = result.DiscountAmount;
                     order.FinalTotal = result.FinalTotal;
                     _dialogService.Success("Thành công", "Áp dụng voucher thành công.");
@@ -798,7 +981,15 @@ namespace MyShop.Client.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error applying voucher: {ex.Message}");
-                _dialogService.Error("Lỗi", $"Có lỗi xảy ra: {ex.Message}");
+
+                if (ex.Message.Contains("Invalid or Expired Voucher", StringComparison.OrdinalIgnoreCase))
+                {
+                    _dialogService.Error("Voucher không hợp lệ", "Voucher không hợp lệ hoặc đã hết hạn. Vui lòng thử mã khác.");
+                }
+                else
+                {
+                    _dialogService.Error("Lỗi", $"Có lỗi xảy ra: {ex.Message}");
+                }
             }
             finally
             {
@@ -866,6 +1057,8 @@ namespace MyShop.Client.ViewModels
             {
                 OnPropertyChanged(nameof(ShowPaymentDetails));
                 OnPropertyChanged(nameof(IsPaidOrder));
+                OnPropertyChanged(nameof(IsCancelledOrder));
+                OnPropertyChanged(nameof(IsFinalizedOrder));
             }
             if (e.PropertyName is nameof(Order.OrderId))
             {

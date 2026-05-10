@@ -122,19 +122,35 @@ namespace MyShop.Client.Services
             return response.IsSuccessStatusCode && result == "Deleted";
         }
 
+        public async Task<bool> CancelAsync(long orderId)
+        {
+            var json = JsonSerializer.Serialize(new { OrderId = orderId, Status = 2 });
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _http.PutAsync(BaseUrl, content);
+            var result = await response.Content.ReadAsStringAsync();
+
+            return response.IsSuccessStatusCode && result == "Canceled";
+        }
+
         public async Task<Order?> ApplyVoucherAsync(int orderId, string voucherCode)
         {
-            var json = JsonSerializer.Serialize(new 
-            { 
-                OrderId = orderId, 
-                VoucherCode = voucherCode 
+            var json = JsonSerializer.Serialize(new
+            {
+                OrderId = orderId,
+                VoucherCode = voucherCode
             });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _http.PutAsync(BaseUrl, content);
-
-            response.EnsureSuccessStatusCode();
-
             var result = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessage = string.IsNullOrWhiteSpace(result)
+                    ? $"Unable to apply voucher. HTTP {(int)response.StatusCode}."
+                    : result;
+
+                throw new InvalidOperationException(errorMessage);
+            }
 
             return JsonSerializer.Deserialize<Order>(
                 result,

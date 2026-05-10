@@ -636,12 +636,12 @@
                             <DataGridTemplateColumn Header="SL" Width="0.6*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding Quantity}" Padding="8,0" TextAlignment="Center" VerticalAlignment="Center" Foreground="#333333" />
+                                        <TextBlock Text="{Binding Quantity, TargetNullValue=''}" Padding="8,0" TextAlignment="Center" VerticalAlignment="Center" Foreground="#333333" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                                 <DataGridTemplateColumn.CellEditingTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, TargetNullValue='', FallbackValue=''}"
                                                  Style="{StaticResource DataGridEditingTextBoxStyle}"
                                                  HorizontalContentAlignment="Center"
                                                  Margin="4,2" />
@@ -681,7 +681,7 @@
                                                         <DataTrigger Binding="{Binding DataContext.IsPaymentMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
-                                                        <DataTrigger Binding="{Binding DataContext.IsPaidOrder, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <DataTrigger Binding="{Binding DataContext.IsFinalizedOrder, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -760,11 +760,20 @@
                                             Content="Áp dụng voucher" 
                                             Command="{Binding ApplyVoucherCommand}"
                                             CommandParameter="{Binding Detail}"
-                                            IsEnabled="{Binding IsPaymentMode}"
-                                            Style="{StaticResource PrimaryButton}"
                                             Margin="8,0,0,0"
                                             Padding="12,7"
-                                            MinWidth="0" />
+                                            MinWidth="0">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                                        <Setter Property="IsEnabled" Value="False" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </Grid>
                             </StackPanel>
 
@@ -824,8 +833,8 @@
                                     <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
-                                        <Setter Property="IsEnabled" Value="False" />
+                                                <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -837,7 +846,24 @@
                                 <Setter Property="Content" Value="Hủy thanh toán" />
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Command="{Binding CancelOrderCommand}" Margin="0,0,8,0">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource DangerOutlineButton}">
+                                <Setter Property="Content" Value="Hủy đơn hàng" />
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
@@ -859,7 +885,7 @@
                                     <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -877,7 +903,7 @@
                                     <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
                                         <Setter Property="Visibility" Value="Visible" />
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
+                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
