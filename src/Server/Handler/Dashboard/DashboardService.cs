@@ -40,7 +40,7 @@ public class DashboardService
             // 2. Top 5 sản phẩm sắp hết hàng (Stock < 5)
             data.LowStockProducts = await db.Set<Product>()
                 .AsNoTracking()
-                .Where(p => p.StockCount < 5)
+                .Where(p => p.StockCount < 5 && p.IsActive == true)
                 .OrderBy(p => p.StockCount)
                 .Take(5)
                 .ToListAsync();
@@ -48,14 +48,15 @@ public class DashboardService
             // 3. 3 đơn hàng gần nhất (Hiển thị feed hoạt động mới nhất)
             data.RecentOrders = await db.Set<Order>()
                 .AsNoTracking()
+                .Where(o => o.IsActive == true)
                 .OrderByDescending(o => o.CreatedAt)
-                .Take(3)
+                .Take(10)
                 .ToListAsync();
 
             // 4. Top 5 sản phẩm bán chạy nhất tháng (Dựa trên số lượng đã bán)
             data.BestSellingProducts = await db.Set<OrderItem>()
                 .AsNoTracking()
-                .Where(oi => oi.Order.Status == 1 && oi.Order.CreatedAt >= firstDayOfMonth)
+                .Where(oi => oi.Order.Status == 1 && oi.Order.CreatedAt >= firstDayOfMonth && oi.Order.IsActive == true)
                 .GroupBy(oi => oi.ProductId)
                 .Select(g => new
                 {
