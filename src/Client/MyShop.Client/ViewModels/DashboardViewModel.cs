@@ -90,6 +90,7 @@ namespace MyShop.Client.ViewModels
                 Values = new ChartValues<decimal>(chartData.Select(x => x ?? 0)),
                 PointGeometrySize = 8,
                 StrokeThickness = 3,
+                LineSmoothness = 0,
                 // Gradient đổ bóng mượt mà giống Reports
                 Fill = new System.Windows.Media.LinearGradientBrush
                 {
