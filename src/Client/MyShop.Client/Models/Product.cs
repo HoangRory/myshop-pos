@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Windows.Media.Imaging;
 
 namespace MyShop.Client.Models
 {
@@ -24,6 +25,8 @@ namespace MyShop.Client.Models
 
         private string _description = string.Empty;
         public string Description { get => _description; set { if (_description != value) { _description = value; OnPropertyChanged(nameof(Description)); } } }
+        private string _images = string.Empty;
+        public string Images { get => _images; set { if (_images != value) { _images = value; OnPropertyChanged(nameof(Images)); } } }
 
         private int? _categoryId;
 
@@ -31,6 +34,9 @@ namespace MyShop.Client.Models
 
         public int? CategoryId { get => _categoryId; set { if (_categoryId != value) { _categoryId = value; OnPropertyChanged(nameof(CategoryId)); } } }
         public string? CategoryName { get; set; } // Thêm property để binding tên danh mục
+
+        private BitmapImage? _thumbnail;
+        public BitmapImage? Thumbnail { get => _thumbnail; set { if (_thumbnail != value) { _thumbnail = value; OnPropertyChanged(nameof(Thumbnail)); } } }
 
         protected void OnPropertyChanged(string propertyName)
         {

@@ -5,6 +5,9 @@ using MyShop.Client.Models;
 using MyShop.Client.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Diagnostics;
+using System.Windows.Media.Imaging;
+using System.IO;
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Products")]
@@ -13,6 +16,7 @@ namespace MyShop.Client.ViewModels
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IDialogService _dialogService;
+            private readonly IImageService _imageService;
 
         private bool _isLoaded;
         public bool IsLoaded
@@ -241,12 +245,109 @@ namespace MyShop.Client.ViewModels
             }
         }
 
+        private async Task LoadPreviewImagesAsync()
+        {
+            PreviewImages.Clear();
+
+            foreach (var fileName in SelectedImages)
+            {
+                try
+                {
+                    var bytes = await _imageService.DownloadImageAsync(fileName);
+
+                    using var ms = new MemoryStream(bytes);
+
+                    var bitmap = new BitmapImage();
+
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.StreamSource = ms;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+
+                    PreviewImages.Add(bitmap);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Load image failed: {ex.Message}");
+                }
+            }
+
+            OnPropertyChanged(nameof(PreviewImages));
+        }
+
+        private async Task LoadProductThumbnailAsync(Product product)
+        {
+            if (product == null) return;
+
+            try
+            {
+                var first = _imageService.ParseImageNames(product.Images).FirstOrDefault();
+                if (string.IsNullOrWhiteSpace(first)) return;
+
+                var bytes = await _image_service_safe_download(first);
+                if (bytes == null || bytes.Length == 0) return;
+
+                using var ms = new MemoryStream(bytes);
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = ms;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    product.Thumbnail = bitmap;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Thumbnail load failed: {ex.Message}");
+            }
+        }
+
+        // Helper to call image service and swallow exceptions, returning bytes or null
+        private async Task<byte[]?> _image_service_safe_download(string fileName)
+        {
+            try
+            {
+                return await _image_service_download_wrapper(fileName);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Download image failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        private Task<byte[]> _image_service_download_wrapper(string fileName)
+        {
+            return _imageService.DownloadImageAsync(fileName);
+        }
+        // Images for editing/viewing
+        private ObservableCollection<string> _selectedImages = new ObservableCollection<string>();
+        public ObservableCollection<string> SelectedImages
+        {
+            get => _selectedImages;
+            set => SetProperty(ref _selectedImages, value);
+        }
+        public ObservableCollection<BitmapImage> PreviewImages { get; set; } = new();
+
+        private bool _isUploadingImage;
+        public bool IsUploadingImage
+        {
+            get => _isUploadingImage;
+            set => SetProperty(ref _isUploadingImage, value);
+        }
+
         public void OpenEditMode(Product? product)
         {
             if (product == null)
             {
                 EditingProduct = null;
                 _snapshotProduct = null;
+                SelectedImages.Clear();
                 return;
             }
             // Clone thủ công từng property, không dùng MemberwiseClone
@@ -259,7 +360,8 @@ namespace MyShop.Client.ViewModels
                 ImportPrice = product.ImportPrice,
                 SalePrice = product.SalePrice,
                 StockCount = product.StockCount,
-                Description = product.Description
+                Description = product.Description,
+                Images = product.Images
             };
             _snapshotProduct = new Product
             {
@@ -270,9 +372,16 @@ namespace MyShop.Client.ViewModels
                 ImportPrice = product.ImportPrice,
                 SalePrice = product.SalePrice,
                 StockCount = product.StockCount,
-                Description = product.Description
+                Description = product.Description,
+                Images = product.Images
             };
             EditingProduct = clone;
+            // Populate selected images collection from Images string
+            SelectedImages = new ObservableCollection<string>(
+                _imageService.ParseImageNames(clone.Images)
+            );
+
+            _ = LoadPreviewImagesAsync();
         }
 
 
@@ -296,6 +405,8 @@ namespace MyShop.Client.ViewModels
         public AsyncRelayCommand DeleteProductCommand { get; }
         public AsyncRelayCommand ClearFormCommand { get; }
         public AsyncRelayCommand CancelEditCommand { get; }
+        public AsyncRelayCommand UploadImageCommand { get; }
+        public RelayCommand<string> RemoveImageCommand { get; }
         public RelayCommand NextPageCommand { get; }
         public RelayCommand PrevPageCommand { get; }
         public ICommand ApplyFiltersCommand { get; }
@@ -307,11 +418,12 @@ namespace MyShop.Client.ViewModels
         public RelayCommand ToggleAddCategoryPanelCommand { get; }
         public RelayCommand ToggleDeleteCategoryPanelCommand { get; }
 
-        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService)
+        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService, IImageService imageService)
         {
             _productService = productService;
             _dialogService = dialogService;
             _categoryService = categoryService;
+            _imageService = imageService;
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             AddCategoryCommand = new AsyncRelayCommand(AddCategoryAsync, CanExecuteAddCategory);
@@ -321,6 +433,8 @@ namespace MyShop.Client.ViewModels
             SaveProductCommand = new AsyncRelayCommand(SaveProductAsync, CanExecuteSaveProduct);
             DeleteProductCommand = new AsyncRelayCommand(DeleteProductAsync, CanExecuteUpdateOrDeleteProduct);
             ClearFormCommand = new AsyncRelayCommand(() => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
+            UploadImageCommand = new AsyncRelayCommand(UploadImageAsync);
+            RemoveImageCommand = new RelayCommand<string>(RemoveImage);
 
             // ===============================
             // STEP 4: Sửa NextPageCommand
@@ -365,6 +479,81 @@ namespace MyShop.Client.ViewModels
             ImportAccessCommand = new RelayCommand(ImportFromAccess);
         }
 
+        private void RemoveImage(string? imageName)
+        {
+            if (string.IsNullOrWhiteSpace(imageName))
+                return;
+
+            if (SelectedImages.Contains(imageName))
+            {
+                SelectedImages.Remove(imageName);
+
+                if (EditingProduct != null)
+                {
+                    EditingProduct.Images = string.Join(";", SelectedImages);
+                }
+                _ = LoadPreviewImagesAsync();
+            }
+        }
+
+        private bool CanExecuteUploadImage()
+        {
+            return !IsLoading && !IsUploadingImage && EditingProduct != null;
+        }
+
+        private async Task UploadImageAsync()
+        {
+            if (EditingProduct == null)
+                return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Chọn ảnh",
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.webp",
+                Multiselect = true
+            };
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            IsUploadingImage = true;
+
+            try
+            {
+                foreach (var filePath in dialog.FileNames)
+                {
+                    try
+                    {
+                        var bytes = await File.ReadAllBytesAsync(filePath);
+
+                        var uploadedFileName = await _imageService.UploadImageAsync(
+                            bytes,
+                            Path.GetFileName(filePath)
+                        );
+
+                        if (!SelectedImages.Contains(uploadedFileName))
+                        {
+                            SelectedImages.Add(uploadedFileName);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Upload failed: {ex.Message}");
+                    }
+                }
+
+                // Sync lại vào Product.Images
+                EditingProduct.Images = string.Join(";", SelectedImages);
+                await LoadPreviewImagesAsync();
+
+                OnPropertyChanged(nameof(SelectedImages));
+                OnPropertyChanged(nameof(EditingProduct));
+            }
+            finally
+            {
+                IsUploadingImage = false;
+            }
+        }
         private bool CanExecuteToggleCategoryPanel() => !IsLoading;
 
         private void NotifyPagingCommands()
@@ -428,6 +617,8 @@ namespace MyShop.Client.ViewModels
                 {
                     EditingProduct.CategoryId = null; // Gán null nếu chọn "(Không có)"
                 }
+                // Ensure Images property is synchronized from SelectedImages
+                EditingProduct.Images = string.Join(";", SelectedImages);
                 if (isCreate)
                 {
                     result = await _productService.CreateAsync(EditingProduct);
@@ -677,6 +868,8 @@ namespace MyShop.Client.ViewModels
                         .FirstOrDefault(c => c.CategoryId == p.CategoryId)
                         ?.Name ?? "Không có";
                     Products.Add(p);
+                    // Start loading the thumbnail asynchronously (do not block the UI)
+                    _ = LoadProductThumbnailAsync(p);
                 }
                 TotalCount = totalCount;
 

@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:MyShop.Client.ViewModels"
+             xmlns:controls="clr-namespace:MyShop.Client.Controls;assembly=MyShop.Client"
              d:DataContext="{d:DesignInstance Type=viewmodels:ProductsViewModel}"
              mc:Ignorable="d"
              Padding="14">
@@ -294,7 +295,21 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Width="56" Height="40" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="2">
-                                            <TextBlock Text="{Binding Sku}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                                            <Grid>
+                                                <Image Source="{Binding Thumbnail}" Width="56" Height="40" Stretch="UniformToFill" />
+                                                <TextBlock Text="{Binding Sku}" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Thumbnail}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -381,14 +396,37 @@
                 </Style>
             </StackPanel.Style>
             <!-- Image gallery card -->
+
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel>
-                    <TextBlock Text="Hình ảnh" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <Border Height="220" Background="#FFF" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="4">
-                        <Grid>
-                            <TextBlock Text="Không có ảnh" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Grid>
-                    </Border>
+                    <!-- Header -->
+                    <DockPanel Margin="0,0,0,10">
+                        <TextBlock Text="Hình ảnh" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <Button Content="Upload ảnh" Command="{Binding UploadImageCommand}"
+                                Width="120" Height="30" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+                    </DockPanel>
+                    <!-- Preview images -->
+                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding PreviewImages}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#DDD" BorderThickness="1"
+                                            Margin="5" Padding="5">
+                                        <StackPanel>
+                                            <Image Width="120" Height="120"
+                                                Stretch="UniformToFill" Source="{Binding}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </StackPanel>
             </Border>
 
