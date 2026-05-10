@@ -11,6 +11,7 @@ namespace MyShop.Client.Services.Interfaces
         Task<Order?> CreateAsync(List<OrderItem> items);
         Task<Order?> UpdateAsync(Order model);
         Task<bool> DeleteAsync(long id);
+        Task<bool> CancelAsync(long orderId);
         Task<Order?> ApplyVoucherAsync(int orderId, string voucherCode);
         Task<(List<Order>, int)> SearchAsync(OrderQuery query);
     }
