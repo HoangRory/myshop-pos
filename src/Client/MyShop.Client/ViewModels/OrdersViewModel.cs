@@ -340,6 +340,13 @@ namespace MyShop.Client.ViewModels
             {
                 return true;
             }
+            // Nếu chỉ đang ở payment mode
+            // thì KHÔNG autosave/create order mới
+            if (IsPaymentMode)
+            {
+                IsPaymentMode = false;
+                return true;
+            }
 
             var shouldRollback = Detail.Status != (byte)OrderStatus.Paid && (Detail.OrderId == -1 || IsPaymentMode);
 
@@ -1004,25 +1011,15 @@ namespace MyShop.Client.ViewModels
             if (Detail == null)
                 return;
 
-            IsLoading = true;
+            // Nếu đang payment mode
+            // chỉ thoát payment mode
+            if (IsPaymentMode)
+            {
+                IsPaymentMode = false;
+                return;
+            }
 
-            try
-            {
-                var rolledBack = await RollbackDetailToDraftAsync(forceRollback: true);
-                if (!rolledBack)
-                {
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error going back: {ex.Message}");
-                _dialogService.Error("Lỗi", "Có lỗi xảy ra khi quay lại.");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            await RollbackDetailToDraftAsync(true);
         }
 
         private async Task OnPrevPageAsync()
