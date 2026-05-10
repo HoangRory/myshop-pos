@@ -37,6 +37,7 @@ namespace MyShop.Client.Services
                 model.SalePrice,
                 model.StockCount,
                 model.Description,
+                model.Images,
                 model.CategoryId
             };
 
