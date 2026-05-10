@@ -81,41 +81,75 @@ GO
 -- DỮ LIỆU MẪU (SEED DATA)
 ---------------------------------------------------------
 
--- Seed Account
-INSERT INTO account (username, password_hash, role) VALUES 
-('admin', 'hash_of_admin_password', N'Admin'),
-('staff01', 'hash_of_staff_password', N'Staff');
-
--- Seed Category
 INSERT INTO category (name, description) VALUES 
-(N'Laptops', N'High performance laptops'), (N'Phones', N'Smartphones'),
-(N'Audio', N'Headphones'), (N'Gaming', N'Consoles'), (N'Mice', N'Mice');
+(N'CPU - Bộ vi xử lý', N'Các dòng CPU từ Intel và AMD'),
+(N'VGA - Card màn hình', N'Card đồ họa chơi game và đồ họa'),
+(N'Mainboard - Bo mạch chủ', N'Bo mạch chủ cho PC');
+GO
 
--- Seed Product (50 record mẫu với images giả lập)
-DECLARE @i INT = 1;
-WHILE @i <= 50
+DECLARE @cat_id INT;
+DECLARE @p_idx INT;
+DECLARE @p_name NVARCHAR(200);
+DECLARE @sku VARCHAR(50);
+DECLARE @img_str NVARCHAR(MAX);
+
+-- Vòng lặp cho 3 Category
+SET @cat_id = 1;
+WHILE @cat_id <= 3
 BEGIN
-    INSERT INTO product (sku, name, import_price, sale_price, stock_count, category_id, images)
-    VALUES (
-        'SKU-' + CAST(@i AS VARCHAR), 
-        N'Sản phẩm mẫu số ' + CAST(@i AS NVARCHAR), 
-        100.00 + (@i * 2), 
-        150.00 + (@i * 3), 
-        10 + @i, 
-        (CAST(RAND() * 4 AS INT) + 1),
-        N'https://img.myshop.com/p' + CAST(@i AS NVARCHAR) + '_1.jpg;https://img.myshop.com/p' + CAST(@i AS NVARCHAR) + '_2.jpg'
-    );
-    SET @i = @i + 1;
+    SET @p_idx = 1;
+    -- Mỗi Category 22 sản phẩm
+    WHILE @p_idx <= 22
+    BEGIN
+        SET @sku = CASE @cat_id 
+                    WHEN 1 THEN 'CPU-' WHEN 2 THEN 'VGA-' ELSE 'MB-' END 
+                    + RIGHT('00' + CAST(@p_idx AS VARCHAR), 3);
+        
+        SET @p_name = CASE @cat_id 
+                        WHEN 1 THEN N'CPU ' + (CASE WHEN @p_idx % 2 = 0 THEN 'Intel Core i' ELSE 'AMD Ryzen ' END) + CAST(@p_idx AS NVARCHAR)
+                        WHEN 2 THEN N'VGA NVIDIA/AMD Edition ' + CAST(@p_idx AS NVARCHAR)
+                        ELSE N'Mainboard Series Z/B/H ' + CAST(@p_idx AS NVARCHAR) 
+                      END;
+
+        -- Gen ảnh theo format: productid_1.png;productid_2.png;productid_3.png
+        -- Vì ID tự tăng, chúng ta dùng biến đếm tạm thời để giả lập ảnh
+        -- Sau khi Insert, ID thực tế sẽ khớp với logic hiển thị của ông
+        SET @img_str = 'p' + CAST(((@cat_id-1)*22 + @p_idx) AS NVARCHAR) + '_1.png;' +
+                       'p' + CAST(((@cat_id-1)*22 + @p_idx) AS NVARCHAR) + '_2.png;' +
+                       'p' + CAST(((@cat_id-1)*22 + @p_idx) AS NVARCHAR) + '_3.png';
+
+        INSERT INTO product (sku, name, import_price, sale_price, stock_count, description, images, category_id)
+        VALUES (
+            @sku, 
+            @p_name, 
+            2000000 + (RAND() * 5000000), -- Giá nhập 2tr - 7tr
+            3000000 + (RAND() * 8000000), -- Giá bán 3tr - 11tr
+            10 + (CAST(RAND() * 50 AS INT)), -- Tồn kho 10 - 60
+            N'Thông tin chi tiết cho ' + @p_name,
+            @img_str,
+            @cat_id
+        );
+        SET @p_idx = @p_idx + 1;
+    END
+    SET @cat_id = @cat_id + 1;
 END;
+GO
 
--- Seed Voucher
-INSERT INTO discount_voucher (voucher_code, discount_type, discount_value, expiry_date) VALUES 
-('KHAIXUAN', 1, 50000, '2026-12-31'),
-('GIAM20', 2, 20, '2026-12-31');
 
--- Seed Order & OrderItem mẫu (status=1: Đã thanh toán, payment_method=0: Tiền mặt)
-INSERT INTO [order] (account_id, sub_total, final_total, status, payment_method) 
-VALUES (1, 300.00, 300.00, 1, 0);
+-- Account
+INSERT INTO account (username, password_hash, role) VALUES 
+('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', N'Admin'), -- pass: admin123
+('staff01', 'ede7f95081f9a2e37e96a40562e841f3e0980e1816e9c60e3745a557ef22ec01', N'Staff'); -- pass: staff123
+
+-- Voucher
+INSERT INTO discount_voucher (voucher_code, discount_type, discount_value, expiry_date, min_order_value) VALUES 
+('BUILDPC', 1, 500000, '2026-12-31', 10000000),
+('LUCIFER', 2, 10, '2026-12-31', 0);
+
+-- Order mẫu (Để test Report)
+INSERT INTO [order] (account_id, sub_total, final_total, status, payment_method, is_active) 
+VALUES (1, 15000000, 14500000, 1, 1, 1);
 
 INSERT INTO order_item (order_id, product_id, quantity, unit_price) 
-VALUES (1, 1, 2, 150.00);
+VALUES (1, 1, 1, 8000000), (1, 23, 1, 7000000);
+GO
