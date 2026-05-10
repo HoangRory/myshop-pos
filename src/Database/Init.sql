@@ -160,17 +160,17 @@ GO
 
 -- 1. Sản phẩm thuộc Category 1 (CPU): Dùng chung bộ ảnh CPU
 UPDATE product
-SET images = 'assets/cpu_1.png;assets/cpu_2.png;assets/cpu_3.png'
+SET images = 'image/cpu_1.png;image/cpu_2.png;image/cpu_3.png'
 WHERE category_id = 1;
 
 -- 2. Sản phẩm thuộc Category 2 (VGA): Dùng chung bộ ảnh VGA
 UPDATE product
-SET images = 'assets/vga_1.png;assets/vga_2.png;assets/vga_3.png'
+SET images = 'image/vga_1.png;image/vga_2.png;image/vga_3.png'
 WHERE category_id = 2;
 
 -- 3. Sản phẩm thuộc Category 3 (Mainboard): Dùng chung bộ ảnh Mainboard
 UPDATE product
-SET images = 'assets/mb_1.png;assets/mb_2.png;assets/mb_3.png'
+SET images = 'image/mb_1.png;image/mb_2.png;image/mb_3.png'
 WHERE category_id = 3;
 
 GO
