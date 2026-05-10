@@ -153,3 +153,24 @@ VALUES (1, 15000000, 14500000, 1, 1, 1);
 INSERT INTO order_item (order_id, product_id, quantity, unit_price) 
 VALUES (1, 1, 1, 8000000), (1, 23, 1, 7000000);
 GO
+
+---------------------------------------------------------
+-- CẬP NHẬT ẢNH THEO CATEGORY (Tạm thời)
+---------------------------------------------------------
+
+-- 1. Sản phẩm thuộc Category 1 (CPU): Dùng chung bộ ảnh CPU
+UPDATE product
+SET images = 'assets/cpu_1.png;assets/cpu_2.png;assets/cpu_3.png'
+WHERE category_id = 1;
+
+-- 2. Sản phẩm thuộc Category 2 (VGA): Dùng chung bộ ảnh VGA
+UPDATE product
+SET images = 'assets/vga_1.png;assets/vga_2.png;assets/vga_3.png'
+WHERE category_id = 2;
+
+-- 3. Sản phẩm thuộc Category 3 (Mainboard): Dùng chung bộ ảnh Mainboard
+UPDATE product
+SET images = 'assets/mb_1.png;assets/mb_2.png;assets/mb_3.png'
+WHERE category_id = 3;
+
+GO
