@@ -100,18 +100,48 @@
             <Setter Property="BorderBrush" Value="{StaticResource AccentDarkBrush}" />
         </Style>
 
-        <!-- Outlined danger -->
-        <Style x:Key="DangerOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="#D9534F" />
-            <Setter Property="Foreground" Value="#D9534F" />
+        <!-- Footer action buttons -->
+        <Style x:Key="FooterActionButton"
+            TargetType="Button"
+            BasedOn="{StaticResource BaseButton}">
+
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="130"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <!-- Outlined cancel button -->
-        <Style x:Key="CancelOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="#6B6F76" />
-            <Setter Property="Foreground" Value="#6B6F76" />
+        <!-- Primary footer button -->
+        <Style x:Key="FooterPrimaryButton"
+            TargetType="Button"
+            BasedOn="{StaticResource FooterActionButton}">
+
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDarkBrush}"/>
+        </Style>
+
+        <!-- Danger footer button -->
+        <Style x:Key="FooterDangerButton"
+            TargetType="Button"
+            BasedOn="{StaticResource FooterActionButton}">
+
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#B91C1C"/>
+        </Style>
+
+        <!-- Neutral footer button -->
+        <Style x:Key="FooterNeutralButton"
+            TargetType="Button"
+            BasedOn="{StaticResource FooterActionButton}">
+
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
         </Style>
 
         <Style x:Key="NeutralButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
@@ -349,16 +379,28 @@
 
         <!-- Page header -->
         <Border Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Style="{StaticResource CardStyle}" Padding="12,8" Margin="0,0,0,12">
-            <DockPanel LastChildFill="True">
-                <TextBlock Text="Đơn hàng" FontSize="18" FontWeight="SemiBold" Foreground="#113347" />
-                <Button Content="+ Tạo đơn hàng"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                        Text="Đơn hàng"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="#113347"
+                        VerticalAlignment="Center" />
+
+                <Button Grid.Column="1"
+                        Content="+ Tạo đơn hàng"
                         Command="{Binding CreateOrderCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        DockPanel.Dock="Right"
-                    MinWidth="0"
-                    Padding="10,6"
-                        Margin="8,0,0,0" />
-            </DockPanel>
+                        Style="{StaticResource FooterPrimaryButton}"
+                        Padding="12,6"
+                        Margin="12,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"/>
+            </Grid>
         </Border>
 
         <!-- Left column: Filters + DataGrid + Pager -->
@@ -586,6 +628,9 @@
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -824,94 +869,107 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Xóa" Command="{Binding DeleteOrderCommand}" CommandParameter="{Binding Detail}" Margin="0,0,8,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource DangerOutlineButton}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Command="{Binding GoBackCommand}" Margin="0,0,8,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource CancelOutlineButton}">
-                                <Setter Property="Content" Value="Hủy thanh toán" />
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                <WrapPanel HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Margin="0,0,0,8"
+                        ItemHeight="40">
+                    <!-- Nhóm danger -->
+                    <WrapPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        
+                        <!-- Xóa -->
+                        <Button Content="Xóa" Command="{Binding DeleteOrderCommand}" CommandParameter="{Binding Detail}" Margin="0,0,8,8">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource FooterDangerButton}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        
+                        <!-- Hủy đơn hàng -->
+                        <Button Command="{Binding CancelOrderCommand}" Margin="0,0,8,8">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource FooterDangerButton}">
+                                    <Setter Property="Content" Value="Hủy đơn hàng" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <!-- Thanh toán -->
+                        <Button Margin="0,0,8,8">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource FooterPrimaryButton}">
+                                    <Setter Property="Content" Value="Thanh toán" />
+                                    <Setter Property="Command" Value="{Binding EnterPaymentModeCommand}" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        
+                    </WrapPanel>
 
-                    <Button Command="{Binding CancelOrderCommand}" Margin="0,0,8,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource DangerOutlineButton}">
-                                <Setter Property="Content" Value="Hủy đơn hàng" />
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                    <!-- Nhóm payment -->
+                    <WrapPanel Orientation="Horizontal">
+                        <!-- Hủy thanh toán -->
+                        <Button Command="{Binding GoBackCommand}" Margin="0,0,8,8">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource FooterNeutralButton}">
+                                    <Setter Property="Content" Value="Hủy thanh toán" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
-                    <!-- Show 'Thanh toán' when not in payment mode -->
-                    <Button Margin="0,0,8,0">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                <Setter Property="Content" Value="Thanh toán" />
-                                <Setter Property="Command" Value="{Binding EnterPaymentModeCommand}" />
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-
-                    <!-- Show 'Xác nhận thanh toán' when in payment mode -->
-                    <Button Command="{Binding ApplyPaymentCommand}">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                <Setter Property="Content" Value="Xác nhận thanh toán" />
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-
-                </StackPanel>
+                        <!-- Xác nhận thanh toán -->
+                        <Button Command="{Binding ApplyPaymentCommand}" Margin="0,0,0,8">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource FooterPrimaryButton}">
+                                    <Setter Property="Content" Value="Xác nhận thanh toán" />
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </WrapPanel>
+                </WrapPanel>
             </StackPanel>
         </StackPanel>
     </Grid>

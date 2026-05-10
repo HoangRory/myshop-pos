@@ -651,7 +651,7 @@ namespace MyShop.Client.ViewModels
         private void OnAddProduct()
         {
             // Allow adding products only when not in payment mode and order is not paid
-            if (Detail != null && !IsPaymentMode && Detail.Status != (byte)OrderStatus.Paid)
+            if (Detail != null && !IsPaymentMode && !IsFinalizedOrder)
             {
                 var newItem = new OrderItem
                 {
