@@ -61,8 +61,11 @@ namespace MyShop.Client.ViewModels
             _dialogService = dialogService;
 
             RefreshCommand = new RelayCommand(async _ => await LoadReportData(), _ => IsLoaded);
+        }
 
-            // Tự động load dữ liệu khi khởi tạo
+        public void LoadData()
+        {
+            // Vì Reflection gọi method đồng bộ, ta dùng Fire and Forget để load async
             _ = LoadReportData();
         }
 
