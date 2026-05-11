@@ -18,6 +18,8 @@ namespace MyShop.Client.ViewModels
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
         private readonly IDialogService _dialogService;
+        private readonly ITemporaryDataService _tempDataService;
+        private readonly IAuthService _authService;
         private bool _isLoading;
         public bool IsLoading
         {
@@ -221,11 +223,14 @@ namespace MyShop.Client.ViewModels
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
 
-        public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService)
+        public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService, ITemporaryDataService tempDataService, IAuthService authService)
         {
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _tempDataService = tempDataService ?? throw new ArgumentNullException(nameof(tempDataService));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _authService.OnRecoveryRequested += OnRecoveryRequested;
 
             // Initialize status options
             StatusOptions.Add("All");
@@ -257,10 +262,24 @@ namespace MyShop.Client.ViewModels
             // Load PageSize from AppConfig after commands are initialized
             PageSize = AppConfig.Load().ItemsPerPage;
 
+            // Cố gắng khôi phục dữ liệu tạm thời
+            _ = RecoverDataAsync();
+
+            // Đăng ký cho auto-save
+            RegisterAutoSave(_tempDataService, "Orders");
+
             // Load initial data
             InitializeDataAsync();
         }
 
+        private async void OnRecoveryRequested(List<string> modules)
+        {
+            if (!modules.Contains("Orders"))
+                return;
+
+            await RecoverDataAsync();
+            await OnSearchAsync();
+        }
         private async void InitializeDataAsync()
         {
             IsLoading = true;
@@ -1032,6 +1051,9 @@ namespace MyShop.Client.ViewModels
             }
 
             await RollbackDetailToDraftAsync(true);
+
+            // Xóa dữ liệu tạm thời khi hoàn tất đơn hàng
+            _tempDataService.DeleteTemporaryData("Orders");
         }
 
         private async Task OnPrevPageAsync()
@@ -1058,6 +1080,119 @@ namespace MyShop.Client.ViewModels
             CanPrevPage = PageIndex > 1;
             CanNextPage = PageIndex < TotalPages;
             PageInfo = $"Page {PageIndex} / {TotalPages}";
+        }
+
+        // =====================================
+        // Auto-Save and Recovery Methods
+        // =====================================
+
+        /// <summary>
+        /// Khôi phục dữ liệu tạm thời nếu ứng dụng bị tắt bất ngờ
+        /// </summary>
+        private async Task RecoverDataAsync()
+        {
+            var snapshot = await TryRecoverDataAsync<OrdersViewModelSnapshot>(_tempDataService, "Orders");
+            if (snapshot == null)
+                return;
+
+            try
+            {
+                // Validate UserId matches current user
+                if (int.TryParse(_authService.AccountId, out int currentUserId))
+                {
+                    if (snapshot.UserId != currentUserId)
+                    {
+                        // Data belongs to different user, delete it
+                        _tempDataService.DeleteTemporaryData("Orders");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Cannot determine current user ID, skip recovery
+                    return;
+                }
+
+                if(RecoveryHelper.ShowRecoveryDialog(new List<string> { "Orders" }) != true)
+                {     
+                    // User declined recovery, delete temp data
+                    _tempDataService.DeleteTemporaryData("Orders");
+                    return;
+                }
+
+                // Khôi phục các filter
+                if (snapshot.FromDate.HasValue)
+                    FromDate = snapshot.FromDate.Value;
+
+                if (snapshot.ToDate.HasValue)
+                    ToDate = snapshot.ToDate.Value;
+
+                if (!string.IsNullOrEmpty(snapshot.SelectedStatus))
+                    SelectedStatus = snapshot.SelectedStatus;
+
+                // Khôi phục đơn hàng đang chỉnh sửa
+                if (snapshot.Detail != null)
+                {
+                    Detail = snapshot.Detail;
+
+                    // Khôi phục các sản phẩm đã thêm vào đơn hàng
+                    if (snapshot.OrderItems != null && snapshot.OrderItems.Count > 0)
+                    {
+                        Detail.OrderItems = new ObservableCollection<OrderItem>(
+                            snapshot.OrderItems.Select(item => new OrderItem
+                            {
+                                ProductId = item.ProductId,
+                                ProductName = item.ProductName,
+                                Quantity = item.Quantity,
+                                UnitPrice = item.Price
+                            })
+                        );
+                    }
+                }
+
+                PageIndex = snapshot.CurrentPage;
+                PageSize = snapshot.PageSize;
+                CommitRecovery(_tempDataService, "Orders");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi khi khôi phục dữ liệu: {ex.Message}");
+                // Nếu lỗi, xóa dữ liệu để tránh lặp lại
+                _tempDataService.DeleteTemporaryData("Orders");
+            }
+        }
+
+        /// <summary>
+        /// Cung cấp dữ liệu để lưu tạm thời
+        /// </summary>
+        protected override object? GetAutoSaveData()
+        {
+            // Get current user ID
+            int? currentUserId = null;
+            if (int.TryParse(_authService.AccountId, out int userId))
+            {
+                currentUserId = userId;
+            }
+
+            return new OrdersViewModelSnapshot
+            {
+                UserId = currentUserId,
+                FromDate = FromDate,
+                ToDate = ToDate,
+                SelectedStatus = SelectedStatus,
+                Detail = Detail,
+                OrderItems = Detail?.OrderItems != null
+                    ? Detail.OrderItems.Select(item => new OrderItemSnapshot
+                    {
+                        ProductId = item.ProductId ?? 0,
+                        ProductName = item.ProductName,
+                        Price = item.UnitPrice ?? 0,
+                        Quantity = item.Quantity.HasValue ? item.Quantity.Value : 0
+                    }).ToList()
+                    : null,
+                CurrentPage = PageIndex,
+                PageSize = PageSize
+            };
         }
 
         private void Detail_PropertyChanged(object? sender, PropertyChangedEventArgs e)

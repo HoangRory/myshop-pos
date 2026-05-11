@@ -18,7 +18,9 @@ namespace MyShop.Client.ViewModels
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IDialogService _dialogService;
-            private readonly IImageService _imageService;
+        private readonly IImageService _imageService;
+        private readonly ITemporaryDataService _tempDataService;
+        private readonly IAuthService _authService;
 
         private bool _isLoaded;
         public bool IsLoaded
@@ -129,7 +131,7 @@ namespace MyShop.Client.ViewModels
             return true;
         }
 
-        
+
 
         private Product? _editingProduct;
         public Product? EditingProduct
@@ -473,13 +475,17 @@ namespace MyShop.Client.ViewModels
         public RelayCommand ToggleAddCategoryPanelCommand { get; }
         public RelayCommand ToggleDeleteCategoryPanelCommand { get; }
 
-        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService, IImageService imageService)
+        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService, IImageService imageService, ITemporaryDataService tempDataService, IAuthService authService)
         {
             _productService = productService;
             _dialogService = dialogService;
             _categoryService = categoryService;
             _imageService = imageService;
-            
+            _tempDataService = tempDataService;
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+
+            _authService.OnRecoveryRequested += OnRecoveryRequested;
+
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             AddCategoryCommand = new AsyncRelayCommand(AddCategoryAsync, CanExecuteAddCategory);
@@ -544,6 +550,12 @@ namespace MyShop.Client.ViewModels
 
             // Load PageSize from AppConfig after commands are initialized
             PageSize = AppConfig.Load().ItemsPerPage;
+
+            // Cố gắng khôi phục dữ liệu tạm thời
+            _ = RecoverDataAsync();
+
+            // Đăng ký cho auto-save
+            RegisterAutoSave(_tempDataService, "Products");
         }
 
         private void RemoveImage(string? imageName)
@@ -561,6 +573,15 @@ namespace MyShop.Client.ViewModels
                 }
                 _ = LoadPreviewImagesAsync();
             }
+        }
+
+        private async void OnRecoveryRequested(List<string> modules)
+        {
+            if (!modules.Contains("Products"))
+                return;
+
+            await RecoverDataAsync();
+            await LoadProductsAsync();
         }
 
         private bool CanExecuteUploadImage()
@@ -1152,6 +1173,101 @@ namespace MyShop.Client.ViewModels
             ApplyFiltersCommand?.NotifyCanExecuteChanged();
             OnPropertyChanged(nameof(IsApplyEnabled));
             NotifyPagingCommands();
+        }
+
+        // =====================================
+        // Auto-Save and Recovery Methods
+        // =====================================
+
+        /// <summary>
+        /// Khôi phục dữ liệu tạm thời nếu ứng dụng bị tắt bất ngờ
+        /// </summary>
+        private async Task RecoverDataAsync()
+        {
+            var snapshot = await TryRecoverDataAsync<ProductsViewModelSnapshot>(_tempDataService, "Products");
+            if (snapshot == null)
+                return;
+
+            try
+            {
+                // Validate UserId matches current user
+                if (int.TryParse(_authService.AccountId, out int currentUserId))
+                {
+                    if (snapshot.UserId != currentUserId)
+                    {
+                        // Data belongs to different user, delete it
+                        _tempDataService.DeleteTemporaryData("Products");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Cannot determine current user ID, skip recovery
+                    return;
+                }
+
+                if(MyShop.Client.Helpers.RecoveryHelper.ShowRecoveryDialog(new List<string> { "Products" }) != true)
+                {
+                    // User declined recovery, delete temp data
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
+
+                // Khôi phục category được chọn
+                if (snapshot.SelectedCategory != null)
+                {
+                    var category = FilterCategories.FirstOrDefault(c => c.CategoryId == snapshot.SelectedCategory.CategoryId);
+                    if (category != null)
+                    {
+                        SelectedCategory = category;
+                    }
+                }
+
+                // Khôi phục sản phẩm đang chỉnh sửa
+                if (snapshot.EditingProduct != null)
+                {
+                    EditingProduct = snapshot.EditingProduct;
+                }
+
+                // Khôi phục Search keyword 
+                if (snapshot.SearchKeyword != null)
+                    SearchKeyword = snapshot.SearchKeyword;
+                // Khôi phục pagination
+                PageIndex = snapshot.CurrentPage;
+                PageSize = snapshot.PageSize;
+
+                CommitRecovery(_tempDataService, "Products");
+                System.Diagnostics.Debug.WriteLine("Dữ liệu sản phẩm đã được khôi phục");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi khi khôi phục dữ liệu: {ex.Message}");
+                // Nếu lỗi, xóa dữ liệu để tránh lặp lại
+                _tempDataService.DeleteTemporaryData("Products");
+            }
+        }
+
+        /// <summary>
+        /// Cung cấp dữ liệu để lưu tạm thời
+        /// </summary>
+        protected override object? GetAutoSaveData()
+        {
+            // Get current user ID
+            int? currentUserId = null;
+            if (int.TryParse(_authService.AccountId, out int userId))
+            {
+                currentUserId = userId;
+            }
+
+            return new ProductsViewModelSnapshot
+            {
+                UserId = currentUserId,
+                SelectedCategory = SelectedCategory,
+                SearchKeyword = _searchKeyword,
+                EditingProduct = EditingProduct,
+                CurrentPage = PageIndex,
+                PageSize = PageSize
+            };
         }
 
         public void LoadData()
