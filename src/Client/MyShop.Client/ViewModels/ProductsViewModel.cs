@@ -85,13 +85,36 @@ namespace MyShop.Client.ViewModels
         }
         // --- Editing Flow State ---
         // ===============================
-        // STEP 1: Thêm method này vào ProductsViewModel (placed before usage)
+        // Tracks if EditingProduct differs from _snapshotProduct
         // ===============================
+
+        private bool IsEditDirty()
+        {
+            if (EditingProduct == null || _snapshotProduct == null)
+                return false;
+
+            // Compare key properties to determine if changes were made
+            return EditingProduct.Name != _snapshotProduct.Name ||
+                   EditingProduct.Sku != _snapshotProduct.Sku ||
+                   EditingProduct.CategoryId != _snapshotProduct.CategoryId ||
+                   EditingProduct.ImportPrice != _snapshotProduct.ImportPrice ||
+                   EditingProduct.SalePrice != _snapshotProduct.SalePrice ||
+                   EditingProduct.StockCount != _snapshotProduct.StockCount ||
+                   EditingProduct.Description != _snapshotProduct.Description ||
+                   EditingProduct.Images != _snapshotProduct.Images;
+        }
 
         private bool TryLeaveEditMode()
         {
             if (EditingProduct == null)
                 return true;
+
+            // Only confirm if there are actual unsaved changes
+            if (!IsEditDirty())
+            {
+                ClearEdit();
+                return true;
+            }
 
             var confirm = _dialogService.Confirm(
                 "Xác nhận",
@@ -660,6 +683,18 @@ namespace MyShop.Client.ViewModels
                     _dialogService.Success(
                         isCreate ? "Thành công" : "Cập nhật thành công",
                         isCreate ? "Thêm sản phẩm thành công." : "Cập nhật sản phẩm thành công.");
+                    // Update snapshot after successful save so IsEditDirty returns false
+                    if (EditingProduct != null && _snapshotProduct != null)
+                    {
+                        _snapshotProduct.Name = EditingProduct.Name;
+                        _snapshotProduct.Sku = EditingProduct.Sku;
+                        _snapshotProduct.CategoryId = EditingProduct.CategoryId;
+                        _snapshotProduct.ImportPrice = EditingProduct.ImportPrice;
+                        _snapshotProduct.SalePrice = EditingProduct.SalePrice;
+                        _snapshotProduct.StockCount = EditingProduct.StockCount;
+                        _snapshotProduct.Description = EditingProduct.Description;
+                        _snapshotProduct.Images = EditingProduct.Images;
+                    }
                     ClearEdit();
                 }
                 else
