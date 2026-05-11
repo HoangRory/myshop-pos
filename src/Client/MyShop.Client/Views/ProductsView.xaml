@@ -64,6 +64,19 @@
             <Setter Property="Foreground" Value="#6B6F76" />
         </Style>
 
+        <!-- Shared input styles -->
+        <Style x:Key="BaseInputStyle" TargetType="Control">
+            <Setter Property="Height" Value="30" />
+        </Style>
+
+        <Style x:Key="FilterTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource BaseInputStyle}">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="FilterComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource BaseInputStyle}">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
         <!-- DataGrid header style -->
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="FontSize" Value="12" />
@@ -181,86 +194,107 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
-                    <!-- Row 1: Search, Category, Price, Apply -->
-                    <Grid VerticalAlignment="Center" Grid.Row="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Search -->
-                        <Grid Grid.Column="0" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
-                        </Grid>
-                        <!-- Category -->
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding FilterCategories}"
-                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
-                                  DisplayMemberPath="Name"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  HorizontalAlignment="Stretch"
-                                  Margin="8,0,0,0" />
-                        <!-- Price Range -->
-                        <Grid Grid.Column="2" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" VerticalContentAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="-" VerticalAlignment="Center" Margin="6,0" />
-                            <TextBox Grid.Column="3" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center"/>
-                        </Grid>
-                        <!-- Apply Button -->
-                        <Button Grid.Column="3"
-                                Content="Áp dụng"
-                                Command="{Binding ApplyFiltersCommand}"
-                                Height="30"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource PrimaryButton}" />
-                    </Grid>
-                    
-                    <!-- Row 2: Sort Options -->
-                    <Grid VerticalAlignment="Center" Grid.Row="1" Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Sort By Label -->
-                        <TextBlock Grid.Column="0" Text="Sắp xếp:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                        <!-- Sort By ComboBox -->
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding SortOptions}"
-                                  SelectedItem="{Binding SortBy, Mode=TwoWay}"
-                                  Width="100"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  Margin="6,0,0,0" />
-                        <!-- Sort Direction Label -->
-                        <TextBlock Grid.Column="2" Text="Thứ tự:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" />
-                        <!-- Sort Direction ComboBox -->
-                        <ComboBox Grid.Column="3"
-                                  SelectedValuePath="Content"
-                                  SelectedValue="{Binding IsAscending, Converter={StaticResource BoolToSortDirectionConverter}, Mode=TwoWay}"
-                                  Width="120"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  Margin="6,0,0,0">
-                            <ComboBoxItem Content="Tăng dần" />
-                            <ComboBoxItem Content="Giảm dần" />
-                        </ComboBox>
+                    <!-- Filters grouped by interaction -->
+                    <Grid Grid.RowSpan="2">
+                        <WrapPanel VerticalAlignment="Top">
+                            <Grid Margin="0,0,12,12" MinWidth="180" MaxWidth="260">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Danh mục" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <ComboBox Grid.Row="1"
+                                          ItemsSource="{Binding FilterCategories}"
+                                          SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                          DisplayMemberPath="Name"
+                                          MinWidth="180"
+                                          MaxWidth="260"
+                                          Style="{StaticResource FilterComboBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="280" MaxWidth="420">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Sắp xếp" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              MinWidth="130"
+                                              MaxWidth="200"
+                                              ItemsSource="{Binding SortOptions}"
+                                              SelectedItem="{Binding SortBy, Mode=TwoWay}"
+                                              Style="{StaticResource FilterComboBoxStyle}" />
+                                    <ComboBox Grid.Column="2"
+                                              MinWidth="130"
+                                              MaxWidth="200"
+                                              SelectedValuePath="Content"
+                                              SelectedValue="{Binding IsAscending, Converter={StaticResource BoolToSortDirectionConverter}, Mode=TwoWay}"
+                                              Style="{StaticResource FilterComboBoxStyle}">
+                                        <ComboBoxItem Content="Tăng dần" />
+                                        <ComboBoxItem Content="Giảm dần" />
+                                    </ComboBox>
+                                </Grid>
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="220" MaxWidth="360">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Tìm kiếm" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <TextBox Grid.Row="1"
+                                         MinWidth="220"
+                                         MaxWidth="360"
+                                         Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FilterTextBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="220" MaxWidth="320">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Giá" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             MinWidth="100"
+                                             MaxWidth="150"
+                                             Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilterTextBoxStyle}" />
+                                    <TextBlock Grid.Column="1" Text="-" VerticalAlignment="Center" Margin="6,0" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBox Grid.Column="2"
+                                             MinWidth="100"
+                                             MaxWidth="150"
+                                             Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilterTextBoxStyle}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="110" MaxWidth="180">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text=" " Margin="0,0,0,4" Opacity="0" />
+                                <Button Grid.Row="1"
+                                        Content="Áp dụng"
+                                        Command="{Binding ApplyFiltersCommand}"
+                                        Height="30"
+                                        MinWidth="110"
+                                        Style="{StaticResource PrimaryButton}" />
+                            </Grid>
+                        </WrapPanel>
                     </Grid>
                 </Grid>
             </Border>
