@@ -12,6 +12,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Reports")]
     public class ReportsViewModel : INotifyPropertyChanged
     {
+        public string PageTitle { get; } = "Báo cáo";
         private readonly IReportService _reportService;
         private readonly IDialogService _dialogService;
 

@@ -99,49 +99,50 @@
             </Grid.Style>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="56"/>
+                <RowDefinition Height="30"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Header inside content area -->
             <Grid Grid.Row="0"
                   Background="White">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Hamburger (only visible in compact widths) -->
-                <Button Width="40"
-                    Height="40"
-                    Margin="8"
-                    FontSize="18"
-                    Foreground="Black"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Cursor="Hand"
-                    Content="☰"
-                    Command="{Binding ToggleSidebarCommand}"
-                    Style="{StaticResource HamburgerStyle}">
+                <!-- Hamburger -->
+                <Button Width="30"
+                        Height="30"
+                        Margin="6,0,4,0"
+                        FontSize="18"
+                        Foreground="Black"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Content="☰"
+                        Command="{Binding ToggleSidebarCommand}"
+                        Style="{StaticResource HamburgerStyle}">
 
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <ContentPresenter HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"/>
                         </ControlTemplate>
                     </Button.Template>
-
                 </Button>
 
-                <!-- Page title (left/center) -->
+                <!-- Page title -->
                 <TextBlock Grid.Column="1"
                            VerticalAlignment="Center"
+                           Margin="12,0,0,0"
                            Foreground="Black"
                            FontSize="16"
+                           FontWeight="SemiBold"
                            TextTrimming="CharacterEllipsis"
                            Text="{Binding PageTitle}"/>
             </Grid>
-
             <!-- Main content area -->
             <ContentControl x:Name="MainContent"
                             Grid.Row="1"
@@ -215,7 +216,7 @@
 
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="56"/>
+                    <RowDefinition Height="30"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 

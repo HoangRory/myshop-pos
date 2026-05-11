@@ -385,21 +385,14 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0"
-                        Text="Đơn hàng"
-                        FontSize="18"
-                        FontWeight="SemiBold"
-                        Foreground="#113347"
-                        VerticalAlignment="Center" />
-
                 <Button Grid.Column="1"
-                        Content="+ Tạo đơn hàng"
-                        Command="{Binding CreateOrderCommand}"
-                        Style="{StaticResource FooterPrimaryButton}"
-                        Padding="12,6"
-                        Margin="12,0,0,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"/>
+                    Content="+ Tạo đơn hàng"
+                    Command="{Binding CreateOrderCommand}"
+                    Style="{StaticResource FooterPrimaryButton}"
+                    Padding="12,6"
+                    Margin="12,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"/>
             </Grid>
         </Border>
 

@@ -13,6 +13,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Products")]
     public class ProductsViewModel : BaseViewModel
     {
+        public string PageTitle { get; } = "Sản phẩm";
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IDialogService _dialogService;

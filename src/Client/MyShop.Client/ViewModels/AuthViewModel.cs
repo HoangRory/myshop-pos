@@ -16,6 +16,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Auth")]
     public class AuthViewModel : INotifyPropertyChanged
     {
+        public string PageTitle { get; } = "Đăng nhập";
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
 

@@ -11,6 +11,13 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Main")]
     public class MainViewModel : INotifyPropertyChanged
     {
+        private string _pageTitle = "";
+        public string PageTitle
+        {
+            get => _pageTitle;
+            set { _pageTitle = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PageTitle))); }
+        }
+
         private readonly INavigationService _navigationService;
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -53,6 +60,7 @@ namespace MyShop.Client.ViewModels
                     {
                         CurrentViewModel = _navigationService.CurrentViewModel;
                         TryAutoLoad(CurrentViewModel);
+                        UpdatePageTitleFromChild(CurrentViewModel);
                     }
                 };
             }
@@ -100,6 +108,35 @@ namespace MyShop.Client.ViewModels
             // Dùng Reflection hoặc Dynamic để gọi hàm Load nếu tồn tại (duck typing)
             var loadMethod = viewModel?.GetType().GetMethod("LoadData");
             loadMethod?.Invoke(viewModel, null);
+        }
+
+        private void UpdatePageTitleFromChild(object? viewModel)
+        {
+            if (viewModel == null)
+            {
+                PageTitle = string.Empty;
+                return;
+            }
+
+            var prop = viewModel.GetType().GetProperty("PageTitle");
+            if (prop != null)
+            {
+                var val = prop.GetValue(viewModel) as string;
+                if (!string.IsNullOrEmpty(val))
+                {
+                    PageTitle = val;
+                    return;
+                }
+            }
+
+            var alt = viewModel.GetType().GetProperty("Title") ?? viewModel.GetType().GetProperty("Name");
+            if (alt != null)
+            {
+                PageTitle = alt.GetValue(viewModel)?.ToString() ?? string.Empty;
+                return;
+            }
+
+            PageTitle = SelectedSection;
         }
 
         private void UpdateSelection(string viewName)

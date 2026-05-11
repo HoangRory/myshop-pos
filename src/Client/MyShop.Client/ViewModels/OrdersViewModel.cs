@@ -13,6 +13,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Orders")]
     public class OrdersViewModel : BaseViewModel
     {
+        public string PageTitle { get; } = "Đơn hàng";
         private readonly IOrderService _orderService;
         private readonly IProductService _productService;
         private readonly IDialogService _dialogService;
