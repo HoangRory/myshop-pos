@@ -35,33 +35,33 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
 
-        <!-- Primary button -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
+        <!-- Base button style -->
+        <Style x:Key="BaseButtonStyle" TargetType="Button">
             <Setter Property="Padding" Value="8,6" />
-            <Setter Property="BorderBrush" Value="{x:Null}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="MinWidth" Value="88" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
 
+        <!-- Primary button -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="{x:Null}" />
+        </Style>
+
         <!-- Outlined danger -->
-        <Style x:Key="DangerOutlineButton" TargetType="Button">
+        <Style x:Key="DangerOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#D9534F" />
             <Setter Property="Foreground" Value="#D9534F" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="MinWidth" Value="88" />
         </Style>
 
         <!-- Outlined cancel button -->
-        <Style x:Key="CancelOutlineButton" TargetType="Button">
+        <Style x:Key="CancelOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#6B6F76" />
             <Setter Property="Foreground" Value="#6B6F76" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="MinWidth" Value="88" />
         </Style>
 
         <!-- DataGrid header style -->
@@ -128,12 +128,12 @@
         <!-- Page header -->
         <DockPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" LastChildFill="True" Margin="0,0,0,12">
             <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="0,8,12,0">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Import" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                <WrapPanel HorizontalAlignment="Right">
+                    <Button Content="Nhập Excel" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
                     <Button Content="{Binding AddCategoryButtonText}" Command="{Binding ToggleAddCategoryPanelCommand}" Style="{StaticResource CancelOutlineButton}" Margin="0,0,8,0" />
                     <Button Content="{Binding DeleteCategoryButtonText}" Command="{Binding ToggleDeleteCategoryPanelCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,0" />
                     <Button Content="Thêm sản phẩm" Command="{Binding AddProductCommand}" Style="{StaticResource PrimaryButton}" />
-                </StackPanel>
+                </WrapPanel>
                 <DockPanel Margin="0,8,0,0"
                            HorizontalAlignment="Right"
                            Visibility="{Binding IsAddCategoryPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
