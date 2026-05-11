@@ -57,19 +57,18 @@ public class AuthHandler : RouteHandler
     }
 
     [RateLimiter(100, 60)]
+#if DEBUG
+    [Authorize(UserRole.Guest)]
+#else 
     [Authorize(UserRole.User)]
+#endif
     [HttpGet("/logout")]
     private void Logout([Session] AppSession session, [Data] RequestModel request)
     {
         var response = Lucifer.Rent<ResponseModel>();
-        if (Lucifer.Deauthorize(session))
-        {
-            response.MakeCustomResponse<byte, byte, byte>(200, StorageData.Http11Protocol, "Logged out successfully"u8, StorageData.TextPlainCharset);
-            session.SendResponseAsync(response);
-            return;
-        }
+        Lucifer.Deauthorize(session);
 
-        response.MakeCustomResponse<byte, byte, byte>(400, StorageData.Http11Protocol, "Logout failed"u8, StorageData.TextPlainCharset);
+        response.MakeCustomResponse<byte, byte, byte>(200, StorageData.Http11Protocol, "Logged out successfully"u8, StorageData.TextPlainCharset);
         session.SendResponseAsync(response);
     }
 
