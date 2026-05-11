@@ -83,14 +83,26 @@ namespace MyShop.Client.ViewModels
             CloseSidebarCommand = new RelayCommand(_ => IsSidebarOpen = false);
 
             var config = AppConfig.Load();
-            _selectedSection = config.LastViewModel;
+            // If RememberLastScreen is enabled, navigate to last screen; otherwise start with the configured startup screen
+            var startupSection = config.RememberLastScreen ? config.LastViewModel : config.StartupScreen;
+            if (string.IsNullOrWhiteSpace(startupSection))
+            {
+                startupSection = "Settings";
+            }
+
+            if (!MenuItems.Any(item => item.Name.Equals(startupSection, StringComparison.OrdinalIgnoreCase)))
+            {
+                startupSection = "Settings";
+            }
+
+            _selectedSection = startupSection;
 
             // Set default view
-            Navigate(SelectedSection);
+            Navigate(SelectedSection, persistLastView: false);
 
         }
 
-        private void Navigate(string? viewName)
+        private void Navigate(string? viewName, bool persistLastView = true)
         {
             if (string.IsNullOrEmpty(viewName)) return;
 
@@ -98,9 +110,13 @@ namespace MyShop.Client.ViewModels
             IsSidebarOpen = false;
             UpdateSelection(viewName);
 
-            var config = AppConfig.Load(); // Load để giữ lại IP/Port cũ
-            config.LastViewModel = viewName;
-            config.Save();
+            // Persist the last opened screen for all navigations, including Settings.
+            if (persistLastView)
+            {
+                var config = AppConfig.Load();
+                config.LastViewModel = viewName;
+                config.Save();
+            }
         }
 
         private void TryAutoLoad(object? viewModel)

@@ -409,13 +409,12 @@
                         </TextBlock>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                             <ComboBox Width="80"
-                                  SelectedValue="{Binding PageSize}"
+                                  SelectedValue="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="Content">
+                                <ComboBoxItem Content="5"/>
                                 <ComboBoxItem Content="10"/>
-                                <ComboBoxItem Content="25"/>
-                                <ComboBoxItem Content="50"/>
-                                <ComboBoxItem Content="100"/>
-
+                                <ComboBoxItem Content="15"/>
+                                <ComboBoxItem Content="20"/>
                             </ComboBox>
                             <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" />
                             <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="48" HorizontalContentAlignment="Center" />

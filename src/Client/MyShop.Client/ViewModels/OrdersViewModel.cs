@@ -6,6 +6,7 @@ using System.Windows.Input;
 using MyShop.Client.Helpers;
 using MyShop.Client.Models;
 using LuciferCore.Attributes;
+using MyShop.Client.Services;
 using MyShop.Client.Services.Interfaces;
 
 namespace MyShop.Client.ViewModels
@@ -245,6 +246,16 @@ namespace MyShop.Client.ViewModels
             GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
+
+            // Subscribe to settings changes to update PageSize
+            AppSettingsService.ItemsPerPageChanged += (s, e) =>
+            {
+                var config = AppConfig.Load();
+                PageSize = config.ItemsPerPage;
+            };
+
+            // Load PageSize from AppConfig after commands are initialized
+            PageSize = AppConfig.Load().ItemsPerPage;
 
             // Load initial data
             InitializeDataAsync();

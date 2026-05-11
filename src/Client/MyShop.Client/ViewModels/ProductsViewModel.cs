@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using LuciferCore.Attributes;
 using Microsoft.Win32;
 using MyShop.Client.Models;
+using MyShop.Client.Services;
 using MyShop.Client.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -478,6 +479,7 @@ namespace MyShop.Client.ViewModels
             _dialogService = dialogService;
             _categoryService = categoryService;
             _imageService = imageService;
+            
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             AddCategoryCommand = new AsyncRelayCommand(AddCategoryAsync, CanExecuteAddCategory);
@@ -525,18 +527,23 @@ namespace MyShop.Client.ViewModels
             ApplyFiltersCommand = new RelayCommand(
                 () =>
                 {
-                    // Apply pending filter/sort/search changes without prompting to leave edit mode
-                    _pageIndex = 1;
-                    OnPropertyChanged(nameof(PageIndex));
-                    _filtersDirty = false;
-                    ApplyFiltersCommand.NotifyCanExecuteChanged();
-                    OnPropertyChanged(nameof(IsApplyEnabled));
+                    PageIndex = 1;
                     LoadProductsCommand.Execute(null);
                 },
                 () => !IsLoading && _filtersDirty
             );
             ImportExcelCommand = new AsyncRelayCommand(ImportFromExcelAsync, CanExecuteImportExcel);
             ImportAccessCommand = new RelayCommand(ImportFromAccess);
+
+            // Subscribe to settings changes to update PageSize
+            AppSettingsService.ItemsPerPageChanged += (s, e) =>
+            {
+                var config = AppConfig.Load();
+                PageSize = config.ItemsPerPage;
+            };
+
+            // Load PageSize from AppConfig after commands are initialized
+            PageSize = AppConfig.Load().ItemsPerPage;
         }
 
         private void RemoveImage(string? imageName)

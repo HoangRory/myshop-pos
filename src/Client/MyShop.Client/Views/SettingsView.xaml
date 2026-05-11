@@ -4,8 +4,74 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="400" d:DesignWidth="600">
-    <Grid>
-        <TextBlock Text="Settings" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="32"/>
-    </Grid>
+             d:DesignHeight="600" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <ScrollViewer>
+        <Border Padding="20">
+            <StackPanel VerticalAlignment="Top" MaxWidth="400">
+                <!-- Section: Pagination Settings -->
+                <TextBlock Text="Cấu hình phân trang" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                
+                <!-- Items Per Page -->
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Số sản phẩm mỗi trang:" Margin="0,0,0,10"/>
+                    <ComboBox ItemsSource="{Binding ItemsPerPageOptions}" 
+                              SelectedItem="{Binding ItemsPerPage, UpdateSourceTrigger=PropertyChanged}"
+                              Padding="10,8" FontSize="14"/>
+                </StackPanel>
+
+                <!-- Last Opened Screen Section -->
+                <TextBlock Text="Màn hình mở khi khởi động" FontSize="18" FontWeight="Bold" Margin="0,30,0,20"/>
+
+
+                <!-- Remember Last Screen Option -->
+                <StackPanel Margin="0,0,0,20" Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding RememberLastScreen, UpdateSourceTrigger=PropertyChanged}"
+                              VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Mở màn hình cuối cùng khi khởi động ứng dụng" 
+                               FontSize="14" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <TextBlock Text="Nếu tắt, ứng dụng sẽ mở màn hình bạn chọn khi khởi động."       
+                           FontSize="12" 
+                           Foreground="#666666" 
+                           Margin="0,0,0,20"/>
+
+                <StackPanel Margin="0,0,0,20"
+                            Visibility="{Binding ShowStartupScreenSelection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Màn hình mở khi khởi động:" Margin="0,0,0,10"/>
+                    <ComboBox ItemsSource="{Binding StartupScreenOptions}"
+                              SelectedItem="{Binding StartupScreen, UpdateSourceTrigger=PropertyChanged}"
+                              Padding="10,8" FontSize="14"/>
+                </StackPanel>
+
+                <TextBlock Text="Cấu hình máy chủ" FontSize="18" FontWeight="Bold" Margin="0,10,0,20"/>
+
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Server IP:" Margin="0,0,0,10"/>
+                    <TextBox Text="{Binding ServerIP, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,8" FontSize="14"/>
+                </StackPanel>
+
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Server Port:" Margin="0,0,0,10"/>
+                    <TextBox Text="{Binding ServerPort, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="10,8" FontSize="14"/>
+                </StackPanel>
+
+                <!-- Save Button -->
+                <Button Content="{Binding SaveButtonText}"
+                        Command="{Binding SaveSettingsCommand}"
+                        Padding="15,10" 
+                        FontSize="14" 
+                        Background="#4CAF50" 
+                        Foreground="White"
+                        Cursor="Hand"
+                        Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+    </ScrollViewer>
 </UserControl>
