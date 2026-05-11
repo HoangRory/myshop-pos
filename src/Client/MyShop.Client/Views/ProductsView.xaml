@@ -128,10 +128,24 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource AppBackground}">
+    <Grid x:Name="RootGrid" Background="{StaticResource AppBackground}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Left}" />
-            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Right}" />
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}" ConverterParameter="Left|980">
+                        <Binding Path="EditingProduct" />
+                        <Binding ElementName="RootGrid" Path="ActualWidth" />
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}" ConverterParameter="Right|980">
+                        <Binding Path="EditingProduct" />
+                        <Binding ElementName="RootGrid" Path="ActualWidth" />
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
