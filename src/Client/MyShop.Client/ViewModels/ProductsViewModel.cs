@@ -149,6 +149,33 @@ namespace MyShop.Client.ViewModels
 
         private Product? _snapshotProduct;
 
+        private static Product CloneProduct(Product product)
+        {
+            return new Product
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Sku = product.Sku,
+                CategoryId = product.CategoryId,
+                ImportPrice = product.ImportPrice,
+                SalePrice = product.SalePrice,
+                StockCount = product.StockCount,
+                Description = product.Description,
+                Images = product.Images,
+                CategoryName = product.CategoryName
+            };
+        }
+
+        private void RestoreSelectedProduct(Product? product)
+        {
+            if (ReferenceEquals(_selectedProduct, product))
+                return;
+
+            _selectedProduct = product;
+            OnPropertyChanged(nameof(SelectedProduct));
+            UpdateCommandStates();
+        }
+
         // Query/filter state
         private int _pageIndex = 1;
         public int PageIndex
@@ -279,6 +306,13 @@ namespace MyShop.Client.ViewModels
                 {
                     if (SetProperty(ref _selectedProduct, value))
                     {
+                        if (value == null)
+                        {
+                            // Selection can be cleared during reload/filtering; keep the edit session alive.
+                            UpdateCommandStates();
+                            return;
+                        }
+
                         // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
                         // Nếu muốn bắt đầu edit, gọi hàm riêng
                         OpenEditMode(value);
@@ -393,31 +427,8 @@ namespace MyShop.Client.ViewModels
                 SelectedImages.Clear();
                 return;
             }
-            // Clone thủ công từng property, không dùng MemberwiseClone
-            var clone = new Product
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                Sku = product.Sku,
-                CategoryId = product.CategoryId,
-                ImportPrice = product.ImportPrice,
-                SalePrice = product.SalePrice,
-                StockCount = product.StockCount,
-                Description = product.Description,
-                Images = product.Images
-            };
-            _snapshotProduct = new Product
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                Sku = product.Sku,
-                CategoryId = product.CategoryId,
-                ImportPrice = product.ImportPrice,
-                SalePrice = product.SalePrice,
-                StockCount = product.StockCount,
-                Description = product.Description,
-                Images = product.Images
-            };
+            var clone = CloneProduct(product);
+            _snapshotProduct = CloneProduct(product);
             EditingProduct = clone;
             // Populate selected images collection from Images string
             SelectedImages = new ObservableCollection<string>(
@@ -900,6 +911,9 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
+                var activeEditProductId = EditingProduct?.ProductId;
+                var activeSelectedProductId = SelectedProduct?.ProductId;
+
                 // Map UI SortBy display names to API field names
                 string sortByField = _sortBy switch
                 {
@@ -923,16 +937,28 @@ namespace MyShop.Client.ViewModels
                     : SelectedCategory?.CategoryId
                 };
                 var (products, totalCount) = await _productService.SearchAsync(query);
+
                 Products.Clear();
                 foreach (var p in products)
                 {
-                    p.CategoryName = FilterCategories
+                    var product = CloneProduct(p);
+                    product.CategoryName = FilterCategories
                         .FirstOrDefault(c => c.CategoryId == p.CategoryId)
                         ?.Name ?? "Không có";
-                    Products.Add(p);
+
+                    Products.Add(product);
+
                     // Start loading the thumbnail asynchronously (do not block the UI)
-                    _ = LoadProductThumbnailAsync(p);
+                    _ = LoadProductThumbnailAsync(product);
                 }
+
+                var restoreProductId = activeEditProductId ?? activeSelectedProductId;
+                if (restoreProductId.HasValue)
+                {
+                    var restoredSelection = Products.FirstOrDefault(x => x.ProductId == restoreProductId.Value);
+                    RestoreSelectedProduct(restoredSelection);
+                }
+
                 TotalCount = totalCount;
 
                 ErrorMessage = string.Empty;
@@ -1018,12 +1044,13 @@ namespace MyShop.Client.ViewModels
 
         private async Task DeleteProductAsync()
         {
-            if (IsLoading || SelectedProduct == null) return;
+            var productToDelete = SelectedProduct ?? EditingProduct;
+            if (IsLoading || productToDelete == null) return;
             IsLoading = true;
             // Confirm deletion
             var confirm = _dialogService.Confirm(
                         "Xác nhận",
-                        $"Bạn có chắc muốn xóa sản phẩm '{SelectedProduct.Name}' không?");
+                        $"Bạn có chắc muốn xóa sản phẩm '{productToDelete.Name}' không?");
             if (!confirm)
             {
                 IsLoading = false;
@@ -1031,7 +1058,7 @@ namespace MyShop.Client.ViewModels
             }
             try
             {
-                var result = await _productService.DeleteAsync(SelectedProduct.ProductId);
+                var result = await _productService.DeleteAsync(productToDelete.ProductId);
                 if (result)
                 {
                     _dialogService.Success("Thành công", "Xóa sản phẩm thành công.");
@@ -1100,7 +1127,7 @@ namespace MyShop.Client.ViewModels
         private bool CanExecuteLoadProducts() => !IsLoading;
         private bool CanExecuteOpenAddForm() => !IsLoading;
         private bool CanExecuteSaveProduct() => !IsLoading && EditingProduct != null;
-        private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && SelectedProduct != null;
+        private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && EditingProduct != null;
         private bool CanExecuteClearForm() => !IsLoading;
 
         private void UpdateCommandStates()

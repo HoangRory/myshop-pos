@@ -324,7 +324,7 @@
                     <DataGrid x:Name="ProductsGrid"
                               Grid.Row="0"
                               ItemsSource="{Binding Products}" 
-                              SelectedItem="{Binding SelectedProduct, Mode=OneWayToSource}"
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               RowHeaderWidth="0"
