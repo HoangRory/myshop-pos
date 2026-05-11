@@ -1,10 +1,14 @@
 using LuciferCore.Attributes;
+using Microsoft.Extensions.DependencyInjection;
 using MyShop.Client.Helpers;
 using MyShop.Client.Models;
 using MyShop.Client.Services;
+using MyShop.Client.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Windows.Input;
+using System.Windows;
 
 namespace MyShop.Client.ViewModels
 {
@@ -40,6 +44,7 @@ namespace MyShop.Client.ViewModels
         public ICommand NavigateCommand { get; }
         public ICommand ToggleSidebarCommand { get; }
         public ICommand CloseSidebarCommand { get; }
+        public ICommand LogoutCommand { get; }
 
         private bool _isSidebarOpen;
         public bool IsSidebarOpen
@@ -81,10 +86,17 @@ namespace MyShop.Client.ViewModels
 
             ToggleSidebarCommand = new RelayCommand(_ => IsSidebarOpen = !IsSidebarOpen);
             CloseSidebarCommand = new RelayCommand(_ => IsSidebarOpen = false);
+            LogoutCommand = new AsyncRelayCommand(_ => ExecuteLogoutAsync());
 
+            ResetToStartup();
+
+        }
+
+        public void ResetToStartup()
+        {
             var config = AppConfig.Load();
-            // If RememberLastScreen is enabled, navigate to last screen; otherwise start with the configured startup screen
             var startupSection = config.RememberLastScreen ? config.LastViewModel : config.StartupScreen;
+
             if (string.IsNullOrWhiteSpace(startupSection))
             {
                 startupSection = "Settings";
@@ -97,9 +109,49 @@ namespace MyShop.Client.ViewModels
 
             _selectedSection = startupSection;
 
-            // Set default view
-            Navigate(SelectedSection, persistLastView: false);
+            Navigate(startupSection, persistLastView: false);
+        }
 
+        private async Task ExecuteLogoutAsync()
+        {
+            try
+            {
+                var authService = DIContainer.ServiceProvider.GetRequiredService<IAuthService>();
+                await authService.LogoutAsync();
+            }
+            catch
+            {
+                // Nếu server không phản hồi thì vẫn cho phép logout cục bộ.
+            }
+
+            ClearRememberedAccount();
+            ResetToStartup();
+
+            App.Current.MainWindow.DataContext = DIContainer.ServiceProvider.GetRequiredService<AuthViewModel>();
+        }
+
+        private static void ClearRememberedAccount()
+        {
+            var candidates = new[]
+            {
+                "user_state.json",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user_state.json")
+            };
+
+            foreach (var filePath in candidates)
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+                catch
+                {
+                    // Bỏ qua nếu file đang bị khóa hoặc không thể xóa.
+                }
+            }
         }
 
         private void Navigate(string? viewName, bool persistLastView = true)

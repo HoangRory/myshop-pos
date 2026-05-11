@@ -218,6 +218,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="30"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Header inside sidebar -->
@@ -313,6 +314,26 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
+
+                <Border Grid.Row="2"
+                        Margin="12,0,12,12"
+                        Background="#1F1F22"
+                        CornerRadius="6">
+                    <Button Content="Đăng xuất"
+                            Command="{Binding LogoutCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="#FFB4B4"
+                            FontWeight="SemiBold"
+                            Height="40"
+                            Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Border>
             </Grid>
         </Border>
     </Grid>
