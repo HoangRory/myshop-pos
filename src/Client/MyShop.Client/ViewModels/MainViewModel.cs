@@ -31,6 +31,15 @@ namespace MyShop.Client.ViewModels
         }
 
         public ICommand NavigateCommand { get; }
+        public ICommand ToggleSidebarCommand { get; }
+        public ICommand CloseSidebarCommand { get; }
+
+        private bool _isSidebarOpen;
+        public bool IsSidebarOpen
+        {
+            get => _isSidebarOpen;
+            set { _isSidebarOpen = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSidebarOpen))); }
+        }
 
         public MainViewModel(INavigationService navigationService)
         {
@@ -62,6 +71,9 @@ namespace MyShop.Client.ViewModels
 
             NavigateCommand = new RelayCommand(p => Navigate(p?.ToString()));
 
+            ToggleSidebarCommand = new RelayCommand(_ => IsSidebarOpen = !IsSidebarOpen);
+            CloseSidebarCommand = new RelayCommand(_ => IsSidebarOpen = false);
+
             var config = AppConfig.Load();
             _selectedSection = config.LastViewModel;
 
@@ -75,6 +87,7 @@ namespace MyShop.Client.ViewModels
             if (string.IsNullOrEmpty(viewName)) return;
 
             _navigationService.NavigateTo(viewName);
+            IsSidebarOpen = false;
             UpdateSelection(viewName);
 
             var config = AppConfig.Load(); // Load để giữ lại IP/Port cũ
@@ -96,6 +109,17 @@ namespace MyShop.Client.ViewModels
             foreach (var item in MenuItems)
             {
                 item.IsSelected = item.Name.Equals(viewName, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private const double CompactThresholdForHost = 800.0;
+
+        // Called by the view when the host/control width changes.
+        public void HostWidthChanged(double width)
+        {
+            if (width <= CompactThresholdForHost)
+            {
+                IsSidebarOpen = false;
             }
         }
     }

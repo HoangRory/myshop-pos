@@ -10,25 +10,208 @@
              mc:Ignorable="d">
 
     <UserControl.Resources>
-        <helpers:PluginTemplateSelector x:Key="PluginSelector" />
+        <helpers:PluginTemplateSelector x:Key="PluginSelector"/>
+        <helpers:WidthToBoolConverter x:Key="IsCompactConverter"/>
+
+        <!-- Styles for responsive behaviors -->
+        <Style x:Key="HamburgerStyle"
+               TargetType="Button">
+            <Setter Property="Visibility"
+                    Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IsCompactConverter}, ConverterParameter=800}"
+                             Value="True">
+                    <Setter Property="Visibility"
+                            Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="SidebarStyle"
+               TargetType="Border">
+            <Setter Property="Visibility"
+                    Value="Visible"/>
+            <Setter Property="Grid.ColumnSpan"
+                    Value="1"/>
+            <Setter Property="Panel.ZIndex"
+                    Value="2"/>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IsCompactConverter}, ConverterParameter=800}"
+                                   Value="True"/>
+                        <Condition Binding="{Binding DataContext.IsSidebarOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.Setters>
+                        <Setter Property="Visibility"
+                                Value="Visible"/>
+                        <Setter Property="Grid.ColumnSpan"
+                                Value="2"/>
+                        <Setter Property="Panel.ZIndex"
+                                Value="5"/>
+                    </MultiDataTrigger.Setters>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IsCompactConverter}, ConverterParameter=800}"
+                                   Value="True"/>
+                        <Condition Binding="{Binding DataContext.IsSidebarOpen, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility"
+                            Value="Collapsed"/>
+                </MultiDataTrigger>
+                <DataTrigger Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IsCompactConverter}, ConverterParameter=800}"
+                             Value="False">
+                    <Setter Property="Visibility"
+                            Value="Visible"/>
+                    <Setter Property="Grid.ColumnSpan"
+                            Value="1"/>
+                    <Setter Property="Panel.ZIndex"
+                            Value="2"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
-    
+
     <Grid>
-        <Grid.ColumnDefinitions>
-            <!-- Giữ nguyên 150 nhưng Sidebar thực tế là 260 nên cột này nên khớp 260 -->
-            <ColumnDefinition Width="260" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <!-- MainLayout: fixed top header + content area -->
+        <Grid x:Name="MainLayout"
+              Panel.ZIndex="0">
+            <Grid.Resources>
+                <!-- MainLayout margin when sidebar is docked on desktop -->
+                <Style x:Key="MainLayoutStyle"
+                       TargetType="Grid">
+                    <Setter Property="Margin"
+                            Value="0"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IsCompactConverter}, ConverterParameter=800}"
+                                     Value="False">
+                            <Setter Property="Margin"
+                                    Value="260,0,0,0"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Resources>
 
-        <!-- Main Content -->
-        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" ContentTemplateSelector="{StaticResource PluginSelector}" />
+            <Grid.Style>
+                <StaticResource ResourceKey="MainLayoutStyle"/>
+            </Grid.Style>
 
-        <!-- Sidebar: Layout nguyên bản của bạn -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header inside content area -->
+            <Grid Grid.Row="0"
+                  Background="White">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Hamburger (only visible in compact widths) -->
+                <Button Width="40"
+                    Height="40"
+                    Margin="8"
+                    FontSize="18"
+                    Foreground="Black"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Content="☰"
+                    Command="{Binding ToggleSidebarCommand}"
+                    Style="{StaticResource HamburgerStyle}">
+
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <ContentPresenter HorizontalAlignment="Center"
+                              VerticalAlignment="Center"/>
+                        </ControlTemplate>
+                    </Button.Template>
+
+                </Button>
+
+                <!-- Page title (left/center) -->
+                <TextBlock Grid.Column="1"
+                           VerticalAlignment="Center"
+                           Foreground="Black"
+                           FontSize="16"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding PageTitle}"/>
+            </Grid>
+
+            <!-- Main content area -->
+            <ContentControl x:Name="MainContent"
+                            Grid.Row="1"
+                            Content="{Binding CurrentViewModel}"
+                            ContentTemplateSelector="{StaticResource PluginSelector}"/>
+        </Grid>
+
+        <!-- Overlay: covers header + content when sidebar overlays in compact mode. Not a Button. -->
+        <!-- Overlay -->
+        <Button x:Name="Overlay"
+                Grid.RowSpan="2"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Background="#66000000"
+                BorderThickness="0"
+                Panel.ZIndex="4"
+                Command="{Binding CloseSidebarCommand}">
+
+            <Button.Style>
+                <Style TargetType="Button">
+
+                    <Setter Property="Visibility"
+                            Value="Collapsed"/>
+                    <Setter Property="Background"
+                            Value="#66000000"/>
+                    <Setter Property="BorderThickness"
+                            Value="0"/>
+                    <Setter Property="Focusable"
+                            Value="False"/>
+
+                    <!-- XÓA hover effect -->
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+
+                                <Condition Binding="{Binding ActualWidth,
+                               RelativeSource={RelativeSource AncestorType=UserControl},
+                               Converter={StaticResource IsCompactConverter},
+                               ConverterParameter=800}"
+                                           Value="True"/>
+
+                                <Condition Binding="{Binding IsSidebarOpen}"
+                                           Value="True"/>
+
+                            </MultiDataTrigger.Conditions>
+
+                            <Setter Property="Visibility"
+                                    Value="Visible"/>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+
+                </Style>
+            </Button.Style>
+        </Button>
+        <!-- Sidebar: single instance, full height, switches between docked and overlay via triggers -->
         <Border x:Name="Sidebar"
-                Grid.Column="0"
                 Width="260"
                 Background="#2D2D30"
-                Panel.ZIndex="2">
+                Panel.ZIndex="5"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Left"
+                Style="{StaticResource SidebarStyle}">
 
             <Grid>
                 <Grid.RowDefinitions>
@@ -36,43 +219,63 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Header: Giữ nguyên -->
-                <DockPanel Grid.Row="0" Margin="12,8,12,8" LastChildFill="True">
-                    <TextBlock Text="Menu" Foreground="White" FontSize="16" DockPanel.Dock="Left" VerticalAlignment="Center" />
+                <!-- Header inside sidebar -->
+                <DockPanel Grid.Row="0"
+                           Margin="12,8,12,8"
+                           LastChildFill="True">
+                    <TextBlock Text="Menu"
+                               Foreground="White"
+                               FontSize="16"
+                               DockPanel.Dock="Left"
+                               VerticalAlignment="Center"/>
                 </DockPanel>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-
-                    <!-- TỰ ĐỘNG LOAD ITEM TẠI ĐÂY -->
-                    <ItemsControl ItemsSource="{Binding MenuItems}" Margin="8,8,8,12">
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding MenuItems}"
+                                  Margin="8,8,8,12">
                         <ItemsControl.Resources>
-                            <!-- Style Gốc của bạn - Không đổi một thông số nào -->
-                            <Style x:Key="SidebarMenuButtonBase" TargetType="Button">
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="BorderThickness" Value="0" />
-                                <Setter Property="Foreground" Value="#CCCCCC" />
-                                <Setter Property="HorizontalContentAlignment" Value="Left" />
-                                <Setter Property="Padding" Value="12,0" />
-                                <Setter Property="Height" Value="40" />
-                                <Setter Property="FontSize" Value="14" />
+                            <Style x:Key="SidebarMenuButtonBase"
+                                   TargetType="Button">
+                                <Setter Property="Background"
+                                        Value="Transparent"/>
+                                <Setter Property="BorderThickness"
+                                        Value="0"/>
+                                <Setter Property="Foreground"
+                                        Value="#CCCCCC"/>
+                                <Setter Property="HorizontalContentAlignment"
+                                        Value="Left"/>
+                                <Setter Property="Padding"
+                                        Value="12,0"/>
+                                <Setter Property="Height"
+                                        Value="40"/>
+                                <Setter Property="FontSize"
+                                        Value="14"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="{TemplateBinding Background}"
                                                     BorderBrush="{TemplateBinding BorderBrush}"
                                                     BorderThickness="{TemplateBinding BorderThickness}">
-                                                <ContentPresenter VerticalAlignment="Center" Margin="12,0" />
+                                                <ContentPresenter VerticalAlignment="Center"
+                                                                  Margin="12,0"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
                                 <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#333337" />
-                                        <Setter Property="Foreground" Value="White" />
+                                    <Trigger Property="IsMouseOver"
+                                             Value="True">
+                                        <Setter Property="Background"
+                                                Value="#333337"/>
+                                        <Setter Property="Foreground"
+                                                Value="White"/>
                                     </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#2B2B2E" />
+                                    <Trigger Property="IsPressed"
+                                             Value="True">
+                                        <Setter Property="Background"
+                                                Value="#2B2B2E"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -80,21 +283,26 @@
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <!-- Mỗi Button được sinh ra tương ứng với 1 Plugin trong MenuItems -->
-                                <Button Content="{Binding Name}" 
-                                        Margin="8,4" 
+                                <Button Content="{Binding Name}"
+                                        Margin="8,4"
                                         Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding Name}">
                                     <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarMenuButtonBase}">
+                                        <Style TargetType="Button"
+                                               BasedOn="{StaticResource SidebarMenuButtonBase}">
                                             <Style.Triggers>
-                                                <!-- Bind vào IsSelected của PluginMetadata -->
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="Background" Value="#27272A" />
-                                                    <Setter Property="Foreground" Value="White" />
-                                                    <Setter Property="BorderThickness" Value="4,0,0,0" />
-                                                    <Setter Property="BorderBrush" Value="#0078D7" />
-                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                <DataTrigger Binding="{Binding IsSelected}"
+                                                             Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="#27272A"/>
+                                                    <Setter Property="Foreground"
+                                                            Value="White"/>
+                                                    <Setter Property="BorderThickness"
+                                                            Value="4,0,0,0"/>
+                                                    <Setter Property="BorderBrush"
+                                                            Value="#0078D7"/>
+                                                    <Setter Property="FontWeight"
+                                                            Value="SemiBold"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
