@@ -8,7 +8,7 @@ namespace MyShop.Client.Helpers
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value?.ToString() ?? "0";
+            return value == null ? string.Empty : value.ToString();
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -16,12 +16,12 @@ namespace MyShop.Client.Helpers
             var str = value?.ToString();
 
             if (string.IsNullOrWhiteSpace(str))
-                return 0m;
+                return null;
 
             if (decimal.TryParse(str, out var result))
                 return result;
 
-            return 0m; // fallback
+            return Binding.DoNothing; // keep the current value when input is invalid
         }
     }
 }

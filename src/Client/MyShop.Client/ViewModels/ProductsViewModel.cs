@@ -60,6 +60,11 @@ namespace MyShop.Client.ViewModels
         public string AddCategoryButtonText => IsAddCategoryPanelVisible ? "Hủy" : "Thêm danh mục";
         public string DeleteCategoryButtonText => IsDeleteCategoryPanelVisible ? "Hủy" : "Xóa danh mục";
 
+        // Tracks whether there are unapplied filter/sort/search changes
+        private bool _filtersDirty;
+
+        public bool IsApplyEnabled => !IsLoading && _filtersDirty;
+
         private Category? _selectedCategory;
         public Category? SelectedCategory
         {
@@ -69,15 +74,13 @@ namespace MyShop.Client.ViewModels
                 if (_selectedCategory == value)
                     return;
 
-                TryChangeState(() =>
+                if (SetProperty(ref _selectedCategory, value))
                 {
-                    if (SetProperty(ref _selectedCategory, value))
-                    {
-                        _pageIndex = 1;
-                        OnPropertyChanged(nameof(PageIndex));
-                        LoadProductsCommand.Execute(null);
-                    }
-                });
+                    // Do not auto-apply filter changes. Require user to press Apply.
+                    _filtersDirty = true;
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
+                }
             }
         }
         // --- Editing Flow State ---
@@ -102,14 +105,7 @@ namespace MyShop.Client.ViewModels
             return true;
         }
 
-        private bool TryChangeState(Action action)
-        {
-            if (!TryLeaveEditMode())
-                return false;
-
-            action();
-            return true;
-        }
+        
 
         private Product? _editingProduct;
         public Product? EditingProduct
@@ -179,19 +175,19 @@ namespace MyShop.Client.ViewModels
         public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Ceiling((double)TotalCount / PageSize);
 
         private string _searchKeyword;
-        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) PageIndex = 1; } }
+        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _minPrice;
-        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) PageIndex = 1; } }
+        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _maxPrice;
-        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) PageIndex = 1; } }
+        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private string _selectedSortField = "Name";
-        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) LoadProductsCommand.Execute(null); } }
+        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private bool _sortDescending = false;
-        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) LoadProductsCommand.Execute(null); } }
+        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         // Sort Options for UI
         private ObservableCollection<string> _sortOptions = new ObservableCollection<string> { "Tên", "Giá", "Tồn kho" };
@@ -209,7 +205,9 @@ namespace MyShop.Client.ViewModels
             {
                 if (SetProperty(ref _sortBy, value))
                 {
-                    LoadProductsCommand.Execute(null);
+                    _filtersDirty = true;
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
                 }
             }
         }
@@ -222,13 +220,15 @@ namespace MyShop.Client.ViewModels
             {
                 if (SetProperty(ref _isAscending, value))
                 {
-                    LoadProductsCommand.Execute(null);
+                    _filtersDirty = true;
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
                 }
             }
         }
 
         private string _selectedProductType;
-        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) PageIndex = 1; } }
+        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private Product? _selectedProduct;
         public Product? SelectedProduct
@@ -236,12 +236,31 @@ namespace MyShop.Client.ViewModels
             get => _selectedProduct;
             set
             {
-                if (SetProperty(ref _selectedProduct, value))
+                if (_selectedProduct == value)
+                    return;
+
+                // If currently editing another product, confirm before switching selection
+                if (EditingProduct != null && value != null && EditingProduct.ProductId != value.ProductId)
                 {
-                    // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
-                    // Nếu muốn bắt đầu edit, gọi hàm riêng
-                    OpenEditMode(value);
-                    UpdateCommandStates();
+                    if (!TryLeaveEditMode())
+                        return; // user cancelled, do not change selection
+
+                    // TryLeaveEditMode cleared the edit state; proceed with selection
+                    if (SetProperty(ref _selectedProduct, value))
+                    {
+                        OpenEditMode(value);
+                        UpdateCommandStates();
+                    }
+                }
+                else
+                {
+                    if (SetProperty(ref _selectedProduct, value))
+                    {
+                        // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
+                        // Nếu muốn bắt đầu edit, gọi hàm riêng
+                        OpenEditMode(value);
+                        UpdateCommandStates();
+                    }
                 }
             }
         }
@@ -410,7 +429,7 @@ namespace MyShop.Client.ViewModels
         public RelayCommand<string> RemoveImageCommand { get; }
         public RelayCommand NextPageCommand { get; }
         public RelayCommand PrevPageCommand { get; }
-        public ICommand ApplyFiltersCommand { get; }
+        public RelayCommand ApplyFiltersCommand { get; }
         public AsyncRelayCommand ImportExcelCommand { get; }
         public ICommand ImportAccessCommand { get; }
         public ICommand AddProductTypeCommand { get; }
@@ -436,18 +455,19 @@ namespace MyShop.Client.ViewModels
             ClearFormCommand = new AsyncRelayCommand(() => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
             UploadImageCommand = new AsyncRelayCommand(UploadImageAsync);
             RemoveImageCommand = new RelayCommand<string>(RemoveImage);
+            CancelEditCommand = new AsyncRelayCommand(() => { TryLeaveEditMode(); return Task.CompletedTask; }, CanExecuteClearForm);
 
             // ===============================
             // STEP 4: Sửa NextPageCommand
             // ===============================
             NextPageCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
                     if (PageIndex < TotalPages)
                     {
                         PageIndex++;
                     }
-                }),
+                },
                 () => PageIndex < TotalPages
             );
 
@@ -455,13 +475,13 @@ namespace MyShop.Client.ViewModels
             // STEP 5: Sửa PrevPageCommand
             // ===============================
             PrevPageCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
                     if (PageIndex > 1)
                     {
                         PageIndex--;
                     }
-                }),
+                },
                 () => PageIndex > 1
             );
 
@@ -469,12 +489,17 @@ namespace MyShop.Client.ViewModels
             // STEP 6: Sửa ApplyFiltersCommand
             // ===============================
             ApplyFiltersCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
+                    // Apply pending filter/sort/search changes without prompting to leave edit mode
                     _pageIndex = 1;
                     OnPropertyChanged(nameof(PageIndex));
+                    _filtersDirty = false;
+                    ApplyFiltersCommand.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
                     LoadProductsCommand.Execute(null);
-                })
+                },
+                () => !IsLoading && _filtersDirty
             );
             ImportExcelCommand = new AsyncRelayCommand(ImportFromExcelAsync, CanExecuteImportExcel);
             ImportAccessCommand = new RelayCommand(ImportFromAccess);
@@ -589,7 +614,8 @@ namespace MyShop.Client.ViewModels
 
         private void ClearForm()
         {
-            ClearEdit();
+            // Confirm if user is currently editing; TryLeaveEditMode will clear on confirm
+            TryLeaveEditMode();
         }
 
         private async Task OpenAddFormAsync()
@@ -1054,6 +1080,8 @@ namespace MyShop.Client.ViewModels
             DeleteCategoryCommand?.NotifyCanExecuteChanged();
             ToggleAddCategoryPanelCommand?.NotifyCanExecuteChanged();
             ToggleDeleteCategoryPanelCommand?.NotifyCanExecuteChanged();
+            ApplyFiltersCommand?.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(IsApplyEnabled));
             NotifyPagingCommands();
         }
 

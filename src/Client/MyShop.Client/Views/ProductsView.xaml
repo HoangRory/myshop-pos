@@ -284,13 +284,13 @@
                                     <TextBox Grid.Column="0"
                                              MinWidth="100"
                                              MaxWidth="150"
-                                             Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SafeDecimalConverter}}"
                                              Style="{StaticResource FilterTextBoxStyle}" />
                                     <TextBlock Grid.Column="1" Text="-" VerticalAlignment="Center" Margin="6,0" Foreground="{StaticResource MutedBrush}" />
                                     <TextBox Grid.Column="2"
                                              MinWidth="100"
                                              MaxWidth="150"
-                                             Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}"
+                                             Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SafeDecimalConverter}}"
                                              Style="{StaticResource FilterTextBoxStyle}" />
                                 </Grid>
                             </Grid>
@@ -302,11 +302,12 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text=" " Margin="0,0,0,4" Opacity="0" />
                                 <Button Grid.Row="1"
-                                        Content="Áp dụng"
-                                        Command="{Binding ApplyFiltersCommand}"
-                                        Height="30"
-                                        MinWidth="110"
-                                        Style="{StaticResource PrimaryButton}" />
+                                    Content="Áp dụng"
+                                    Command="{Binding ApplyFiltersCommand}"
+                                    IsEnabled="{Binding IsApplyEnabled}"
+                                    Height="30"
+                                    MinWidth="110"
+                                    Style="{StaticResource PrimaryButton}" />
                             </Grid>
                         </WrapPanel>
                     </Grid>
