@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:MyShop.Client.ViewModels"
         xmlns:views="clr-namespace:MyShop.Client.Views"
         mc:Ignorable="d"
-        Title="MyShop" Height="600" Width="1200" >
+        Title="MyShop" Height="600" Width="1200" MinWidth="650" >
 
     <Window.Resources>
         <!-- DataTemplate: "Bản đồ" để WPF biết View nào đi với ViewModel nào -->
