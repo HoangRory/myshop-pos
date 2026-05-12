@@ -25,45 +25,76 @@
         <Color x:Key="DataGridSelectedBg">#E8F0F6</Color>
         <Color x:Key="DataGridEditingBorder">#FFE8B6</Color>
 
-        <LinearGradientBrush x:Key="AppBackground" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F8FBFD" Offset="0" />
-            <GradientStop Color="{StaticResource BgColor}" Offset="1" />
+        <LinearGradientBrush x:Key="AppBackground"
+                StartPoint="0,0"
+                EndPoint="0,1">
+            <GradientStop Color="#F8FBFD"
+                    Offset="0"/>
+            <GradientStop Color="{StaticResource BgColor}"
+                    Offset="1"/>
         </LinearGradientBrush>
-        <SolidColorBrush x:Key="CardBackground" Color="{StaticResource CardBg}" />
-        <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource BorderColor}" />
-        <SolidColorBrush x:Key="MutedBrush" Color="{StaticResource TextMuted}" />
-        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}" />
-        <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentDark}" />
-        <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoft}" />
+        <SolidColorBrush x:Key="CardBackground"
+                Color="{StaticResource CardBg}"/>
+        <SolidColorBrush x:Key="CardBorderBrush"
+                Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="MutedBrush"
+                Color="{StaticResource TextMuted}"/>
+        <SolidColorBrush x:Key="AccentBrush"
+                Color="{StaticResource Accent}"/>
+        <SolidColorBrush x:Key="AccentDarkBrush"
+                Color="{StaticResource AccentDark}"/>
+        <SolidColorBrush x:Key="AccentSoftBrush"
+                Color="{StaticResource AccentSoft}"/>
 
-        <SolidColorBrush x:Key="DataGridHoverBrush" Color="{StaticResource DataGridHoverBg}" />
-        <SolidColorBrush x:Key="DataGridSelectedBrush" Color="{StaticResource DataGridSelectedBg}" />
-        <SolidColorBrush x:Key="DataGridEditingBorderBrush" Color="{StaticResource DataGridEditingBorder}" />
+        <SolidColorBrush x:Key="DataGridHoverBrush"
+                Color="{StaticResource DataGridHoverBg}"/>
+        <SolidColorBrush x:Key="DataGridSelectedBrush"
+                Color="{StaticResource DataGridSelectedBg}"/>
+        <SolidColorBrush x:Key="DataGridEditingBorderBrush"
+                Color="{StaticResource DataGridEditingBorder}"/>
 
         <helpers:OrderItemsToTotalConverter x:Key="OrderItemsToTotalConverter"/>
         <helpers:DetailPanelWidthConverter x:Key="DetailPanelWidthConverter"/>
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource CardBackground}" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="14" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style x:Key="CardStyle"
+                TargetType="Border">
+            <Setter Property="Background"
+                    Value="{StaticResource CardBackground}"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="14"/>
+            <Setter Property="CornerRadius"
+                    Value="10"/>
+            <Setter Property="Margin"
+                    Value="0"/>
+            <Setter Property="SnapsToDevicePixels"
+                    Value="True"/>
         </Style>
 
-        <Style x:Key="SectionTitleText" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="#203040" />
+        <Style x:Key="SectionTitleText"
+                TargetType="TextBlock">
+            <Setter Property="FontSize"
+                    Value="13"/>
+            <Setter Property="FontWeight"
+                    Value="SemiBold"/>
+            <Setter Property="Foreground"
+                    Value="#203040"/>
         </Style>
 
-        <Style x:Key="BaseButton" TargetType="Button">
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="MinWidth" Value="92" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="BorderThickness" Value="1" />
+        <Style x:Key="BaseButton"
+                TargetType="Button">
+            <Setter Property="Padding"
+                    Value="12,7"/>
+            <Setter Property="MinWidth"
+                    Value="92"/>
+            <Setter Property="FontWeight"
+                    Value="SemiBold"/>
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -75,17 +106,26 @@
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
-                                              Margin="2,0" />
+                                              Margin="2,0"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.92" />
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Opacity"
+                                        Value="0.92"/>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.82" />
+                            <Trigger Property="IsPressed"
+                                    Value="True">
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Opacity"
+                                        Value="0.82"/>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45" />
+                            <Trigger Property="IsEnabled"
+                                    Value="False">
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Opacity"
+                                        Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -94,91 +134,142 @@
         </Style>
 
         <!-- Primary button -->
-        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderBrush" Value="{StaticResource AccentDarkBrush}" />
+        <Style x:Key="PrimaryButton"
+                TargetType="Button"
+                BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background"
+                    Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource AccentDarkBrush}"/>
         </Style>
 
         <!-- Footer action buttons -->
         <Style x:Key="FooterActionButton"
-            TargetType="Button"
-            BasedOn="{StaticResource BaseButton}">
+               TargetType="Button"
+               BasedOn="{StaticResource BaseButton}">
 
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="MinWidth" Value="130"/>
-            <Setter Property="Padding" Value="18,0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Height"
+                    Value="40"/>
+            <Setter Property="MinWidth"
+                    Value="130"/>
+            <Setter Property="Padding"
+                    Value="18,0"/>
+            <Setter Property="FontSize"
+                    Value="13"/>
+            <Setter Property="FontWeight"
+                    Value="SemiBold"/>
+            <Setter Property="Margin"
+                    Value="0"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
         </Style>
 
         <!-- Primary footer button -->
         <Style x:Key="FooterPrimaryButton"
-            TargetType="Button"
-            BasedOn="{StaticResource FooterActionButton}">
+               TargetType="Button"
+               BasedOn="{StaticResource FooterActionButton}">
 
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentDarkBrush}"/>
+            <Setter Property="Background"
+                    Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource AccentDarkBrush}"/>
         </Style>
 
         <!-- Danger footer button -->
         <Style x:Key="FooterDangerButton"
-            TargetType="Button"
-            BasedOn="{StaticResource FooterActionButton}">
+               TargetType="Button"
+               BasedOn="{StaticResource FooterActionButton}">
 
-            <Setter Property="Background" Value="#DC2626"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#B91C1C"/>
+            <Setter Property="Background"
+                    Value="#DC2626"/>
+            <Setter Property="Foreground"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="#B91C1C"/>
         </Style>
 
         <!-- Neutral footer button -->
         <Style x:Key="FooterNeutralButton"
-            TargetType="Button"
-            BasedOn="{StaticResource FooterActionButton}">
+               TargetType="Button"
+               BasedOn="{StaticResource FooterActionButton}">
 
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#475569"/>
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="Background"
+                    Value="White"/>
+            <Setter Property="Foreground"
+                    Value="#475569"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
         </Style>
 
-        <Style x:Key="NeutralButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
-            <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="Foreground" Value="#334155" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="Padding" Value="10,6" />
-            <Setter Property="MinWidth" Value="36" />
+        <Style x:Key="NeutralButton"
+                TargetType="Button"
+                BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Background"
+                    Value="#FFFFFF"/>
+            <Setter Property="Foreground"
+                    Value="#334155"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="Padding"
+                    Value="10,6"/>
+            <Setter Property="MinWidth"
+                    Value="36"/>
         </Style>
 
-        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="8,4" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="White" />
+        <Style x:Key="InputTextBoxStyle"
+                TargetType="TextBox">
+            <Setter Property="Height"
+                    Value="32"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
+            <Setter Property="Padding"
+                    Value="8,4"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Background"
+                    Value="White"/>
         </Style>
 
-        <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="8,3" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="White" />
+        <Style x:Key="InputComboBoxStyle"
+                TargetType="ComboBox">
+            <Setter Property="Height"
+                    Value="32"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
+            <Setter Property="Padding"
+                    Value="8,3"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Background"
+                    Value="White"/>
         </Style>
 
-        <Style x:Key="InputDatePickerStyle" TargetType="DatePicker">
-            <Setter Property="Height" Value="32" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="White" />
-            <Setter Property="Foreground" Value="#1F2937" />
-            <Setter Property="Language" Value="vi-VN" />
-            <Setter Property="SelectedDateFormat" Value="Short" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style x:Key="InputDatePickerStyle"
+                TargetType="DatePicker">
+            <Setter Property="Height"
+                    Value="32"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Background"
+                    Value="White"/>
+            <Setter Property="Foreground"
+                    Value="#1F2937"/>
+            <Setter Property="Language"
+                    Value="vi-VN"/>
+            <Setter Property="SelectedDateFormat"
+                    Value="Short"/>
+            <Setter Property="FocusVisualStyle"
+                    Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DatePicker">
@@ -191,8 +282,8 @@
                                     SnapsToDevicePixels="True">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="34"/>
                                     </Grid.ColumnDefinitions>
 
                                     <DatePickerTextBox x:Name="PART_TextBox"
@@ -201,7 +292,7 @@
                                                        BorderThickness="0"
                                                        VerticalContentAlignment="Center"
                                                        Padding="8,0,6,0"
-                                                       Foreground="{TemplateBinding Foreground}" />
+                                                       Foreground="{TemplateBinding Foreground}"/>
 
                                     <Button x:Name="PART_Button"
                                             Grid.Column="1"
@@ -209,10 +300,11 @@
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Cursor="Hand">
-                                        <Grid Width="14" Height="14">
+                                        <Grid Width="14"
+                                                Height="14">
                                             <Path Stretch="Fill"
                                                   Fill="#64748B"
-                                                  Data="M3,1H4V2H8V1H9V2H10C10.5523,2 11,2.44772 11,3V10C11,10.5523 10.5523,11 10,11H3C2.44772,11 2,10.5523 2,10V3C2,2.44772 2.44772,2 3,2V1ZM3,4V10H10V4H3Z" />
+                                                  Data="M3,1H4V2H8V1H9V2H10C10.5523,2 11,2.44772 11,3V10C11,10.5523 10.5523,11 10,11H3C2.44772,11 2,10.5523 2,10V3C2,2.44772 2.44772,2 3,2V1ZM3,4V10H10V4H3Z"/>
                                         </Grid>
                                     </Button>
                                 </Grid>
@@ -232,14 +324,17 @@
                                         SnapsToDevicePixels="True">
                                     <Calendar x:Name="PART_Calendar"
                                               Background="White"
-                                              BorderThickness="0" />
+                                              BorderThickness="0"/>
                                 </Border>
                             </Popup>
                         </Grid>
 
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="OuterBorder" Property="Opacity" Value="0.6" />
+                            <Trigger Property="IsEnabled"
+                                    Value="False">
+                                <Setter TargetName="OuterBorder"
+                                        Property="Opacity"
+                                        Value="0.6"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -248,10 +343,14 @@
         </Style>
 
         <Style TargetType="{x:Type primitives:DatePickerTextBox}">
-            <Setter Property="Padding" Value="8,0" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Padding"
+                    Value="8,0"/>
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+            <Setter Property="Background"
+                    Value="Transparent"/>
+            <Setter Property="FocusVisualStyle"
+                    Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type primitives:DatePickerTextBox}">
@@ -260,21 +359,27 @@
                                           Background="Transparent"
                                           BorderThickness="0"
                                           HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden" />
+                                          VerticalScrollBarVisibility="Hidden"/>
                             <TextBlock x:Name="PlaceholderText"
                                        Text="dd/MM/yyyy"
                                        Foreground="{StaticResource MutedBrush}"
                                        Margin="2,0,0,0"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
-                                       Visibility="Collapsed" />
+                                       Visibility="Collapsed"/>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                            <Trigger Property="Text"
+                                    Value="">
+                                <Setter TargetName="PlaceholderText"
+                                        Property="Visibility"
+                                        Value="Visible"/>
                             </Trigger>
-                            <Trigger Property="Text" Value="{x:Null}">
-                                <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                            <Trigger Property="Text"
+                                    Value="{x:Null}">
+                                <Setter TargetName="PlaceholderText"
+                                        Property="Visibility"
+                                        Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -283,41 +388,53 @@
         </Style>
 
         <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="AlternatingRowBackground" Value="#FAFCFE" />
-            <Setter Property="RowBackground" Value="White" />
-            <Setter Property="HorizontalGridLinesBrush" Value="#EEF3F7" />
+            <Setter Property="Background"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+            <Setter Property="AlternatingRowBackground"
+                    Value="#FAFCFE"/>
+            <Setter Property="RowBackground"
+                    Value="White"/>
+            <Setter Property="HorizontalGridLinesBrush"
+                    Value="#EEF3F7"/>
         </Style>
 
         <!-- DataGrid row style -->
         <Style TargetType="DataGridRow">
-            <Setter Property="Height" Value="42" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Height"
+                    Value="42"/>
+            <Setter Property="Margin"
+                    Value="0"/>
+            <Setter Property="SnapsToDevicePixels"
+                    Value="True"/>
+            <Setter Property="Background"
+                    Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Border x:Name="DGR_Border"
-                        Background="{TemplateBinding Background}">
-                            <DataGridCellsPresenter />
+                                Background="{TemplateBinding Background}">
+                            <DataGridCellsPresenter/>
                         </Border>
 
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
+                            <Trigger Property="IsSelected"
+                                    Value="True">
                                 <Setter TargetName="DGR_Border"
-                                Property="Background"
-                                Value="{StaticResource DataGridSelectedBrush}" />
+                                        Property="Background"
+                                        Value="{StaticResource DataGridSelectedBrush}"/>
                                 <Setter Property="Foreground"
-                                Value="#333333" />
+                                        Value="#333333"/>
                             </Trigger>
 
-                            <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger Property="IsMouseOver"
+                                    Value="True">
                                 <Setter TargetName="DGR_Border"
-                                Property="Background"
-                                Value="{StaticResource DataGridHoverBrush}" />
+                                        Property="Background"
+                                        Value="{StaticResource DataGridHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -327,47 +444,75 @@
 
         <!-- DataGrid header style -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-            <Setter Property="HorizontalContentAlignment" Value="Left" />
-            <Setter Property="Padding" Value="10,9" />
-            <Setter Property="Background" Value="#F7FAFD" />
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+            <Setter Property="FontSize"
+                    Value="12"/>
+            <Setter Property="FontWeight"
+                    Value="SemiBold"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource MutedBrush}"/>
+            <Setter Property="HorizontalContentAlignment"
+                    Value="Left"/>
+            <Setter Property="Padding"
+                    Value="10,9"/>
+            <Setter Property="Background"
+                    Value="#F7FAFD"/>
+            <Setter Property="BorderThickness"
+                    Value="0,0,0,1"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource CardBorderBrush}"/>
         </Style>
 
         <Style TargetType="DataGridCell">
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+            <Setter Property="Padding"
+                    Value="8,4"/>
         </Style>
 
         <!-- DataGrid editing cell TextBox style -->
-        <Style x:Key="DataGridEditingTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="BorderBrush" Value="{StaticResource DataGridEditingBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="4,2" />
-            <Setter Property="Foreground" Value="#333333" />
-            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Style x:Key="DataGridEditingTextBoxStyle"
+                TargetType="TextBox">
+            <Setter Property="Background"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource DataGridEditingBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="4,2"/>
+            <Setter Property="Foreground"
+                    Value="#333333"/>
+            <Setter Property="CaretBrush"
+                    Value="{StaticResource AccentBrush}"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
         </Style>
 
         <!-- DataGrid editing cell ComboBox style -->
-        <Style x:Key="DataGridEditingComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="BorderBrush" Value="{StaticResource DataGridEditingBorderBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="4,2" />
-            <Setter Property="Foreground" Value="#333333" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Style x:Key="DataGridEditingComboBoxStyle"
+                TargetType="ComboBox">
+            <Setter Property="Background"
+                    Value="White"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource DataGridEditingBorderBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="4,2"/>
+            <Setter Property="Foreground"
+                    Value="#333333"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center"/>
         </Style>
 
     </UserControl.Resources>
 
-    <Grid x:Name="RootGrid" Background="{StaticResource AppBackground}">
+    <Grid x:Name="RootGrid"
+            Background="{StaticResource AppBackground}">
         <Grid.ColumnDefinitions>
 
             <ColumnDefinition>
@@ -375,7 +520,8 @@
                     <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}"
                                   ConverterParameter="Left|980">
                         <Binding Path="Detail"/>
-                        <Binding ElementName="RootGrid" Path="ActualWidth"/>
+                        <Binding ElementName="RootGrid"
+                                Path="ActualWidth"/>
                     </MultiBinding>
                 </ColumnDefinition.Width>
             </ColumnDefinition>
@@ -385,51 +531,62 @@
                     <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}"
                                   ConverterParameter="Right|980">
                         <Binding Path="Detail"/>
-                        <Binding ElementName="RootGrid" Path="ActualWidth"/>
+                        <Binding ElementName="RootGrid"
+                                Path="ActualWidth"/>
                     </MultiBinding>
                 </ColumnDefinition.Width>
             </ColumnDefinition>
 
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="56" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Page header -->
-        <Border Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Style="{StaticResource CardStyle}" Padding="12,8" Margin="0,0,0,12">
+        <Border Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Grid.Row="0"
+                Style="{StaticResource CardStyle}"
+                Padding="12,8"
+                Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="1"
-                    Content="+ Tạo đơn hàng"
-                    Command="{Binding CreateOrderCommand}"
-                    Style="{StaticResource FooterPrimaryButton}"
-                    Padding="12,6"
-                    Margin="12,0,0,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"/>
+                        Content="+ Tạo đơn hàng"
+                        Command="{Binding CreateOrderCommand}"
+                        Style="{StaticResource FooterPrimaryButton}"
+                        Padding="12,6"
+                        Margin="12,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
         <!-- Left column: Filters + DataGrid + Pager -->
-        <Grid Grid.Column="0" Grid.Row="1" Margin="0,0,12,0">
+        <Grid Grid.Column="0"
+                Grid.Row="1"
+                Margin="0,0,12,0"
+                MinWidth="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Filter toolbar card -->
-            <Border Style="{StaticResource CardStyle}" Grid.Row="0" Margin="0,0,0,12">
+            <Border Style="{StaticResource CardStyle}"
+                    Grid.Row="0"
+                    Margin="0,0,0,12">
                 <WrapPanel VerticalAlignment="Center"
-                    ItemHeight="70">
+                           ItemHeight="70">
                     <!-- Status -->
                     <Grid Margin="0,0,12,12"
-                      MinWidth="180"
-                      MaxWidth="240">
+                          MinWidth="180"
+                          MaxWidth="240">
 
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -437,62 +594,79 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
-                               Text="Trạng thái"
-                               Foreground="{StaticResource MutedBrush}"
-                               Margin="0,0,0,4"/>
+                                   Text="Trạng thái"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   Margin="0,0,0,4"/>
 
                         <ComboBox Grid.Row="1"
-                              ItemsSource="{Binding StatusOptions}"
-                              SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
-                              Style="{StaticResource InputComboBoxStyle}"
-                              MinWidth="180"
-                              MaxWidth="240" />
+                                  ItemsSource="{Binding StatusOptions}"
+                                  SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
+                                  Style="{StaticResource InputComboBoxStyle}"
+                                  MinWidth="180"
+                                  MaxWidth="240"/>
                     </Grid>
                     <!-- Date Range -->
-                    <Grid Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                    <Grid Margin="0,0,12,12"
+                            MinWidth="340"
+                            MaxWidth="520">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="Khoảng thời gian" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4"/>
+                        <TextBlock Grid.Row="0"
+                                Text="Khoảng thời gian"
+                                Foreground="{StaticResource MutedBrush}"
+                                Margin="0,0,0,4"/>
                         <WrapPanel Grid.Row="1">
                             <DatePicker Width="160"
                                         SelectedDate="{Binding FromDate}"
                                         Text="{Binding FromDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                         Style="{StaticResource InputDatePickerStyle}"
-                                        Margin="0,0,8,0" />
+                                        Margin="0,0,8,0"/>
 
-                            <DatePicker Width="160" SelectedDate="{Binding ToDate}"
+                            <DatePicker Width="160"
+                                    SelectedDate="{Binding ToDate}"
                                         Text="{Binding ToDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                        Style="{StaticResource InputDatePickerStyle}" />
+                                        Style="{StaticResource InputDatePickerStyle}"/>
                         </WrapPanel>
                     </Grid>
                     <!-- Apply Button -->
-                    <Grid Margin="0,0,12,12" MinWidth="120">
+                    <Grid Margin="0,0,12,12"
+                            MinWidth="120">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text=" " Opacity="0" Margin="0,0,0,4"/>
-                        <Button Grid.Row="1" Content="Áp dụng" Command="{Binding SearchCommand}"
-                                Height="32" MinWidth="120" Style="{StaticResource PrimaryButton}" />
+                        <TextBlock Grid.Row="0"
+                                Text=" "
+                                Opacity="0"
+                                Margin="0,0,0,4"/>
+                        <Button Grid.Row="1"
+                                Content="Áp dụng"
+                                Command="{Binding SearchCommand}"
+                                Height="32"
+                                MinWidth="120"
+                                Style="{StaticResource PrimaryButton}"/>
                     </Grid>
                 </WrapPanel>
             </Border>
 
             <!-- DataGrid card -->
-            <Border Style="{StaticResource CardStyle}" Grid.Row="1" VerticalAlignment="Stretch">
+            <Border Style="{StaticResource CardStyle}"
+                    Grid.Row="1"
+                    VerticalAlignment="Stretch"
+                    MinWidth="0">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <DataGrid x:Name="OrdersGrid"
                               MinWidth="720"
                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               Grid.Row="0"
-                              ItemsSource="{Binding Orders}" 
+                              ItemsSource="{Binding Orders}"
                               SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
@@ -506,31 +680,51 @@
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               ScrollViewer.CanContentScroll="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Mã đơn" Binding="{Binding DisplayOrderId}" Width="1.2*" />
-                            <DataGridTextColumn Header="Ngày" Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy}" Width="1*" />
-                            <DataGridTextColumn Header="Tổng tiền" Binding="{Binding FinalTotal, StringFormat=N0}" Width="1.2*" />
-                            <DataGridTemplateColumn Header="Trạng thái" Width="1*">
+                            <DataGridTextColumn Header="Mã đơn"
+                                    Binding="{Binding DisplayOrderId}"
+                                    Width="1.2*"/>
+                            <DataGridTextColumn Header="Ngày"
+                                    Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy}"
+                                    Width="1*"/>
+                            <DataGridTextColumn Header="Tổng tiền"
+                                    Binding="{Binding FinalTotal, StringFormat=N0}"
+                                    Width="1.2*"/>
+                            <DataGridTemplateColumn Header="Trạng thái"
+                                    Width="1*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border Background="Transparent" Padding="4">
-                                            <Border Padding="8,3" CornerRadius="10">
+                                        <Border Background="Transparent"
+                                                Padding="4">
+                                            <Border Padding="8,3"
+                                                    CornerRadius="10">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
-                                                        <Setter Property="Background" Value="#64748B"/>
+                                                        <Setter Property="Background"
+                                                                Value="#64748B"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Status}" Value="0">
-                                                                <Setter Property="Background" Value="#F59E0B"/>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                    Value="0">
+                                                                <Setter Property="Background"
+                                                                        Value="#F59E0B"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Status}" Value="1">
-                                                                <Setter Property="Background" Value="#16A34A"/>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                    Value="1">
+                                                                <Setter Property="Background"
+                                                                        Value="#16A34A"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Status}" Value="2">
-                                                                <Setter Property="Background" Value="#DC2626"/>
+                                                            <DataTrigger Binding="{Binding Status}"
+                                                                    Value="2">
+                                                                <Setter Property="Background"
+                                                                        Value="#DC2626"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </Border.Style>
-                                                <TextBlock Text="{Binding StatusText}" Foreground="White" FontWeight="SemiBold" FontSize="11" TextAlignment="Center" />
+                                                <TextBlock Text="{Binding StatusText}"
+                                                        Foreground="White"
+                                                        FontWeight="SemiBold"
+                                                        FontSize="11"
+                                                        TextAlignment="Center"/>
                                             </Border>
                                         </Border>
                                     </DataTemplate>
@@ -540,7 +734,9 @@
                     </DataGrid>
 
                     <!-- Pager (row 1) -->
-                    <DockPanel Grid.Row="1" LastChildFill="False" Margin="0,12,0,0">
+                    <DockPanel Grid.Row="1"
+                            LastChildFill="False"
+                            Margin="0,12,0,0">
                         <TextBlock VerticalAlignment="Center"
                                    Foreground="{StaticResource MutedBrush}"
                                    DockPanel.Dock="Left">
@@ -551,19 +747,32 @@
                                 </MultiBinding>
                             </TextBlock.Text>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                        <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                DockPanel.Dock="Right">
                             <ComboBox Width="84"
-                                  Style="{StaticResource InputComboBoxStyle}"
-                                  SelectedValue="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"
-                                  SelectedValuePath="Content">
+                                      Style="{StaticResource InputComboBoxStyle}"
+                                      SelectedValue="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Content">
                                 <ComboBoxItem Content="5"/>
                                 <ComboBoxItem Content="10"/>
                                 <ComboBoxItem Content="15"/>
                                 <ComboBoxItem Content="20"/>
                             </ComboBox>
-                            <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" Margin="8,0,4,0" Style="{StaticResource NeutralButton}" />
-                            <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="52" HorizontalContentAlignment="Center" Style="{StaticResource InputTextBoxStyle}" />
-                            <Button Content="▶" Command="{Binding NextPageCommand}" Width="36" Margin="4,0,0,0" Style="{StaticResource NeutralButton}" />
+                            <Button Content="◀"
+                                    Command="{Binding PrevPageCommand}"
+                                    Width="36"
+                                    Margin="8,0,4,0"
+                                    Style="{StaticResource NeutralButton}"/>
+                            <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="52"
+                                    HorizontalContentAlignment="Center"
+                                    Style="{StaticResource InputTextBoxStyle}"/>
+                            <Button Content="▶"
+                                    Command="{Binding NextPageCommand}"
+                                    Width="36"
+                                    Margin="4,0,0,0"
+                                    Style="{StaticResource NeutralButton}"/>
                         </StackPanel>
                     </DockPanel>
                 </Grid>
@@ -571,364 +780,519 @@
         </Grid>
 
         <!-- Right column: Order detail panel -->
-        <ScrollViewer Grid.Column="1"
-              Grid.Row="1"
-              VerticalScrollBarVisibility="Auto"
-              HorizontalScrollBarVisibility="Disabled">
+        <Grid Grid.Column="1"
+              Grid.Row="1">
 
-            <StackPanel Orientation="Vertical">
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Visible" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </StackPanel.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Scrollable content -->
+            <ScrollViewer Grid.Row="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
 
-            <!-- Order Info Card -->
-            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,12">
-                <StackPanel>
-                    <TextBlock Text="Thông tin đơn hàng" Style="{StaticResource SectionTitleText}" Margin="0,0,0,10" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Mã đơn" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding Detail.DisplayOrderId, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
-                            <TextBlock Text="Ngày tạo" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <DatePicker SelectedDate="{Binding Detail.CreatedAt, Mode=TwoWay}">
-                                <DatePicker.Style>
-                                    <Style TargetType="DatePicker" BasedOn="{StaticResource InputDatePickerStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsNewOrder}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DatePicker.Style>
-                            </DatePicker>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Trạng thái" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <ComboBox
-                                ItemsSource="{Binding StatusOptions}"
-                                SelectedItem="{Binding Detail.StatusText, Mode=OneWay}"
-                                IsEnabled="False"
-                                VerticalContentAlignment="Center"
-                                Style="{StaticResource InputComboBoxStyle}">
-                            </ComboBox>
-                            <TextBlock Text="Tổng tiền" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding Detail.FinalTotal, StringFormat=N0, Mode=OneWay}" IsReadOnly="True" Style="{StaticResource InputTextBoxStyle}" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Order Items Card -->
-            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,12">
-                <StackPanel>
-                    <DockPanel LastChildFill="False" Margin="0,0,0,8">
-                        <TextBlock Text="Sản phẩm" Style="{StaticResource SectionTitleText}" VerticalAlignment="Center" />
-                        <Border Background="Transparent" Padding="0" CornerRadius="8" DockPanel.Dock="Right">
-                            <Button Command="{Binding AddProductCommand}" Padding="8,6">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                        <Setter Property="IsEnabled" Value="True" />
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsPaidOrder}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="＋" FontSize="14" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Thêm sản phẩm"/>
-                                </StackPanel>
-                            </Button>
-                        </Border>
-                    </DockPanel>
-                    <DataGrid x:Name="OrderItemsGrid"
-                              ItemsSource="{Binding Detail.OrderItems}"
-                              helpers:DataGridFocusBehavior.PendingFocusItem="{Binding PendingNewOrderItem}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="{Binding IsPaymentMode}"
-                              RowHeaderWidth="0"
-                              AlternationCount="2"
-                              CanUserResizeRows="False"
-                              GridLinesVisibility="None"
-                              SelectionMode="Single"
-                              MaxHeight="250"
-                              Background="White"
-                              CanUserAddRows="False"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Sản phẩm" Width="2*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding ProductName}" Padding="8,0" VerticalAlignment="Center" Foreground="#333333" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=DataContext.AvailableProducts}"
-                                                  SelectedItem="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged}"
-                                                  DisplayMemberPath="Name"
-                                                  SelectedValuePath="ProductId"
-                                                  IsEditable="True"
-                                                  IsTextSearchEnabled="True"
-                                                  StaysOpenOnEdit="True"
-                                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                                  Style="{StaticResource DataGridEditingComboBoxStyle}"
-                                                  Margin="4,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="SL" Width="0.6*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Quantity, TargetNullValue=''}" Padding="8,0" TextAlignment="Center" VerticalAlignment="Center" Foreground="#333333" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, TargetNullValue='', FallbackValue=''}"
-                                                 Style="{StaticResource DataGridEditingTextBoxStyle}"
-                                                 HorizontalContentAlignment="Center"
-                                                 Margin="4,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Giá" Width="1*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding UnitPrice, StringFormat=N0}" Padding="8,0" VerticalAlignment="Center" Foreground="#333333" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Tổng" Width="1*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Total, StringFormat=N0}" Padding="8,0" VerticalAlignment="Center" Foreground="#333333" FontWeight="SemiBold" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Xóa" Width="Auto">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Width="28" Height="28"
-                                                Command="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=DataContext.RemoveItemCommand}"
-                                                CommandParameter="{Binding}"
-                                                ToolTip="Xóa sản phẩm"
-                                                Background="Transparent"
-                                                Foreground="#D9534F"
-                                                Cursor="Hand"
-                                                Padding="0"
-                                                BorderThickness="0">
-                                            <Button.Style>
-                                                <Style TargetType="Button">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding DataContext.IsPaymentMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding DataContext.IsFinalizedOrder, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                            <TextBlock Text="✕" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                        </Button>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                </StackPanel>
-            </Border>
-
-            <!-- Payment details and Actions -->
-            <StackPanel>
-                <Border Margin="0,0,0,12">
-                    <Border.Style>
-                        <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
-                            <Setter Property="Visibility" Value="Collapsed" />
+                <StackPanel Orientation="Vertical">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility"
+                                    Value="Visible"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ShowPaymentDetails}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
+                                <DataTrigger Binding="{Binding Detail}"
+                                        Value="{x:Null}">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Border.Style>
-                    <StackPanel>
-                        <TextBlock Text="Thông tin thanh toán" Style="{StaticResource SectionTitleText}" Margin="0,0,0,10" />
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- Hàng 1: Phương thức thanh toán và Ghi chú -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,0">
-                                <TextBlock Text="Phương thức thanh toán" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                                <ComboBox SelectedValue="{Binding Detail.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          SelectedValuePath="Tag"
-                                          IsEnabled="{Binding IsPaymentMode}"
-                                          Style="{StaticResource InputComboBoxStyle}">
-                                    <ComboBoxItem Tag="1">Tiền mặt</ComboBoxItem>
-                                    <ComboBoxItem Tag="2">Chuyển khoản</ComboBoxItem>
-                                </ComboBox>
-                            </StackPanel>
-                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,0">
-                                <TextBlock Text="Ghi chú" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                                <TextBox Text="{Binding Detail.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsPaymentMode}"
-                                         Style="{StaticResource InputTextBoxStyle}" />
-                            </StackPanel>
+                    </StackPanel.Style>
 
-                            <!-- Hàng 2: Voucher input và nút gửi -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12,0,0">
-                                <TextBlock Text="Mã voucher" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" 
-                                             Text="{Binding Detail.VoucherCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="{Binding IsPaymentMode}"
-                                             Style="{StaticResource InputTextBoxStyle}" />
-                                    <Button Grid.Column="1" 
-                                            Content="Áp dụng voucher" 
-                                            Command="{Binding ApplyVoucherCommand}"
-                                            CommandParameter="{Binding Detail}"
-                                            Margin="8,0,0,0"
-                                            Padding="12,7"
-                                            MinWidth="0">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                                <Setter Property="IsEnabled" Value="True" />
+                    <!-- Order Info Card -->
+                    <Border Style="{StaticResource CardStyle}"
+                            Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Thông tin đơn hàng"
+                                    Style="{StaticResource SectionTitleText}"
+                                    Margin="0,0,0,10"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Mã đơn"
+                                            FontSize="12"
+                                            Foreground="{StaticResource MutedBrush}"/>
+                                    <TextBox Text="{Binding Detail.DisplayOrderId, Mode=OneWay}"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource InputTextBoxStyle}"/>
+                                    <TextBlock Text="Ngày tạo"
+                                            FontSize="12"
+                                            Foreground="{StaticResource MutedBrush}"
+                                            Margin="0,8,0,0"/>
+                                    <DatePicker SelectedDate="{Binding Detail.CreatedAt, Mode=TwoWay}">
+                                        <DatePicker.Style>
+                                            <Style TargetType="DatePicker"
+                                                    BasedOn="{StaticResource InputDatePickerStyle}">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                                        <Setter Property="IsEnabled" Value="False" />
+                                                    <DataTrigger Binding="{Binding IsNewOrder}"
+                                                            Value="True">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="False"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                            Value="True">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="False"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsPaidOrder}"
+                                                            Value="True">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DatePicker.Style>
+                                    </DatePicker>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Trạng thái"
+                                            FontSize="12"
+                                            Foreground="{StaticResource MutedBrush}"/>
+                                    <ComboBox
+                                        ItemsSource="{Binding StatusOptions}"
+                                        SelectedItem="{Binding Detail.StatusText, Mode=OneWay}"
+                                        IsEnabled="False"
+                                        VerticalContentAlignment="Center"
+                                        Style="{StaticResource InputComboBoxStyle}">
+                                    </ComboBox>
+                                    <TextBlock Text="Tổng tiền"
+                                            FontSize="12"
+                                            Foreground="{StaticResource MutedBrush}"
+                                            Margin="0,8,0,0"/>
+                                    <TextBox Text="{Binding Detail.FinalTotal, StringFormat=N0, Mode=OneWay}"
+                                            IsReadOnly="True"
+                                            Style="{StaticResource InputTextBoxStyle}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Order Items Card -->
+                    <Border Style="{StaticResource CardStyle}"
+                            Margin="0,0,0,12">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False"
+                                    Margin="0,0,0,8">
+                                <TextBlock Text="Sản phẩm"
+                                        Style="{StaticResource SectionTitleText}"
+                                        VerticalAlignment="Center"/>
+                                <Border Background="Transparent"
+                                        Padding="0"
+                                        CornerRadius="8"
+                                        DockPanel.Dock="Right">
+                                    <Button Command="{Binding AddProductCommand}"
+                                            Padding="8,6"
+                                            MinWidth="150">
+                                        <Button.Style>
+                                            <Style TargetType="Button"
+                                                    BasedOn="{StaticResource PrimaryButton}">
+                                                <Setter Property="IsEnabled"
+                                                        Value="True"/>
+                                                <Setter Property="Visibility"
+                                                        Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                            Value="True">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="False"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsPaidOrder}"
+                                                            Value="True">
+                                                        <Setter Property="Visibility"
+                                                                Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                            Value="True">
+                                                        <Setter Property="Visibility"
+                                                                Value="Collapsed"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="＋"
+                                                    FontSize="14"
+                                                    Margin="0,0,4,0"/>
+                                            <TextBlock Text="Thêm sản phẩm"/>
+                                        </StackPanel>
                                     </Button>
+                                </Border>
+                            </DockPanel>
+                            <DataGrid x:Name="OrderItemsGrid"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      MinWidth="640"
+                                      ItemsSource="{Binding Detail.OrderItems}"
+                                      helpers:DataGridFocusBehavior.PendingFocusItem="{Binding PendingNewOrderItem}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="{Binding IsPaymentMode}"
+                                      RowHeaderWidth="0"
+                                      AlternationCount="2"
+                                      CanUserResizeRows="False"
+                                      GridLinesVisibility="None"
+                                      SelectionMode="Single"
+                                      MaxHeight="250"
+                                      Background="White"
+                                      CanUserAddRows="False"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Sản phẩm"
+                                            Width="2*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding ProductName}"
+                                                        Padding="8,0"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#333333"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=DataContext.AvailableProducts}"
+                                                          SelectedItem="{Binding SelectedProduct, UpdateSourceTrigger=PropertyChanged}"
+                                                          DisplayMemberPath="Name"
+                                                          SelectedValuePath="ProductId"
+                                                          IsEditable="True"
+                                                          IsTextSearchEnabled="True"
+                                                          StaysOpenOnEdit="True"
+                                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                          Style="{StaticResource DataGridEditingComboBoxStyle}"
+                                                          Margin="4,2"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="SL"
+                                            Width="0.6*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Quantity, TargetNullValue=''}"
+                                                        Padding="8,0"
+                                                        TextAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#333333"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, TargetNullValue='', FallbackValue=''}"
+                                                         Style="{StaticResource DataGridEditingTextBoxStyle}"
+                                                         HorizontalContentAlignment="Center"
+                                                         Margin="4,2"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Giá"
+                                            Width="1*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding UnitPrice, StringFormat=N0}"
+                                                        Padding="8,0"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#333333"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Tổng"
+                                            Width="1*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Total, StringFormat=N0}"
+                                                        Padding="8,0"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="#333333"
+                                                        FontWeight="SemiBold"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Xóa"
+                                            Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Width="28"
+                                                        Height="28"
+                                                        Command="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=DataContext.RemoveItemCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Xóa sản phẩm"
+                                                        Background="Transparent"
+                                                        Foreground="#D9534F"
+                                                        Cursor="Hand"
+                                                        Padding="0"
+                                                        BorderThickness="0">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Visibility"
+                                                                    Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DataContext.IsPaymentMode, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        Value="True">
+                                                                    <Setter Property="Visibility"
+                                                                            Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DataContext.IsFinalizedOrder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        Value="True">
+                                                                    <Setter Property="Visibility"
+                                                                            Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                    <TextBlock Text="✕"
+                                                            FontWeight="Bold"
+                                                            FontSize="14"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Payment details and Actions -->
+                    <StackPanel Margin="0,0,0,8">
+                        <Border Margin="0,0,0,12">
+                            <Border.Style>
+                                <Style TargetType="Border"
+                                        BasedOn="{StaticResource CardStyle}">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ShowPaymentDetails}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock Text="Thông tin thanh toán"
+                                        Style="{StaticResource SectionTitleText}"
+                                        Margin="0,0,0,10"/>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Hàng 1: Phương thức thanh toán và Ghi chú -->
+                                    <StackPanel Grid.Row="0"
+                                            Grid.Column="0"
+                                            Margin="0,0,8,0">
+                                        <TextBlock Text="Phương thức thanh toán"
+                                                FontSize="12"
+                                                Foreground="{StaticResource MutedBrush}"/>
+                                        <ComboBox SelectedValue="{Binding Detail.PaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  SelectedValuePath="Tag"
+                                                  IsEnabled="{Binding IsPaymentMode}"
+                                                  Style="{StaticResource InputComboBoxStyle}">
+                                            <ComboBoxItem Tag="1">Tiền mặt</ComboBoxItem>
+                                            <ComboBoxItem Tag="2">Chuyển khoản</ComboBoxItem>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0"
+                                            Grid.Column="1"
+                                            Margin="8,0,0,0">
+                                        <TextBlock Text="Ghi chú"
+                                                FontSize="12"
+                                                Foreground="{StaticResource MutedBrush}"/>
+                                        <TextBox Text="{Binding Detail.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsPaymentMode}"
+                                                 Style="{StaticResource InputTextBoxStyle}"/>
+                                    </StackPanel>
+
+                                    <!-- Hàng 2: Voucher input và nút gửi -->
+                                    <StackPanel Grid.Row="1"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Margin="0,12,0,0">
+                                        <TextBlock Text="Mã voucher"
+                                                FontSize="12"
+                                                Foreground="{StaticResource MutedBrush}"
+                                                Margin="0,0,0,4"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding Detail.VoucherCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     IsEnabled="{Binding IsPaymentMode}"
+                                                     Style="{StaticResource InputTextBoxStyle}"/>
+                                            <Button Grid.Column="1"
+                                                    Content="Áp dụng voucher"
+                                                    Command="{Binding ApplyVoucherCommand}"
+                                                    CommandParameter="{Binding Detail}"
+                                                    Margin="8,0,0,0"
+                                                    Padding="12,7"
+                                                    MinWidth="0">
+                                                <Button.Style>
+                                                    <Style TargetType="Button"
+                                                            BasedOn="{StaticResource PrimaryButton}">
+                                                        <Setter Property="IsEnabled"
+                                                                Value="True"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                                    Value="True">
+                                                                <Setter Property="IsEnabled"
+                                                                        Value="False"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Hàng 3: Tổng số tiền (text only) -->
+                                    <StackPanel Grid.Row="2"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Margin="0,12,0,0">
+                                        <DockPanel LastChildFill="False">
+                                            <TextBlock Text="Tổng số tiền:"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource MutedBrush}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       Text="{Binding Detail.SubTotal, StringFormat=N0}"
+                                                       FontSize="12"
+                                                       Foreground="#1F2937"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </StackPanel>
+
+                                    <!-- Hàng 4: Giảm giá (text only với màu đỏ) -->
+                                    <StackPanel Grid.Row="3"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Margin="0,8,0,0">
+                                        <DockPanel LastChildFill="False">
+                                            <TextBlock Text="Giảm giá:"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource MutedBrush}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       FontSize="12"
+                                                       Foreground="#DC2626"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="-{0:N0}">
+                                                        <Binding Path="Detail.DiscountAmount"/>
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </DockPanel>
+                                    </StackPanel>
+
+                                    <!-- Hàng 5: Tổng cuối (text only) -->
+                                    <StackPanel Grid.Row="4"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="2"
+                                            Margin="0,8,0,0">
+                                        <DockPanel LastChildFill="False">
+                                            <TextBlock Text="Tổng cuối:"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource MutedBrush}"
+                                                    FontWeight="SemiBold"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       Text="{Binding Detail.FinalTotal, StringFormat=N0}"
+                                                       FontSize="13"
+                                                       Foreground="#1F2937"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </StackPanel>
                                 </Grid>
                             </StackPanel>
+                        </Border>
 
-                            <!-- Hàng 3: Tổng số tiền (text only) -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12,0,0">
-                                <DockPanel LastChildFill="False">
-                                    <TextBlock Text="Tổng số tiền:" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                                    <TextBlock DockPanel.Dock="Right" 
-                                               Text="{Binding Detail.SubTotal, StringFormat=N0}" 
-                                               FontSize="12" 
-                                               Foreground="#1F2937"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center" />
-                                </DockPanel>
-                            </StackPanel>
 
-                            <!-- Hàng 4: Giảm giá (text only với màu đỏ) -->
-                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
-                                <DockPanel LastChildFill="False">
-                                    <TextBlock Text="Giảm giá:" FontSize="12" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                                    <TextBlock DockPanel.Dock="Right" 
-                                               FontSize="12" 
-                                               Foreground="#DC2626"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="-{0:N0}">
-                                                <Binding Path="Detail.DiscountAmount" />
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </DockPanel>
-                            </StackPanel>
-
-                            <!-- Hàng 5: Tổng cuối (text only) -->
-                            <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
-                                <DockPanel LastChildFill="False">
-                                    <TextBlock Text="Tổng cuối:" FontSize="12" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    <TextBlock DockPanel.Dock="Right" 
-                                               Text="{Binding Detail.FinalTotal, StringFormat=N0}" 
-                                               FontSize="13" 
-                                               Foreground="#1F2937"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center" />
-                                </DockPanel>
-                            </StackPanel>
-                        </Grid>
                     </StackPanel>
-                </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="1"
+                    Padding="0,12,0,0">
 
                 <WrapPanel HorizontalAlignment="Right"
-                        Orientation="Horizontal"
-                        Margin="0,0,0,8"
-                        ItemHeight="40">
+                           Orientation="Horizontal"
+                           Margin="0,0,0,8"
+                           ItemHeight="40">
                     <!-- Nhóm danger -->
-                    <WrapPanel Orientation="Horizontal" Margin="0,0,12,0">
-                        
-                        <!-- Xóa -->
-                        <Button Content="Xóa" Command="{Binding DeleteOrderCommand}" CommandParameter="{Binding Detail}" Margin="0,0,8,8">
+                    <WrapPanel Orientation="Horizontal"
+                            Margin="0,0,12,0">
+
+                        <!-- Xóa đơn -->
+                        <Button Content="Xóa đơn"
+                                Command="{Binding DeleteOrderCommand}"
+                                CommandParameter="{Binding Detail}"
+                                Margin="0,0,8,8">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource FooterDangerButton}">
-                                    <Setter Property="Visibility" Value="Visible" />
+                                <Style TargetType="Button"
+                                        BasedOn="{StaticResource FooterDangerButton}">
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding Detail}"
+                                                Value="{x:Null}">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
                         </Button>
-                        
-                        <!-- Hủy đơn hàng -->
-                        <Button Command="{Binding CancelOrderCommand}" Margin="0,0,8,8">
+
+                        <!-- Hủy đơn -->
+                        <Button Content="Hủy đơn"
+                                Command="{Binding CancelOrderCommand}"
+                                Margin="0,0,8,8">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource FooterDangerButton}">
-                                    <Setter Property="Content" Value="Hủy đơn hàng" />
-                                    <Setter Property="Visibility" Value="Visible" />
+                                <Style TargetType="Button"
+                                        BasedOn="{StaticResource FooterDangerButton}">
+                                    <Setter Property="Content"
+                                            Value="Hủy đơn"/>
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                Value="False">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -937,38 +1301,55 @@
                         <!-- Thanh toán -->
                         <Button Margin="0,0,8,8">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource FooterPrimaryButton}">
-                                    <Setter Property="Content" Value="Thanh toán" />
-                                    <Setter Property="Command" Value="{Binding EnterPaymentModeCommand}" />
-                                    <Setter Property="Visibility" Value="Visible" />
+                                <Style TargetType="Button"
+                                        BasedOn="{StaticResource FooterPrimaryButton}">
+                                    <Setter Property="Content"
+                                            Value="Thanh toán"/>
+                                    <Setter Property="Command"
+                                            Value="{Binding EnterPaymentModeCommand}"/>
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
                         </Button>
-                        
+
                     </WrapPanel>
 
                     <!-- Nhóm payment -->
                     <WrapPanel Orientation="Horizontal">
-                        <!-- Hủy thanh toán -->
-                        <Button Command="{Binding GoBackCommand}" Margin="0,0,8,8">
+                        <!-- Quay lại -->
+                        <Button Content="Quay lại"
+                                Command="{Binding GoBackCommand}"
+                                Margin="0,0,8,8">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource FooterNeutralButton}">
-                                    <Setter Property="Content" Value="Hủy thanh toán" />
-                                    <Setter Property="Visibility" Value="Visible" />
+                                <Style TargetType="Button"
+                                        BasedOn="{StaticResource FooterNeutralButton}">
+                                    <Setter Property="Content"
+                                            Value="Quay lại"/>
+                                    <Setter Property="Visibility"
+                                            Value="Visible"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                Value="False">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -976,17 +1357,25 @@
                         </Button>
 
                         <!-- Xác nhận thanh toán -->
-                        <Button Command="{Binding ApplyPaymentCommand}" Margin="0,0,0,8">
+                        <Button Command="{Binding ApplyPaymentCommand}"
+                                Margin="0,0,0,8">
                             <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource FooterPrimaryButton}">
-                                    <Setter Property="Content" Value="Xác nhận thanh toán" />
-                                    <Setter Property="Visibility" Value="Collapsed" />
+                                <Style TargetType="Button"
+                                        BasedOn="{StaticResource FooterPrimaryButton}">
+                                    <Setter Property="Content"
+                                            Value="Xác nhận thanh toán"/>
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPaymentMode}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
+                                        <DataTrigger Binding="{Binding IsPaymentMode}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Visible"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsFinalizedOrder}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -994,8 +1383,9 @@
                         </Button>
                     </WrapPanel>
                 </WrapPanel>
-            </StackPanel>
-        </StackPanel>
-        </ScrollViewer>
+
+
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

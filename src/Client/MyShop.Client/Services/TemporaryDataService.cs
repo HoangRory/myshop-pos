@@ -164,7 +164,12 @@ namespace MyShop.Client.Services
                     try
                     {
                         var data = kvp.Value?.Invoke();
-                        await SaveAsync(kvp.Key, data);
+                        if (data == null)
+                        {
+                            DeleteTemporaryData(kvp.Key);
+                            return;
+                        }
+                            await SaveAsync(kvp.Key, data);
                     }
                     catch (Exception ex)
                     {

@@ -8,11 +8,12 @@ using MyShop.Client.Models;
 using LuciferCore.Attributes;
 using MyShop.Client.Services;
 using MyShop.Client.Services.Interfaces;
+using System.Collections.Specialized;
 
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Orders")]
-    public class OrdersViewModel : BaseViewModel
+    public class OrdersViewModel : BaseViewModel, IDisposable
     {
         public string PageTitle { get; } = "Đơn hàng";
         private readonly IOrderService _orderService;
@@ -20,6 +21,7 @@ namespace MyShop.Client.ViewModels
         private readonly IDialogService _dialogService;
         private readonly ITemporaryDataService _tempDataService;
         private readonly IAuthService _authService;
+        private CancellationTokenSource? _autoSaveCts;
         private bool _isLoading;
         public bool IsLoading
         {
@@ -55,7 +57,13 @@ namespace MyShop.Client.ViewModels
         public string? SelectedStatus
         {
             get => _selectedStatus;
-            set => SetProperty(ref _selectedStatus, value);
+            set
+            {
+                if (SetProperty(ref _selectedStatus, value))
+                {
+                    TriggerAutoSave();
+                }
+            }
         }
 
         private DateTime? _fromDate;
@@ -68,6 +76,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _fromDate, value?.Date))
                 {
                     SyncDateTextFromDate(isFromDate: true);
+                    TriggerAutoSave();
                 }
             }
         }
@@ -88,6 +97,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _toDate, value?.Date))
                 {
                     SyncDateTextFromDate(isFromDate: false);
+                    TriggerAutoSave();
                 }
             }
         }
@@ -112,6 +122,12 @@ namespace MyShop.Client.ViewModels
                 if (_detail != null)
                 {
                     _detail.PropertyChanged -= Detail_PropertyChanged;
+                    foreach (var item in _detail.OrderItems)
+                    {
+                        item.PropertyChanged -= OrderItem_PropertyChanged;
+                    }
+
+                    _detail.OrderItems.CollectionChanged -= OrderItems_CollectionChanged;
                 }
 
                 if (SetProperty(ref _detail, value))
@@ -119,6 +135,12 @@ namespace MyShop.Client.ViewModels
                     if (_detail != null)
                     {
                         _detail.PropertyChanged += Detail_PropertyChanged;
+                        foreach (var item in _detail.OrderItems)
+                        {
+                            item.PropertyChanged += OrderItem_PropertyChanged;
+                        }
+
+                        _detail.OrderItems.CollectionChanged += OrderItems_CollectionChanged;
                     }
 
                     OnPropertyChanged(nameof(IsNewOrder));
@@ -242,8 +264,8 @@ namespace MyShop.Client.ViewModels
             SearchCommand = new AsyncRelayCommand(_ => OnSearchAsync());
             CreateOrderCommand = new RelayCommand(_ => OnCreateOrder());
             DeleteOrderCommand = new AsyncRelayCommand<Order>(param => OnDeleteOrderAsync(param));
-            AddProductCommand = new RelayCommand(_ => OnAddProduct());
-            RemoveItemCommand = new RelayCommand(param => OnRemoveItem(param));
+            AddProductCommand = new AsyncRelayCommand(_ => OnAddProductAsync());
+            RemoveItemCommand = new AsyncRelayCommand(param => OnRemoveItemAsync(param));
             EnterPaymentModeCommand = new RelayCommand(_ => OnEnterPaymentMode());
             ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null && (Detail.PaymentMethod ?? 0) > 0);
             ApplyVoucherCommand = new AsyncRelayCommand<Order>(param => OnApplyVoucherAsync(param), param => param != null && IsPaymentMode);
@@ -253,11 +275,7 @@ namespace MyShop.Client.ViewModels
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
 
             // Subscribe to settings changes to update PageSize
-            AppSettingsService.ItemsPerPageChanged += (s, e) =>
-            {
-                var config = AppConfig.Load();
-                PageSize = config.ItemsPerPage;
-            };
+            AppSettingsService.ItemsPerPageChanged += OnItemsPerPageChanged;
 
             // Load PageSize from AppConfig after commands are initialized
             PageSize = AppConfig.Load().ItemsPerPage;
@@ -270,6 +288,32 @@ namespace MyShop.Client.ViewModels
 
             // Load initial data
             InitializeDataAsync();
+        }
+
+        public void Dispose()
+        {
+            _authService.OnRecoveryRequested -= OnRecoveryRequested;
+
+            _autoSaveCts?.Cancel();
+            _autoSaveCts?.Dispose();
+            AppSettingsService.ItemsPerPageChanged -= OnItemsPerPageChanged;
+
+            if (_detail != null)
+            {
+                _detail.PropertyChanged -= Detail_PropertyChanged;
+
+                foreach (var item in _detail.OrderItems)
+                {
+                    item.PropertyChanged -= OrderItem_PropertyChanged;
+                }
+
+                _detail.OrderItems.CollectionChanged -= OrderItems_CollectionChanged;
+            }
+        }
+        private void OnItemsPerPageChanged(object? sender, EventArgs e)
+        {
+            var config = AppConfig.Load();
+            PageSize = config.ItemsPerPage;
         }
 
         private async void OnRecoveryRequested(List<string> modules)
@@ -437,10 +481,9 @@ namespace MyShop.Client.ViewModels
                 var createdOrder = await _orderService.CreateAsync(orderItems);
                 if (createdOrder != null)
                 {
+                    await OnSearchAsync();
                     return true;
                 }
-
-                await OnSearchAsync();
 
                 return false;
             }
@@ -656,6 +699,27 @@ namespace MyShop.Client.ViewModels
             if (order == null)
                 return;
 
+            if (order.OrderId == -1)
+            {
+                // Clear editing state
+                if (Detail?.OrderId == -1)
+                {
+                    Detail = null;
+                }
+
+                if (SelectedOrder?.OrderId == -1)
+                {
+                    SelectedOrder = null;
+                }
+
+                ResetPaymentState();
+
+                // Xóa autosave draft
+                _tempDataService.DeleteTemporaryData("Orders");
+
+                return;
+            }
+
             IsLoading = true;
             try
             {
@@ -670,9 +734,17 @@ namespace MyShop.Client.ViewModels
                     {
                         Detail = null;
                     }
+                    if (SelectedOrder?.OrderId == order.OrderId)
+                    {
+                        SelectedOrder = null;
+                    }
+                    ResetPaymentState();
 
                     // Refresh list to sync with server
                     await OnSearchAsync();
+                } else
+                {
+                    _dialogService.Error("Thất bại", "Xóa đơn hàng thất bại.");
                 }
 
             }
@@ -686,7 +758,7 @@ namespace MyShop.Client.ViewModels
             }
         }
 
-        private void OnAddProduct()
+        private async Task OnAddProductAsync()
         {
             // Allow adding products only when not in payment mode and order is not paid
             if (Detail != null && !IsPaymentMode && !IsFinalizedOrder)
@@ -700,18 +772,20 @@ namespace MyShop.Client.ViewModels
                 };
                 Detail.OrderItems.Add(newItem);
                 PendingNewOrderItem = newItem;
+                await SaveDraftNowAsync();
             }
         }
 
-        private void OnRemoveItem(object? param)
+        private async Task OnRemoveItemAsync(object? param)
         {
             if (Detail != null && !IsPaymentMode && Detail.Status != (byte)OrderStatus.Paid && param is OrderItem item)
             {
                 Detail.OrderItems.Remove(item);
+                await SaveDraftNowAsync();
             }
         }
 
-        private async void OnEnterPaymentMode()
+        private async Task OnEnterPaymentMode()
         {
             if (Detail == null || Detail.Status == (byte)OrderStatus.Paid)
                 return;
@@ -731,6 +805,7 @@ namespace MyShop.Client.ViewModels
 
                 // Enter payment mode (show payment input fields)
                 IsPaymentMode = true;
+                await SaveDraftNowAsync();
             }
             catch (Exception ex)
             {
@@ -774,6 +849,7 @@ namespace MyShop.Client.ViewModels
                     Detail = null;
                     SelectedOrder = null;
                     _dialogService.Success("Thành công", "Thanh toán thành công.");
+                    _tempDataService.DeleteTemporaryData("Orders");
                 }
                 else
                 {
@@ -1009,6 +1085,7 @@ namespace MyShop.Client.ViewModels
                     order.SubTotal = result.SubTotal;
                     order.DiscountAmount = result.DiscountAmount;
                     order.FinalTotal = result.FinalTotal;
+                    await SaveDraftNowAsync();
                     _dialogService.Success("Thành công", "Áp dụng voucher thành công.");
                 }
                 else
@@ -1081,6 +1158,34 @@ namespace MyShop.Client.ViewModels
             CanNextPage = PageIndex < TotalPages;
             PageInfo = $"Page {PageIndex} / {TotalPages}";
         }
+        private bool HasRecoverableData(OrdersViewModelSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return false;
+
+            // Có filter
+            if (snapshot.FromDate != null ||
+                snapshot.ToDate != null ||
+                (!string.IsNullOrWhiteSpace(snapshot.SelectedStatus)
+                && snapshot.SelectedStatus != "All"))
+            {
+                return true;
+            }
+
+            // Có order draft
+            if (snapshot.Detail != null)
+            {
+                // Có item
+                if (snapshot.OrderItems != null && snapshot.OrderItems.Count > 0)
+                    return true;
+
+                // Hoặc order khác mặc định
+                if (snapshot.Detail.OrderId != -1)
+                    return true;
+            }
+
+            return false;
+        }
 
         // =====================================
         // Auto-Save and Recovery Methods
@@ -1113,9 +1218,16 @@ namespace MyShop.Client.ViewModels
                     return;
                 }
 
-                if(RecoveryHelper.ShowRecoveryDialog(new List<string> { "Orders" }) != true)
-                {     
-                    // User declined recovery, delete temp data
+                // Không có gì đáng phục hồi
+                if (!HasRecoverableData(snapshot))
+                {
+                    _tempDataService.DeleteTemporaryData("Orders");
+                    return;
+                }
+
+                // Có dữ liệu thật mới hỏi recovery
+                if (RecoveryHelper.ShowRecoveryDialog(new List<string> { "Orders" }) != true)
+                {
                     _tempDataService.DeleteTemporaryData("Orders");
                     return;
                 }
@@ -1138,7 +1250,7 @@ namespace MyShop.Client.ViewModels
                     // Khôi phục các sản phẩm đã thêm vào đơn hàng
                     if (snapshot.OrderItems != null && snapshot.OrderItems.Count > 0)
                     {
-                        Detail.OrderItems = new ObservableCollection<OrderItem>(
+                        var restoredItems = new ObservableCollection<OrderItem>(
                             snapshot.OrderItems.Select(item => new OrderItem
                             {
                                 ProductId = item.ProductId,
@@ -1147,6 +1259,7 @@ namespace MyShop.Client.ViewModels
                                 UnitPrice = item.Price
                             })
                         );
+                        Detail.OrderItems = restoredItems;
                     }
                 }
 
@@ -1162,11 +1275,60 @@ namespace MyShop.Client.ViewModels
             }
         }
 
+        private void TriggerAutoSave()
+        {
+            _autoSaveCts?.Cancel();
+
+            _autoSaveCts = new CancellationTokenSource();
+            var token = _autoSaveCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(1500, token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        await SaveDraftNowAsync();
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                }
+            });
+        }
+        private async Task SaveDraftNowAsync()
+        {
+            try
+            {
+                var data = GetAutoSaveData();
+
+                if (data == null)
+                {
+                    _tempDataService.DeleteTemporaryData("Orders");
+                    return;
+                }
+
+                await _tempDataService.SaveAsync("Orders", data);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi khi lưu dữ liệu tạm: {ex.Message}");
+            }
+        }
+
+
         /// <summary>
         /// Cung cấp dữ liệu để lưu tạm thời
         /// </summary>
         protected override object? GetAutoSaveData()
         {
+            if (Detail == null && FromDate == null &&
+                ToDate == null && (string.IsNullOrWhiteSpace(SelectedStatus) || SelectedStatus == "All"))
+            {
+                return null;
+            }
             // Get current user ID
             int? currentUserId = null;
             if (int.TryParse(_authService.AccountId, out int userId))
@@ -1203,11 +1365,39 @@ namespace MyShop.Client.ViewModels
                 OnPropertyChanged(nameof(IsPaidOrder));
                 OnPropertyChanged(nameof(IsCancelledOrder));
                 OnPropertyChanged(nameof(IsFinalizedOrder));
+
+                TriggerAutoSave();
             }
             if (e.PropertyName is nameof(Order.OrderId))
             {
                 OnPropertyChanged(nameof(IsNewOrder));
             }
+        }
+        private void OrderItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            TriggerAutoSave();
+        }
+
+        private void OrderItems_CollectionChanged(object? sender,
+            NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (OrderItem item in e.NewItems)
+                {
+                    item.PropertyChanged += OrderItem_PropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (OrderItem item in e.OldItems)
+                {
+                    item.PropertyChanged -= OrderItem_PropertyChanged;
+                }
+            }
+
+            TriggerAutoSave();
         }
     }
 }
