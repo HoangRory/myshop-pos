@@ -663,7 +663,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <DataGrid x:Name="OrdersGrid"
-                              MinWidth="720"
+                              MinWidth="400"
                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               Grid.Row="0"
                               ItemsSource="{Binding Orders}"
@@ -682,15 +682,19 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Mã đơn"
                                     Binding="{Binding DisplayOrderId}"
-                                    Width="1.2*"/>
+                                    Width="1*"
+                                    MinWidth="100"/>
                             <DataGridTextColumn Header="Ngày"
                                     Binding="{Binding CreatedAt, StringFormat=dd/MM/yyyy}"
-                                    Width="1*"/>
+                                    Width="1*"
+                                    MinWidth="100"/>
                             <DataGridTextColumn Header="Tổng tiền"
                                     Binding="{Binding FinalTotal, StringFormat=N0}"
-                                    Width="1.2*"/>
+                                    Width="1.2*"
+                                    MinWidth="100"/>
                             <DataGridTemplateColumn Header="Trạng thái"
-                                    Width="1*">
+                                    Width="1*"
+                                    MinWidth="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Background="Transparent"
@@ -790,25 +794,34 @@
             <!-- Scrollable content -->
             <ScrollViewer Grid.Row="0"
                           VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
+                          HorizontalScrollBarVisibility="Disabled"
+                          CanContentScroll="True"
+                          PanningMode="VerticalOnly">
 
-                <StackPanel Orientation="Vertical">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility"
-                                    Value="Visible"/>
-                            <Style.Triggers>
+                <Grid>
+                        <Grid.Style>
+                        <Style TargetType="Grid">
+                                <Setter Property="Visibility"
+                                        Value="Visible"/>
+                                <Style.Triggers>
                                 <DataTrigger Binding="{Binding Detail}"
-                                        Value="{x:Null}">
-                                    <Setter Property="Visibility"
-                                            Value="Collapsed"/>
+                                                Value="{x:Null}">
+                                        <Setter Property="Visibility"
+                                                        Value="Collapsed"/>
                                 </DataTrigger>
-                            </Style.Triggers>
+                                </Style.Triggers>
                         </Style>
-                    </StackPanel.Style>
+                        </Grid.Style>
+
+                        <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
                     <!-- Order Info Card -->
-                    <Border Style="{StaticResource CardStyle}"
+                    <Border Grid.Row="0"
+                            Style="{StaticResource CardStyle}"
                             Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="Thông tin đơn hàng"
@@ -879,7 +892,8 @@
                     </Border>
 
                     <!-- Order Items Card -->
-                    <Border Style="{StaticResource CardStyle}"
+                    <Border Grid.Row="1"
+                            Style="{StaticResource CardStyle}"
                             Margin="0,0,0,12">
                         <StackPanel>
                             <DockPanel LastChildFill="False"
@@ -931,7 +945,7 @@
                             </DockPanel>
                             <DataGrid x:Name="OrderItemsGrid"
                                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      MinWidth="640"
+                                      MinWidth="400"
                                       ItemsSource="{Binding Detail.OrderItems}"
                                       helpers:DataGridFocusBehavior.PendingFocusItem="{Binding PendingNewOrderItem}"
                                       AutoGenerateColumns="False"
@@ -1062,7 +1076,8 @@
                     </Border>
 
                     <!-- Payment details and Actions -->
-                    <StackPanel Margin="0,0,0,8">
+                    <StackPanel Grid.Row="2"
+                            Margin="0,0,0,8">
                         <Border Margin="0,0,0,12">
                             <Border.Style>
                                 <Style TargetType="Border"
@@ -1229,10 +1244,8 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
-
-
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </ScrollViewer>
 
             <Border Grid.Row="1"
@@ -1245,6 +1258,25 @@
                     <!-- Nhóm danger -->
                     <WrapPanel Orientation="Horizontal"
                             Margin="0,0,12,0">
+                       <Button Command="{Binding CloseDetailCommand}">
+                        <Button.Style>
+                                <Style TargetType="Button"
+                                BasedOn="{StaticResource FooterNeutralButton}">
+                                <Setter Property="Content"
+                                        Value="Đóng"/>
+                                <Setter Property="Visibility"
+                                        Value="Collapsed"/>
+
+                                <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFinalizedOrder}"
+                                                Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Visible"/>
+                                        </DataTrigger>
+                                </Style.Triggers>
+                                </Style>
+                        </Button.Style>
+                        </Button>
 
                         <!-- Xóa đơn -->
                         <Button Content="Xóa đơn"

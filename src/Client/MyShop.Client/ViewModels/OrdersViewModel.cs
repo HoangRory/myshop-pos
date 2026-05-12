@@ -244,6 +244,7 @@ namespace MyShop.Client.ViewModels
         public ICommand GoBackCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
+        public ICommand CloseDetailCommand { get; }
 
         public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService, ITemporaryDataService tempDataService, IAuthService authService)
         {
@@ -270,6 +271,7 @@ namespace MyShop.Client.ViewModels
             ApplyPaymentCommand = new AsyncRelayCommand(_ => OnApplyPaymentAsync(), _ => Detail != null && (Detail.PaymentMethod ?? 0) > 0);
             ApplyVoucherCommand = new AsyncRelayCommand<Order>(param => OnApplyVoucherAsync(param), param => param != null && IsPaymentMode);
             CancelOrderCommand = new AsyncRelayCommand(_ => OnCancelOrderAsync(), _ => Detail != null && Detail.OrderId != -1 && Detail.Status != (byte)OrderStatus.Paid);
+            CloseDetailCommand = new RelayCommand(_ => OnCloseDetail(), _ => Detail != null);
             GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
@@ -742,7 +744,8 @@ namespace MyShop.Client.ViewModels
 
                     // Refresh list to sync with server
                     await OnSearchAsync();
-                } else
+                }
+                else
                 {
                     _dialogService.Error("Thất bại", "Xóa đơn hàng thất bại.");
                 }
@@ -869,6 +872,14 @@ namespace MyShop.Client.ViewModels
 
         private void ResetPaymentState()
         {
+            IsPaymentMode = false;
+            PendingNewOrderItem = null;
+        }
+
+        private void OnCloseDetail()
+        {
+            Detail = null;
+            SelectedOrder = null;
             IsPaymentMode = false;
             PendingNewOrderItem = null;
         }
