@@ -21,6 +21,7 @@ namespace MyShop.Client.ViewModels
         private readonly IDialogService _dialogService;
         private readonly ITemporaryDataService _tempDataService;
         private readonly IAuthService _authService;
+        private readonly IInvoicePrintService _invoicePrintService;
         private CancellationTokenSource? _autoSaveCts;
         private bool _isLoading;
         public bool IsLoading
@@ -245,13 +246,14 @@ namespace MyShop.Client.ViewModels
         public ICommand PrevPageCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand CloseDetailCommand { get; }
-
-        public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService, ITemporaryDataService tempDataService, IAuthService authService)
+        public ICommand PrintInvoiceCommand { get; }
+        public OrdersViewModel(IOrderService orderService, IProductService productService, IDialogService dialogService, ITemporaryDataService tempDataService, IAuthService authService, IInvoicePrintService invoicePrintService)
         {
             _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _tempDataService = tempDataService ?? throw new ArgumentNullException(nameof(tempDataService));
+            _invoicePrintService = invoicePrintService ?? throw new ArgumentNullException(nameof(invoicePrintService));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _authService.OnRecoveryRequested += OnRecoveryRequested;
 
@@ -272,6 +274,7 @@ namespace MyShop.Client.ViewModels
             ApplyVoucherCommand = new AsyncRelayCommand<Order>(param => OnApplyVoucherAsync(param), param => param != null && IsPaymentMode);
             CancelOrderCommand = new AsyncRelayCommand(_ => OnCancelOrderAsync(), _ => Detail != null && Detail.OrderId != -1 && Detail.Status != (byte)OrderStatus.Paid);
             CloseDetailCommand = new RelayCommand(_ => OnCloseDetail(), _ => Detail != null);
+            PrintInvoiceCommand = new AsyncRelayCommand(_ => OnPrintInvoiceAsync(), _ => Detail != null && Detail.OrderId != -1 && Detail.Status == (byte)OrderStatus.Paid);
             GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
             PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
             NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
@@ -882,6 +885,45 @@ namespace MyShop.Client.ViewModels
             SelectedOrder = null;
             IsPaymentMode = false;
             PendingNewOrderItem = null;
+        }
+
+        // chỉ in được khi đã thanh toán thành công (có order trên server với ID hợp lệ)
+        private async Task OnPrintInvoiceAsync()
+        {
+            if (Detail == null || Detail.OrderId == -1 || Detail.Status != (byte)OrderStatus.Paid)
+                return;
+
+            IsLoading = true;
+
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "XPS Document (*.xps)|*.xps",
+                    FileName = $"Invoice_{Detail.OrderId}.xps"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    _invoicePrintService.ExportToXps(
+                        Detail,
+                        dialog.FileName);
+
+                    _dialogService.Success(
+                        "Thành công",
+                        "Xuất hóa đơn thành công.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _dialogService.Error(
+                    "Lỗi",
+                    $"Không thể xuất hóa đơn: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task OnCancelOrderAsync()
