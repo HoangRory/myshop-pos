@@ -385,21 +385,14 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0"
-                        Text="Đơn hàng"
-                        FontSize="18"
-                        FontWeight="SemiBold"
-                        Foreground="#113347"
-                        VerticalAlignment="Center" />
-
                 <Button Grid.Column="1"
-                        Content="+ Tạo đơn hàng"
-                        Command="{Binding CreateOrderCommand}"
-                        Style="{StaticResource FooterPrimaryButton}"
-                        Padding="12,6"
-                        Margin="12,0,0,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"/>
+                    Content="+ Tạo đơn hàng"
+                    Command="{Binding CreateOrderCommand}"
+                    Style="{StaticResource FooterPrimaryButton}"
+                    Padding="12,6"
+                    Margin="12,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
@@ -535,12 +528,12 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                             <ComboBox Width="84"
                                   Style="{StaticResource InputComboBoxStyle}"
-                                  SelectedValue="{Binding PageSize}"
+                                  SelectedValue="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="Content">
+                                <ComboBoxItem Content="5"/>
                                 <ComboBoxItem Content="10"/>
-                                <ComboBoxItem Content="25"/>
-                                <ComboBoxItem Content="50"/>
-                                <ComboBoxItem Content="100"/>
+                                <ComboBoxItem Content="15"/>
+                                <ComboBoxItem Content="20"/>
                             </ComboBox>
                             <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" Margin="8,0,4,0" Style="{StaticResource NeutralButton}" />
                             <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="52" HorizontalContentAlignment="Center" Style="{StaticResource InputTextBoxStyle}" />

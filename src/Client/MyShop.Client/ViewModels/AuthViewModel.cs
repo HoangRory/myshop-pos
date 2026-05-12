@@ -10,14 +10,17 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Threading.Tasks;
 
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Auth")]
     public class AuthViewModel : INotifyPropertyChanged
     {
+        public string PageTitle { get; } = "Đăng nhập";
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
+        private readonly ITemporaryDataService _tempDataService;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -60,10 +63,11 @@ namespace MyShop.Client.ViewModels
         public ICommand ToggleModeCommand { get; }
         public ICommand ToggleConfigCommand { get; }
 
-        public AuthViewModel(IAuthService authService, IDialogService dialogService)
+        public AuthViewModel(IAuthService authService, IDialogService dialogService, ITemporaryDataService tempDataService)
         {
             _authService = authService;
             _dialogService = dialogService;
+            _tempDataService = tempDataService;
 
             SubmitCommand = new RelayCommand(async parameter => await ExecuteSubmit(parameter));
             ToggleModeCommand = new RelayCommand(_ => IsLoginMode = !IsLoginMode);
@@ -139,6 +143,9 @@ namespace MyShop.Client.ViewModels
                         File.Delete("user_state.json");
                     }
 
+                    // Check for recoverable data after successful login
+                    await CheckAndRecoverDataPostLogin();
+
                     _dialogService.Success("Thành công", "Chào mừng quay trở lại!");
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -173,6 +180,56 @@ namespace MyShop.Client.ViewModels
                     _dialogService.Error("Lỗi", "Không thể đăng ký tài khoản.");
                 }
             }
+        }
+
+        private async Task CheckAndRecoverDataPostLogin()
+        {
+            try
+            {
+                // Get current user ID from AuthService
+                if (!int.TryParse(_authService.AccountId, out int currentUserId))
+                    return;
+
+                // Check .running flag for unexpected shutdown
+                var flagPath = GetApplicationRunningFlagPath();
+                if (!File.Exists(flagPath))
+                    return; // Normal shutdown, no recovery needed
+
+                // Check for temporary data
+                var tempDataDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "MyShop",
+                    "TempData"
+                );
+
+                if (!Directory.Exists(tempDataDir))
+                    return;
+
+                var recoverableViewModels = Directory
+                    .EnumerateFiles(tempDataDir, "*.json")
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .Distinct()
+                    .ToList();
+
+                AppState.ViewModelsToRecover = recoverableViewModels.ToHashSet();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during post-login recovery: {ex.Message}");
+            }
+        }
+
+        private string GetApplicationRunningFlagPath()
+        {
+            var appDataPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MyShop"
+            );
+
+            if (!Directory.Exists(appDataPath))
+                Directory.CreateDirectory(appDataPath);
+
+            return Path.Combine(appDataPath, ".running");
         }
 
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
