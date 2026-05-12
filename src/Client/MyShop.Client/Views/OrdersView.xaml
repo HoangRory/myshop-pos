@@ -489,6 +489,8 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <DataGrid x:Name="OrdersGrid"
+                              MinWidth="720"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               Grid.Row="0"
                               ItemsSource="{Binding Orders}" 
                               SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
