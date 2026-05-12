@@ -9,10 +9,11 @@ using System.Windows.Input;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.ComponentModel;
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Products")]
-    public class ProductsViewModel : BaseViewModel
+    public class ProductsViewModel : BaseViewModel, IDisposable
     {
         public string PageTitle { get; } = "Sản phẩm";
         private readonly IProductService _productService;
@@ -29,6 +30,7 @@ namespace MyShop.Client.ViewModels
             private set => SetProperty(ref _isLoaded, value);
         }
 
+        private CancellationTokenSource? _autoSaveCts;
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
         public ObservableCollection<Category> FilterCategories { get; } = new ObservableCollection<Category>();
         public ObservableCollection<Category> EditCategories { get; } = new ObservableCollection<Category>();
@@ -139,13 +141,23 @@ namespace MyShop.Client.ViewModels
             get => _editingProduct;
             set
             {
+                if (_editingProduct != null)
+                {
+                    _editingProduct.PropertyChanged -= EditingProduct_PropertyChanged;
+                }
                 if (SetProperty(ref _editingProduct, value))
                 {
+                    if (_editingProduct != null)
+                    {
+                        _editingProduct.PropertyChanged += EditingProduct_PropertyChanged;
+                    }
                     // Khi gán object mới, thông báo toàn bộ property thay đổi để binding UI cập nhật
                     OnPropertyChanged(nameof(EditingProduct));
                     // Nếu có các command phụ thuộc, cập nhật trạng thái
                     SaveProductCommand.NotifyCanExecuteChanged();
                     DeleteProductCommand.NotifyCanExecuteChanged();
+
+
                 }
             }
         }
@@ -228,19 +240,19 @@ namespace MyShop.Client.ViewModels
         public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Ceiling((double)TotalCount / PageSize);
 
         private string _searchKeyword;
-        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _minPrice;
-        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _maxPrice;
-        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private string _selectedSortField = "Name";
-        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private bool _sortDescending = false;
-        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         // Sort Options for UI
         private ObservableCollection<string> _sortOptions = new ObservableCollection<string> { "Tên", "Giá", "Tồn kho" };
@@ -274,6 +286,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _isAscending, value))
                 {
                     _filtersDirty = true;
+                    TriggerAutoSave();
                     ApplyFiltersCommand?.NotifyCanExecuteChanged();
                     OnPropertyChanged(nameof(IsApplyEnabled));
                 }
@@ -281,7 +294,7 @@ namespace MyShop.Client.ViewModels
         }
 
         private string _selectedProductType;
-        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) { _filtersDirty = true; ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
+        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private Product? _selectedProduct;
         public Product? SelectedProduct
@@ -469,7 +482,6 @@ namespace MyShop.Client.ViewModels
         public RelayCommand ApplyFiltersCommand { get; }
         public AsyncRelayCommand ImportExcelCommand { get; }
         public ICommand ImportAccessCommand { get; }
-        public ICommand AddProductTypeCommand { get; }
         public AsyncRelayCommand AddCategoryCommand { get; }
         public AsyncRelayCommand DeleteCategoryCommand { get; }
         public RelayCommand ToggleAddCategoryPanelCommand { get; }
@@ -542,11 +554,7 @@ namespace MyShop.Client.ViewModels
             ImportAccessCommand = new RelayCommand(ImportFromAccess);
 
             // Subscribe to settings changes to update PageSize
-            AppSettingsService.ItemsPerPageChanged += (s, e) =>
-            {
-                var config = AppConfig.Load();
-                PageSize = config.ItemsPerPage;
-            };
+            AppSettingsService.ItemsPerPageChanged += OnItemsPerPageChanged;
 
             // Load PageSize from AppConfig after commands are initialized
             PageSize = AppConfig.Load().ItemsPerPage;
@@ -556,6 +564,19 @@ namespace MyShop.Client.ViewModels
 
             // Đăng ký cho auto-save
             RegisterAutoSave(_tempDataService, "Products");
+        }
+
+        public void Dispose()
+        {
+            _authService.OnRecoveryRequested -= OnRecoveryRequested;
+
+            _autoSaveCts?.Cancel();
+            _autoSaveCts?.Dispose();
+
+            if (_editingProduct != null)
+            {
+                _editingProduct.PropertyChanged -= EditingProduct_PropertyChanged;
+            }
         }
 
         private void RemoveImage(string? imageName)
@@ -572,6 +593,7 @@ namespace MyShop.Client.ViewModels
                     EditingProduct.Images = string.Join(";", SelectedImages);
                 }
                 _ = LoadPreviewImagesAsync();
+                TriggerAutoSave();
             }
         }
 
@@ -636,6 +658,7 @@ namespace MyShop.Client.ViewModels
 
                 OnPropertyChanged(nameof(SelectedImages));
                 OnPropertyChanged(nameof(EditingProduct));
+                TriggerAutoSave();
             }
             finally
             {
@@ -705,6 +728,7 @@ namespace MyShop.Client.ViewModels
                 if (EditingProduct.CategoryId == -1)
                 {
                     EditingProduct.CategoryId = null; // Gán null nếu chọn "(Không có)"
+                    TriggerAutoSave();
                 }
                 // Ensure Images property is synchronized from SelectedImages
                 EditingProduct.Images = string.Join(";", SelectedImages);
@@ -734,6 +758,7 @@ namespace MyShop.Client.ViewModels
                         _snapshotProduct.Description = EditingProduct.Description;
                         _snapshotProduct.Images = EditingProduct.Images;
                     }
+                    _tempDataService.DeleteTemporaryData("Products");
                     ClearEdit();
                 }
                 else
@@ -758,6 +783,7 @@ namespace MyShop.Client.ViewModels
             EditingProduct = null;
             _snapshotProduct = null;
             ErrorMessage = string.Empty;
+            _tempDataService.DeleteTemporaryData("Products");
         }
 
         private async Task LoadCategoriesAsync()
@@ -806,6 +832,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _newCategoryName, value))
                 {
                     AddCategoryCommand.NotifyCanExecuteChanged();
+                    TriggerAutoSave();
                 }
             }
         }
@@ -837,6 +864,7 @@ namespace MyShop.Client.ViewModels
                     {
                         EditingProduct.CategoryId = created.CategoryId;
                         OnPropertyChanged(nameof(EditingProduct));
+                        TriggerAutoSave();
                     }
                     SelectedCategoryToDelete = created;
                     NewCategoryName = string.Empty;
@@ -896,6 +924,7 @@ namespace MyShop.Client.ViewModels
                     {
                         EditingProduct.CategoryId = -1;
                         OnPropertyChanged(nameof(EditingProduct));
+                        TriggerAutoSave();
                     }
 
                     SelectedCategoryToDelete = null;
@@ -1068,6 +1097,71 @@ namespace MyShop.Client.ViewModels
             ErrorMessage = "Import from Access is not implemented in this build.";
         }
 
+        private void TriggerAutoSave()
+        {
+            _autoSaveCts?.Cancel();
+
+            _autoSaveCts = new CancellationTokenSource();
+            var token = _autoSaveCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(1500, token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        await SaveDraftNowAsync();
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                }
+            });
+        }
+
+        private void EditingProduct_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            TriggerAutoSave();
+
+            SaveProductCommand.NotifyCanExecuteChanged();
+        }
+        private async Task SaveDraftNowAsync()
+        {
+            try
+            {
+                var data = GetAutoSaveData();
+
+                if (data == null)
+                {
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
+
+                await _tempDataService.SaveAsync("Products", data);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Auto save failed: {ex.Message}");
+            }
+        }
+        private bool HasRecoverableData(ProductsViewModelSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(snapshot.SearchKeyword))
+                return true;
+
+            if (snapshot.EditingProduct != null)
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(snapshot.NewCategoryName))
+                return true;
+
+            return false;
+        }
 
 
         private async Task DeleteProductAsync()
@@ -1175,6 +1269,12 @@ namespace MyShop.Client.ViewModels
             NotifyPagingCommands();
         }
 
+        private void OnItemsPerPageChanged(object? sender, EventArgs e)
+        {
+            var config = AppConfig.Load();
+            PageSize = config.ItemsPerPage;
+        }
+
         // =====================================
         // Auto-Save and Recovery Methods
         // =====================================
@@ -1205,28 +1305,35 @@ namespace MyShop.Client.ViewModels
                     // Cannot determine current user ID, skip recovery
                     return;
                 }
+                if (!HasRecoverableData(snapshot))
+                {
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
 
-                if(MyShop.Client.Helpers.RecoveryHelper.ShowRecoveryDialog(new List<string> { "Products" }) != true)
+                if (MyShop.Client.Helpers.RecoveryHelper.ShowRecoveryDialog(new List<string> { "Products" }) != true)
                 {
                     // User declined recovery, delete temp data
                     _tempDataService.DeleteTemporaryData("Products");
                     return;
                 }
 
-                // Khôi phục category được chọn
-                if (snapshot.SelectedCategory != null)
+                // Khôi phục new category name
+                if (!string.IsNullOrWhiteSpace(snapshot.NewCategoryName))
                 {
-                    var category = FilterCategories.FirstOrDefault(c => c.CategoryId == snapshot.SelectedCategory.CategoryId);
-                    if (category != null)
-                    {
-                        SelectedCategory = category;
-                    }
+                    NewCategoryName = snapshot.NewCategoryName;
+                    // open add category panel if there was a new category name
+                    IsAddCategoryPanelVisible = true;
                 }
-
                 // Khôi phục sản phẩm đang chỉnh sửa
                 if (snapshot.EditingProduct != null)
                 {
                     EditingProduct = snapshot.EditingProduct;
+                    SelectedImages = new ObservableCollection<string>(
+                        _imageService.ParseImageNames(EditingProduct.Images)
+                    );
+
+                    await LoadPreviewImagesAsync();
                 }
 
                 // Khôi phục Search keyword 
@@ -1252,6 +1359,11 @@ namespace MyShop.Client.ViewModels
         /// </summary>
         protected override object? GetAutoSaveData()
         {
+            //nếu như cũ thì không autosave
+            if (EditingProduct != null && _snapshotProduct != null && !IsEditDirty())
+            {
+                return null;
+            }
             // Get current user ID
             int? currentUserId = null;
             if (int.TryParse(_authService.AccountId, out int userId))
@@ -1262,9 +1374,10 @@ namespace MyShop.Client.ViewModels
             return new ProductsViewModelSnapshot
             {
                 UserId = currentUserId,
-                SelectedCategory = SelectedCategory,
+                NewCategoryName = NewCategoryName,
                 SearchKeyword = _searchKeyword,
                 EditingProduct = EditingProduct,
+                SelectedProductId = SelectedProduct?.ProductId,
                 CurrentPage = PageIndex,
                 PageSize = PageSize
             };
