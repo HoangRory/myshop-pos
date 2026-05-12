@@ -367,10 +367,29 @@
 
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource AppBackground}">
+    <Grid x:Name="RootGrid" Background="{StaticResource AppBackground}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="{Binding Detail, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Left}" />
-            <ColumnDefinition Width="{Binding Detail, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Right}" />
+
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}"
+                                  ConverterParameter="Left|980">
+                        <Binding Path="Detail"/>
+                        <Binding ElementName="RootGrid" Path="ActualWidth"/>
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
+
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}"
+                                  ConverterParameter="Right|980">
+                        <Binding Path="Detail"/>
+                        <Binding ElementName="RootGrid" Path="ActualWidth"/>
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
+
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="56" />
@@ -405,56 +424,61 @@
 
             <!-- Filter toolbar card -->
             <Border Style="{StaticResource CardStyle}" Grid.Row="0" Margin="0,0,0,12">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <WrapPanel VerticalAlignment="Center"
+                    ItemHeight="70">
                     <!-- Status -->
-                    <ComboBox Grid.Column="0"
+                    <Grid Margin="0,0,12,12"
+                      MinWidth="180"
+                      MaxWidth="240">
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                               Text="Trạng thái"
+                               Foreground="{StaticResource MutedBrush}"
+                               Margin="0,0,0,4"/>
+
+                        <ComboBox Grid.Row="1"
                               ItemsSource="{Binding StatusOptions}"
                               SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
                               Style="{StaticResource InputComboBoxStyle}"
-                              VerticalContentAlignment="Center"
-                              HorizontalAlignment="Stretch"
-                              Margin="0" />
+                              MinWidth="180"
+                              MaxWidth="240" />
+                    </Grid>
                     <!-- Date Range -->
-                    <Grid Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Từ:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                        <DatePicker Grid.Column="1"
-                                    SelectedDate="{Binding FromDate}"
-                                    Text="{Binding FromDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                    Style="{StaticResource InputDatePickerStyle}"
-                                    ToolTip="Nhập ngày hoặc chọn từ lịch, định dạng dd/MM/yyyy"
-                                    Margin="6,0,0,0"
-                                    VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="Đến:" VerticalAlignment="Center" Margin="6,0" Foreground="{StaticResource MutedBrush}" />
-                        <DatePicker Grid.Column="3"
-                                    SelectedDate="{Binding ToDate}"
-                                    Text="{Binding ToDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                    Style="{StaticResource InputDatePickerStyle}"
-                                    ToolTip="Nhập ngày hoặc chọn từ lịch, định dạng dd/MM/yyyy"
-                                    VerticalAlignment="Center"/>
+                    <Grid Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Khoảng thời gian" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4"/>
+                        <WrapPanel Grid.Row="1">
+                            <DatePicker Width="160"
+                                        SelectedDate="{Binding FromDate}"
+                                        Text="{Binding FromDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                        Style="{StaticResource InputDatePickerStyle}"
+                                        Margin="0,0,8,0" />
+
+                            <DatePicker Width="160" SelectedDate="{Binding ToDate}"
+                                        Text="{Binding ToDateText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                        Style="{StaticResource InputDatePickerStyle}" />
+                        </WrapPanel>
                     </Grid>
                     <!-- Apply Button -->
-                        <Button Grid.Column="2"
-                            Content="Áp dụng"
-                            Command="{Binding SearchCommand}"
-                            Height="32"
-                            MinWidth="0"
-                            Padding="12,6"
-                            Margin="10,0,0,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource PrimaryButton}" />
-                </Grid>
+                    <Grid Margin="0,0,12,12" MinWidth="120">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text=" " Opacity="0" Margin="0,0,0,4"/>
+                        <Button Grid.Row="1" Content="Áp dụng" Command="{Binding SearchCommand}"
+                                Height="32" MinWidth="120" Style="{StaticResource PrimaryButton}" />
+                    </Grid>
+                </WrapPanel>
             </Border>
 
             <!-- DataGrid card -->
