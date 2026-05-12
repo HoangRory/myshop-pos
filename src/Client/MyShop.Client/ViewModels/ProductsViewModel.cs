@@ -1075,16 +1075,16 @@ namespace MyShop.Client.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Nhập sản phẩm từ Excel thất bại.";
+                    //ErrorMessage = "Nhập sản phẩm từ Excel thất bại.";
                     // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
-                    //_dialogService.Success("Lỗi", ErrorMessage);
+                    _dialogService.Error("Lỗi nhập sản phẩm", ErrorMessage);
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Lỗi khi nhập Excel: {ex.Message}";
+                //ErrorMessage = $"Lỗi khi nhập Excel: {ex.Message}";
                 // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
-                //_dialogService.Success("Lỗi", ErrorMessage);
+                _dialogService.Error("Lỗi nhập sản phẩm", ErrorMessage);
             }
             finally
             {
