@@ -178,7 +178,16 @@ namespace MyShop.Client.ViewModels
         public int PageIndex
         {
             get => _pageIndex;
-            set => SetProperty(ref _pageIndex, value);
+            set
+            {
+                if (SetProperty(ref _pageIndex, value))
+                {
+                    CanPrevPage = _pageIndex > 1;
+                    CanNextPage = _pageIndex < TotalPages;
+                    PageInfo = $"Page {_pageIndex} / {TotalPages}";
+                    NotifyPagingCommands();
+                }
+            }
         }
 
         private int _totalPages = 1;
@@ -192,7 +201,14 @@ namespace MyShop.Client.ViewModels
         public int PageSize
         {
             get => _pageSize;
-            set => SetProperty(ref _pageSize, value);
+            set
+            {
+                if (SetProperty(ref _pageSize, value))
+                {
+                    PageIndex = 1; // triggers search via PageIndex setter
+                    _ = OnSearchAsync();
+                }
+            }
         }
 
         private string _pageInfo = "Page 1";
@@ -276,8 +292,29 @@ namespace MyShop.Client.ViewModels
             CloseDetailCommand = new RelayCommand(_ => OnCloseDetail(), _ => Detail != null);
             PrintInvoiceCommand = new AsyncRelayCommand(_ => OnPrintInvoiceAsync(), _ => Detail != null && Detail.OrderId != -1 && Detail.Status == (byte)OrderStatus.Paid);
             GoBackCommand = new AsyncRelayCommand(_ => OnGoBackAsync());
-            PrevPageCommand = new AsyncRelayCommand(_ => OnPrevPageAsync(), _ => CanPrevPage);
-            NextPageCommand = new AsyncRelayCommand(_ => OnNextPageAsync(), _ => CanNextPage);
+            PrevPageCommand = new RelayCommand(
+                (obj) =>
+                {
+                    if (PageIndex > 1)
+                    {
+                        PageIndex--;
+                        _ = OnSearchAsync();
+                    }
+                },
+                (obj) => PageIndex > 1
+            );
+
+            NextPageCommand = new RelayCommand(
+                (obj) =>
+                {
+                    if (PageIndex < TotalPages)
+                    {
+                        PageIndex++;
+                        _ = OnSearchAsync();
+                    }
+                },
+                (obj) => PageIndex < TotalPages
+            );
 
             // Subscribe to settings changes to update PageSize
             AppSettingsService.ItemsPerPageChanged += OnItemsPerPageChanged;
@@ -366,8 +403,6 @@ namespace MyShop.Client.ViewModels
                 {
                     return;
                 }
-
-                PageIndex = 1;
 
                 // Convert SelectedStatus string to byte? status
                 byte? statusFilter = null;
@@ -850,10 +885,7 @@ namespace MyShop.Client.ViewModels
 
                 if (updatedOrder != null)
                 {
-                    await OnSearchAsync();
                     ResetPaymentState();
-                    Detail = null;
-                    SelectedOrder = null;
                     _dialogService.Success("Thành công", "Thanh toán thành công.");
                     _tempDataService.DeleteTemporaryData("Orders");
                 }
@@ -1210,6 +1242,13 @@ namespace MyShop.Client.ViewModels
             CanPrevPage = PageIndex > 1;
             CanNextPage = PageIndex < TotalPages;
             PageInfo = $"Page {PageIndex} / {TotalPages}";
+            NotifyPagingCommands();
+        }
+
+        private void NotifyPagingCommands()
+        {
+            (PrevPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
         private bool HasRecoverableData(OrdersViewModelSnapshot snapshot)
         {
