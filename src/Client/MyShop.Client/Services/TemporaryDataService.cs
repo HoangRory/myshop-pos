@@ -79,6 +79,20 @@ namespace MyShop.Client.Services
             }
         }
 
+        private string GetUserStatePath()
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MyShop",
+                "UserState"
+            );
+
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            return Path.Combine(dir, "user_state.json");
+        }
+
         public async Task SaveAsync(string viewModelName, object? data)
         {
             try
@@ -169,7 +183,7 @@ namespace MyShop.Client.Services
                             DeleteTemporaryData(kvp.Key);
                             return;
                         }
-                            await SaveAsync(kvp.Key, data);
+                        await SaveAsync(kvp.Key, data);
                     }
                     catch (Exception ex)
                     {

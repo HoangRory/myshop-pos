@@ -40,9 +40,10 @@ namespace MyShop.Client.ViewModels
         }
         public string Password { get; set; } = "";
         public string ConfirmPassword { get; set; } = "";
+        public bool IsPasswordFromCache { get; set; }
 
         private string PasswordHash = string.Empty;
-        private bool _rememberMe = true;
+        private bool _rememberMe;
         public bool RememberMe
         {
             get => _rememberMe;
@@ -86,7 +87,7 @@ namespace MyShop.Client.ViewModels
             this.ServerIP = config.ServerIP;
             this.ServerPort = config.ServerPort;
 
-            string fullPath = Path.Combine(baseDir, "user_state.json");
+            string fullPath = GetUserStatePath();
 
             var savedAcc = Account.LoadFromFile(fullPath);
             if (savedAcc != null)
@@ -94,7 +95,8 @@ namespace MyShop.Client.ViewModels
                 this.Username = savedAcc.Username;
                 this.RememberMe = true;
                 this.PasswordHash = savedAcc.PasswordHash;
-                this.Password = "0921uhsajdhksajhd981u092uasd";
+                this.Password = "••••••••••••••••••••••••";
+                this.IsPasswordFromCache = !string.IsNullOrEmpty(savedAcc.PasswordHash);
                 OnPropertyChanged(string.Empty);
             }
             else
@@ -104,16 +106,43 @@ namespace MyShop.Client.ViewModels
             }
         }
 
+        private string GetUserStatePath()
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MyShop",
+                "UserState"
+            );
+
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            return Path.Combine(dir, "user_state.json");
+        }
         // Sửa lại hàm thực thi Command để nhận parameter
         private async Task ExecuteSubmit(object? parameter)
         {
             var passBox = parameter as PasswordBox;
-            string actualPassword = passBox?.Password ?? "";
+            string actualPassword;
+            if (IsPasswordFromCache && !string.IsNullOrEmpty(PasswordHash))
+            {
+                actualPassword = "CACHE_LOGIN"; // không dùng password thật
+            }
+            else
+            {
+                actualPassword = passBox?.Password ?? "";
+            }
 
             // Kiểm tra dữ liệu đầu vào cơ bản
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(actualPassword))
+            if (string.IsNullOrWhiteSpace(Username))
             {
-                _dialogService.Error("Thông báo", "Vui lòng nhập đầy đủ thông tin.");
+                _dialogService.Error("Thông báo", "Vui lòng nhập username.");
+                return;
+            }
+
+            if (!IsPasswordFromCache && string.IsNullOrWhiteSpace(actualPassword))
+            {
+                _dialogService.Error("Thông báo", "Vui lòng nhập mật khẩu.");
                 return;
             }
 
@@ -124,7 +153,7 @@ namespace MyShop.Client.ViewModels
                 config.ServerPort = ServerPort;
                 config.Save();
 
-                var useHash = actualPassword == "0921uhsajdhksajhd981u092uasd" && !string.IsNullOrEmpty(PasswordHash);
+                var useHash = IsPasswordFromCache && !string.IsNullOrEmpty(PasswordHash);
                 string passwordToSubmit = useHash ? this.PasswordHash : actualPassword;
 
                 // ĐĂNG NHẬP
@@ -136,11 +165,11 @@ namespace MyShop.Client.ViewModels
                          ? new Account(Username, passwordToSubmit, true)
                          : new Account(Username, actualPassword);
                         // Bạn truyền đường dẫn file vào đây, cực kỳ linh hoạt
-                        acc.SaveToFile("user_state.json");
+                        acc.SaveToFile(GetUserStatePath());
                     }
-                    else if (File.Exists("user_state.json"))
+                    else if (File.Exists(GetUserStatePath()))
                     {
-                        File.Delete("user_state.json");
+                        File.Delete(GetUserStatePath());
                     }
 
                     // Check for recoverable data after successful login
