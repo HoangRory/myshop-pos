@@ -571,7 +571,12 @@
         </Grid>
 
         <!-- Right column: Order detail panel -->
-        <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical">
+        <ScrollViewer Grid.Column="1"
+              Grid.Row="1"
+              VerticalScrollBarVisibility="Auto"
+              HorizontalScrollBarVisibility="Disabled">
+
+            <StackPanel Orientation="Vertical">
             <StackPanel.Style>
                 <Style TargetType="StackPanel">
                     <Setter Property="Visibility" Value="Visible" />
@@ -991,5 +996,6 @@
                 </WrapPanel>
             </StackPanel>
         </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>
