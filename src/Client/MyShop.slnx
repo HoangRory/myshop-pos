@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../SetupClient/SetupClient.vdproj" Type="Installer" />
   <Project Path="MyShop.Client/MyShop.Client.csproj" />
 </Solution>
