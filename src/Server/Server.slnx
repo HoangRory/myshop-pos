@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="../Create/Create.vdproj" Type="Installer" />
+  <Project Path="../Create/Create.vdproj" Type="Installer">
+    <Build />
+  </Project>
   <Project Path="Server.csproj" />
 </Solution>
