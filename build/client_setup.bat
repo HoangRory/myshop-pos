@@ -9,8 +9,8 @@ echo =====================================================
 
 :: Link Raw truc tiep tu GitHub cua ban
 :: Luu y: 'tree' duoc thay bang 'raw' de curl tai dung file binary
-set "URL_EXE=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.0/client_setup.exe"
-set "URL_MSI=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.1/client_setup.msi"
+set "URL_EXE=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Client/1.0.0/client_setup.exe"
+set "URL_MSI=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Client/1.0.0/client_setup.msi"
 
 echo [+] Dang tai client_setup.exe (20MB)...
 curl -L -o "client_setup.exe" "%URL_EXE%"
