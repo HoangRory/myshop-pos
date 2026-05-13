@@ -9,11 +9,11 @@ echo =====================================================
 
 :: Link Raw truc tiep tu GitHub cua ban
 :: Luu y: 'tree' duoc thay bang 'raw' de curl tai dung file binary
-set "URL_EXE=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.1/setup.exe"
-set "URL_MSI=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.1/server_setup.msi"
+set "URL_EXE=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.0/client_setup.exe"
+set "URL_MSI=https://github.com/HoangRory/myshop-pos/raw/Backend-Handler/build/Server/1.0.1/client_setup.msi"
 
-echo [+] Dang tai setup.exe (20MB)...
-curl -L -o "setup.exe" "%URL_EXE%"
+echo [+] Dang tai client_setup.exe (20MB)...
+curl -L -o "client_setup.exe" "%URL_EXE%"
 
 if %ERRORLEVEL% NEQ 0 (
     echo [LOI] Khong the tai setup.exe. Kiem tra lai ket noi.
@@ -21,11 +21,11 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b
 )
 
-echo [+] Dang tai server_setup.msi...
-curl -L -o "server_setup.msi" "%URL_MSI%"
+echo [+] Dang tai client_setup.msi...
+curl -L -o "client_setup.msi" "%URL_MSI%"
 
 if %ERRORLEVEL% NEQ 0 (
-    echo [LOI] Khong the tai server_setup.msi.
+    echo [LOI] Khong the tai client_setup.msi.
     pause
     exit /b
 )
@@ -35,8 +35,8 @@ echo    Tai xong! Dang thuc thi setup.exe...
 echo =====================================================
 
 :: Kiem tra file ton tai truoc khi chay
-if exist "setup.exe" (
-    start "" "setup.exe"
+if exist "client_setup.exe" (
+    start "" "client_setup.exe"
 )
 
 echo.
