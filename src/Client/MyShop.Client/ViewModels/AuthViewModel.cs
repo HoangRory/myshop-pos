@@ -10,7 +10,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Threading.Tasks;
 
 namespace MyShop.Client.ViewModels
 {
@@ -71,7 +70,14 @@ namespace MyShop.Client.ViewModels
             _tempDataService = tempDataService;
 
             SubmitCommand = new RelayCommand(async parameter => await ExecuteSubmit(parameter));
-            ToggleModeCommand = new RelayCommand(_ => IsLoginMode = !IsLoginMode);
+            ToggleModeCommand = new RelayCommand(_ =>
+            {
+                IsLoginMode = !IsLoginMode;
+                // RESET cờ cache khi chuyển chế độ, đặc biệt là khi sang Đăng ký
+                IsPasswordFromCache = false;
+                Password = "";
+                PasswordHash = string.Empty;
+            });
             ToggleConfigCommand = new RelayCommand(_ => ShowConfig = !ShowConfig);
 
             // Kiểm tra tự động login nếu có RememberMe
@@ -123,15 +129,16 @@ namespace MyShop.Client.ViewModels
         private async Task ExecuteSubmit(object? parameter)
         {
             var passBox = parameter as PasswordBox;
-            string actualPassword;
-            if (IsPasswordFromCache && !string.IsNullOrEmpty(PasswordHash))
+            string inputPassword = passBox?.Password ?? "";
+
+            // Nếu người dùng có nhập mật khẩu mới (khác với chuỗi dummy che mắt)
+            // thì ta phải hiểu là họ đang muốn dùng pass mới, không dùng cache nữa.
+            if (!string.IsNullOrEmpty(inputPassword) && inputPassword != "••••••••••••••••••••••••")
             {
-                actualPassword = "CACHE_LOGIN"; // không dùng password thật
+                IsPasswordFromCache = false;
             }
-            else
-            {
-                actualPassword = passBox?.Password ?? "";
-            }
+
+            string actualPassword = IsPasswordFromCache ? PasswordHash : inputPassword;
 
             // Kiểm tra dữ liệu đầu vào cơ bản
             if (string.IsNullOrWhiteSpace(Username))
