@@ -13,6 +13,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Dashboard")]
     public class DashboardViewModel : INotifyPropertyChanged
     {
+        public string PageTitle { get; } = "Tổng quan";
         private readonly IDashboardService _dashboardService;
         private readonly IDialogService _dialogService;
         private readonly IImageService _imageService;

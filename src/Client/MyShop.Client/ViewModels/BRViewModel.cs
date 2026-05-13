@@ -11,6 +11,7 @@ namespace MyShop.Client.ViewModels
     [Plugin("ViewModel", "Backup & Restore")]
     public class BRViewModel : INotifyPropertyChanged
     {
+        public string PageTitle { get; } = "Sao lưu & Phục hồi";
         private readonly IBRService _brService;
         private readonly IDialogService _dialogService;
         private List<BackupRestore> _allBackups = new();

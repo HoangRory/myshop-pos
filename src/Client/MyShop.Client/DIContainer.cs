@@ -26,7 +26,7 @@ namespace MyShop.Client
                 if (attr != null && Lucifer.Equals<char>(attr.PluginType, "ViewModel"))
                 {
                     ViewModels[attr.Name] = plugin;
-                    services.AddSingleton(plugin);
+                    services.AddTransient(plugin);
 
                     if (plugin.Name == "MainViewModel" || plugin.Name == "AuthViewModel") continue;
 

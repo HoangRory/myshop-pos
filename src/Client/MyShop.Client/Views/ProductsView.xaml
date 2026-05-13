@@ -35,33 +35,46 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
 
-        <!-- Primary button -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-            <Setter Property="Foreground" Value="White" />
+        <!-- Base button style -->
+        <Style x:Key="BaseButtonStyle" TargetType="Button">
             <Setter Property="Padding" Value="8,6" />
-            <Setter Property="BorderBrush" Value="{x:Null}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="MinWidth" Value="88" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
 
+        <!-- Primary button -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="{x:Null}" />
+        </Style>
+
         <!-- Outlined danger -->
-        <Style x:Key="DangerOutlineButton" TargetType="Button">
+        <Style x:Key="DangerOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#D9534F" />
             <Setter Property="Foreground" Value="#D9534F" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="MinWidth" Value="88" />
         </Style>
 
         <!-- Outlined cancel button -->
-        <Style x:Key="CancelOutlineButton" TargetType="Button">
+        <Style x:Key="CancelOutlineButton" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="#6B6F76" />
             <Setter Property="Foreground" Value="#6B6F76" />
-            <Setter Property="Padding" Value="8,6" />
-            <Setter Property="MinWidth" Value="88" />
+        </Style>
+
+        <!-- Shared input styles -->
+        <Style x:Key="BaseInputStyle" TargetType="Control">
+            <Setter Property="Height" Value="30" />
+        </Style>
+
+        <Style x:Key="FilterTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource BaseInputStyle}">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="FilterComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource BaseInputStyle}">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
         <!-- DataGrid header style -->
@@ -115,10 +128,24 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource AppBackground}">
+    <Grid x:Name="RootGrid" Background="{StaticResource AppBackground}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Left}" />
-            <ColumnDefinition Width="{Binding EditingProduct, Converter={StaticResource DetailPanelWidthConverter}, ConverterParameter=Right}" />
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}" ConverterParameter="Left|980">
+                        <Binding Path="EditingProduct" />
+                        <Binding ElementName="RootGrid" Path="ActualWidth" />
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
+            <ColumnDefinition>
+                <ColumnDefinition.Width>
+                    <MultiBinding Converter="{StaticResource DetailPanelWidthConverter}" ConverterParameter="Right|980">
+                        <Binding Path="EditingProduct" />
+                        <Binding ElementName="RootGrid" Path="ActualWidth" />
+                    </MultiBinding>
+                </ColumnDefinition.Width>
+            </ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -127,17 +154,13 @@
 
         <!-- Page header -->
         <DockPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" LastChildFill="True" Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                <TextBlock Text="Sản phẩm" FontSize="16" FontWeight="SemiBold" />
-                <TextBlock Text="  •  Quản lý sản phẩm" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
-            </StackPanel>
             <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="0,8,12,0">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Import" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                <WrapPanel HorizontalAlignment="Right">
+                    <Button Content="Nhập Excel" Command="{Binding ImportExcelCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
                     <Button Content="{Binding AddCategoryButtonText}" Command="{Binding ToggleAddCategoryPanelCommand}" Style="{StaticResource CancelOutlineButton}" Margin="0,0,8,0" />
                     <Button Content="{Binding DeleteCategoryButtonText}" Command="{Binding ToggleDeleteCategoryPanelCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,0" />
                     <Button Content="Thêm sản phẩm" Command="{Binding AddProductCommand}" Style="{StaticResource PrimaryButton}" />
-                </StackPanel>
+                </WrapPanel>
                 <DockPanel Margin="0,8,0,0"
                            HorizontalAlignment="Right"
                            Visibility="{Binding IsAddCategoryPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -185,86 +208,108 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
-                    <!-- Row 1: Search, Category, Price, Apply -->
-                    <Grid VerticalAlignment="Center" Grid.Row="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Search -->
-                        <Grid Grid.Column="0" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Tìm kiếm" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" />
-                        </Grid>
-                        <!-- Category -->
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding FilterCategories}"
-                                  SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
-                                  DisplayMemberPath="Name"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  HorizontalAlignment="Stretch"
-                                  Margin="8,0,0,0" />
-                        <!-- Price Range -->
-                        <Grid Grid.Column="2" VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Giá:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Grid.Column="1" Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="6,0,0,0" VerticalContentAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="-" VerticalAlignment="Center" Margin="6,0" />
-                            <TextBox Grid.Column="3" Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged}" Height="28" VerticalContentAlignment="Center"/>
-                        </Grid>
-                        <!-- Apply Button -->
-                        <Button Grid.Column="3"
-                                Content="Áp dụng"
-                                Command="{Binding ApplyFiltersCommand}"
-                                Height="30"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Style="{StaticResource PrimaryButton}" />
-                    </Grid>
-                    
-                    <!-- Row 2: Sort Options -->
-                    <Grid VerticalAlignment="Center" Grid.Row="1" Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Sort By Label -->
-                        <TextBlock Grid.Column="0" Text="Sắp xếp:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" />
-                        <!-- Sort By ComboBox -->
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding SortOptions}"
-                                  SelectedItem="{Binding SortBy, Mode=TwoWay}"
-                                  Width="100"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  Margin="6,0,0,0" />
-                        <!-- Sort Direction Label -->
-                        <TextBlock Grid.Column="2" Text="Thứ tự:" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" />
-                        <!-- Sort Direction ComboBox -->
-                        <ComboBox Grid.Column="3"
-                                  SelectedValuePath="Content"
-                                  SelectedValue="{Binding IsAscending, Converter={StaticResource BoolToSortDirectionConverter}, Mode=TwoWay}"
-                                  Width="120"
-                                  Height="30"
-                                  VerticalContentAlignment="Center"
-                                  Margin="6,0,0,0">
-                            <ComboBoxItem Content="Tăng dần" />
-                            <ComboBoxItem Content="Giảm dần" />
-                        </ComboBox>
+                    <!-- Filters grouped by interaction -->
+                    <Grid Grid.RowSpan="2">
+                        <WrapPanel VerticalAlignment="Top">
+                            <Grid Margin="0,0,12,12" MinWidth="180" MaxWidth="260">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Danh mục" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <ComboBox Grid.Row="1"
+                                          ItemsSource="{Binding FilterCategories}"
+                                          SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                          DisplayMemberPath="Name"
+                                          MinWidth="180"
+                                          MaxWidth="260"
+                                          Style="{StaticResource FilterComboBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="280" MaxWidth="420">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Sắp xếp" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              MinWidth="130"
+                                              MaxWidth="200"
+                                              ItemsSource="{Binding SortOptions}"
+                                              SelectedItem="{Binding SortBy, Mode=TwoWay}"
+                                              Style="{StaticResource FilterComboBoxStyle}" />
+                                    <ComboBox Grid.Column="2"
+                                              MinWidth="130"
+                                              MaxWidth="200"
+                                              SelectedValuePath="Content"
+                                              SelectedValue="{Binding IsAscending, Converter={StaticResource BoolToSortDirectionConverter}, Mode=TwoWay}"
+                                              Style="{StaticResource FilterComboBoxStyle}">
+                                        <ComboBoxItem Content="Tăng dần" />
+                                        <ComboBoxItem Content="Giảm dần" />
+                                    </ComboBox>
+                                </Grid>
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="220" MaxWidth="360">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Tìm kiếm" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <TextBox Grid.Row="1"
+                                         MinWidth="220"
+                                         MaxWidth="360"
+                                         Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource FilterTextBoxStyle}" />
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="220" MaxWidth="320">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Giá" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             MinWidth="100"
+                                             MaxWidth="150"
+                                             Text="{Binding MinPrice, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SafeDecimalConverter}}"
+                                             Style="{StaticResource FilterTextBoxStyle}" />
+                                    <TextBlock Grid.Column="1" Text="-" VerticalAlignment="Center" Margin="6,0" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBox Grid.Column="2"
+                                             MinWidth="100"
+                                             MaxWidth="150"
+                                             Text="{Binding MaxPrice, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SafeDecimalConverter}}"
+                                             Style="{StaticResource FilterTextBoxStyle}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid Margin="0,0,12,12" MinWidth="110" MaxWidth="180">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text=" " Margin="0,0,0,4" Opacity="0" />
+                                <Button Grid.Row="1"
+                                    Content="Áp dụng"
+                                    Command="{Binding ApplyFiltersCommand}"
+                                    IsEnabled="{Binding IsApplyEnabled}"
+                                    Height="30"
+                                    MinWidth="110"
+                                    Style="{StaticResource PrimaryButton}" />
+                            </Grid>
+                        </WrapPanel>
                     </Grid>
                 </Grid>
             </Border>
@@ -279,7 +324,7 @@
                     <DataGrid x:Name="ProductsGrid"
                               Grid.Row="0"
                               ItemsSource="{Binding Products}" 
-                              SelectedItem="{Binding SelectedProduct, Mode=OneWayToSource}"
+                              SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
                               RowHeaderWidth="0"
@@ -364,13 +409,12 @@
                         </TextBlock>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                             <ComboBox Width="80"
-                                  SelectedValue="{Binding PageSize}"
+                                  SelectedValue="{Binding PageSize, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="Content">
+                                <ComboBoxItem Content="5"/>
                                 <ComboBoxItem Content="10"/>
-                                <ComboBoxItem Content="25"/>
-                                <ComboBoxItem Content="50"/>
-                                <ComboBoxItem Content="100"/>
-
+                                <ComboBoxItem Content="15"/>
+                                <ComboBoxItem Content="20"/>
                             </ComboBox>
                             <Button Content="◀" Command="{Binding PrevPageCommand}" Width="36" />
                             <TextBox Text="{Binding PageIndex, UpdateSourceTrigger=PropertyChanged}" Width="48" HorizontalContentAlignment="Center" />
@@ -384,9 +428,9 @@
 
 
         <!-- Right column: Product detail panel -->
-        <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Vertical">
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.Style>
+                <Style TargetType="Grid">
                     <Setter Property="Visibility" Value="Visible" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding EditingProduct}" Value="{x:Null}">
@@ -394,96 +438,106 @@
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
-            </StackPanel.Style>
-            <!-- Image gallery card -->
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <!-- Header -->
-                    <DockPanel Margin="0,0,0,10">
-                        <TextBlock Text="Hình ảnh" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <Button Content="Upload ảnh" Command="{Binding UploadImageCommand}"
-                                Width="120" Height="30" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-                    </DockPanel>
-                    <!-- Preview images -->
-                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding PreviewImages}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
+            <!-- Scrollable card content -->
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Vertical">
+                    <!-- Image gallery card -->
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <!-- Header -->
+                            <DockPanel Margin="0,0,0,10">
+                                <TextBlock Text="Hình ảnh" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <Button Content="Upload ảnh" Command="{Binding UploadImageCommand}"
+                                        Width="120" Height="30" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+                            </DockPanel>
+                            <!-- Preview images -->
+                            <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding PreviewImages}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
 
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BorderBrush="#DDD" BorderThickness="1"
-                                            Margin="5" Padding="5">
-                                        <StackPanel>
-                                            <Image Width="120" Height="120"
-                                                Stretch="UniformToFill" Source="{Binding}" />
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#DDD" BorderThickness="1"
+                                                    Margin="5" Padding="5">
+                                                <StackPanel>
+                                                    <Image Width="120" Height="120"
+                                                        Stretch="UniformToFill" Source="{Binding}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Basic info card -->
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Thông tin cơ bản" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Tên" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBox Text="{Binding EditingProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" Padding="8,4" />
+                                    <TextBlock Text="Sku" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding EditingProduct.Sku, Mode=TwoWay}" Height="30" Padding="8,4" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Danh mục" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                                    <ComboBox
+                                        ItemsSource="{Binding EditCategories}"
+                                        SelectedValue="{Binding EditingProduct.CategoryId, Mode=TwoWay}"
+                                        SelectedValuePath="CategoryId"
+                                        DisplayMemberPath="Name"
+                                        Height="30"
+                                        VerticalContentAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pricing & inventory card -->
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Giá &amp; tồn kho" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Giá nhập" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBox Text="{Binding EditingProduct.ImportPrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
+                                    <TextBlock Text="Giá bán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding EditingProduct.SalePrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Số lượng" FontSize="12" Foreground="{StaticResource MutedBrush}" />
+                                    <TextBox Text="{Binding EditingProduct.StockCount, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
-
-            <!-- Basic info card -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <TextBlock Text="Thông tin cơ bản" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Tên" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="30" Padding="8,4" />
-                            <TextBlock Text="Sku" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding EditingProduct.Sku, Mode=TwoWay}" Height="30" Padding="8,4" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Danh mục" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <ComboBox
-                                ItemsSource="{Binding EditCategories}"
-                                SelectedValue="{Binding EditingProduct.CategoryId, Mode=TwoWay}"
-                                SelectedValuePath="CategoryId"
-                                DisplayMemberPath="Name"
-                                Height="30"
-                                VerticalContentAlignment="Center" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Pricing & inventory card -->
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <TextBlock Text="Giá &amp; tồn kho" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Giá nhập" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.ImportPrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
-                            <TextBlock Text="Giá bán" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                            <TextBox Text="{Binding EditingProduct.SalePrice, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Số lượng" FontSize="12" Foreground="{StaticResource MutedBrush}" />
-                            <TextBox Text="{Binding EditingProduct.StockCount, Mode=TwoWay, Converter={StaticResource SafeDecimalConverter}}" Height="30" Padding="8,4" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
+            </ScrollViewer>
 
             <!-- Actions -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
                 <Button Content="Xóa" Command="{Binding DeleteProductCommand}" Margin="0,0,8,0">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource DangerOutlineButton}">
@@ -500,17 +554,18 @@
                 <Button Content="Hủy" Command="{Binding ClearFormCommand}" Margin="0,0,8,0" Style="{StaticResource CancelOutlineButton}"/>
                 <Button Content="Lưu" Command="{Binding SaveProductCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
-            <Border Background="#FFF3F3"
+            <Border Grid.Row="2"
+                Background="#FFF3F3"
                 BorderBrush="#F5C2C7"
                 BorderThickness="1"
                 Padding="8"
-                Margin="0,0,0,10"
+                Margin="0,10,0,0"
                 CornerRadius="4"
                 Visibility="{Binding ErrorMessage,Converter={StaticResource StringToVisibility} }">
                 <TextBlock Text="{Binding ErrorMessage}"
                Foreground="#D9534F"
                TextWrapping="Wrap"/>
             </Border>
-        </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

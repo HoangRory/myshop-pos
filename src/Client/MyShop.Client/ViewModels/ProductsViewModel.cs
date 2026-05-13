@@ -2,21 +2,26 @@ using CommunityToolkit.Mvvm.Input;
 using LuciferCore.Attributes;
 using Microsoft.Win32;
 using MyShop.Client.Models;
+using MyShop.Client.Services;
 using MyShop.Client.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.ComponentModel;
 namespace MyShop.Client.ViewModels
 {
     [Plugin("ViewModel", "Products")]
-    public class ProductsViewModel : BaseViewModel
+    public class ProductsViewModel : BaseViewModel, IDisposable
     {
+        public string PageTitle { get; } = "Sản phẩm";
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IDialogService _dialogService;
-            private readonly IImageService _imageService;
+        private readonly IImageService _imageService;
+        private readonly ITemporaryDataService _tempDataService;
+        private readonly IAuthService _authService;
 
         private bool _isLoaded;
         public bool IsLoaded
@@ -25,6 +30,7 @@ namespace MyShop.Client.ViewModels
             private set => SetProperty(ref _isLoaded, value);
         }
 
+        private CancellationTokenSource? _autoSaveCts;
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
         public ObservableCollection<Category> FilterCategories { get; } = new ObservableCollection<Category>();
         public ObservableCollection<Category> EditCategories { get; } = new ObservableCollection<Category>();
@@ -59,6 +65,11 @@ namespace MyShop.Client.ViewModels
         public string AddCategoryButtonText => IsAddCategoryPanelVisible ? "Hủy" : "Thêm danh mục";
         public string DeleteCategoryButtonText => IsDeleteCategoryPanelVisible ? "Hủy" : "Xóa danh mục";
 
+        // Tracks whether there are unapplied filter/sort/search changes
+        private bool _filtersDirty;
+
+        public bool IsApplyEnabled => !IsLoading && _filtersDirty;
+
         private Category? _selectedCategory;
         public Category? SelectedCategory
         {
@@ -68,26 +79,47 @@ namespace MyShop.Client.ViewModels
                 if (_selectedCategory == value)
                     return;
 
-                TryChangeState(() =>
+                if (SetProperty(ref _selectedCategory, value))
                 {
-                    if (SetProperty(ref _selectedCategory, value))
-                    {
-                        _pageIndex = 1;
-                        OnPropertyChanged(nameof(PageIndex));
-                        LoadProductsCommand.Execute(null);
-                    }
-                });
+                    // Do not auto-apply filter changes. Require user to press Apply.
+                    _filtersDirty = true;
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
+                }
             }
         }
         // --- Editing Flow State ---
         // ===============================
-        // STEP 1: Thêm method này vào ProductsViewModel (placed before usage)
+        // Tracks if EditingProduct differs from _snapshotProduct
         // ===============================
+
+        private bool IsEditDirty()
+        {
+            if (EditingProduct == null || _snapshotProduct == null)
+                return false;
+
+            // Compare key properties to determine if changes were made
+            return EditingProduct.Name != _snapshotProduct.Name ||
+                   EditingProduct.Sku != _snapshotProduct.Sku ||
+                   EditingProduct.CategoryId != _snapshotProduct.CategoryId ||
+                   EditingProduct.ImportPrice != _snapshotProduct.ImportPrice ||
+                   EditingProduct.SalePrice != _snapshotProduct.SalePrice ||
+                   EditingProduct.StockCount != _snapshotProduct.StockCount ||
+                   EditingProduct.Description != _snapshotProduct.Description ||
+                   EditingProduct.Images != _snapshotProduct.Images;
+        }
 
         private bool TryLeaveEditMode()
         {
             if (EditingProduct == null)
                 return true;
+
+            // Only confirm if there are actual unsaved changes
+            if (!IsEditDirty())
+            {
+                ClearEdit();
+                return true;
+            }
 
             var confirm = _dialogService.Confirm(
                 "Xác nhận",
@@ -101,14 +133,7 @@ namespace MyShop.Client.ViewModels
             return true;
         }
 
-        private bool TryChangeState(Action action)
-        {
-            if (!TryLeaveEditMode())
-                return false;
 
-            action();
-            return true;
-        }
 
         private Product? _editingProduct;
         public Product? EditingProduct
@@ -116,18 +141,55 @@ namespace MyShop.Client.ViewModels
             get => _editingProduct;
             set
             {
+                if (_editingProduct != null)
+                {
+                    _editingProduct.PropertyChanged -= EditingProduct_PropertyChanged;
+                }
                 if (SetProperty(ref _editingProduct, value))
                 {
+                    if (_editingProduct != null)
+                    {
+                        _editingProduct.PropertyChanged += EditingProduct_PropertyChanged;
+                    }
                     // Khi gán object mới, thông báo toàn bộ property thay đổi để binding UI cập nhật
                     OnPropertyChanged(nameof(EditingProduct));
                     // Nếu có các command phụ thuộc, cập nhật trạng thái
                     SaveProductCommand.NotifyCanExecuteChanged();
                     DeleteProductCommand.NotifyCanExecuteChanged();
+
+
                 }
             }
         }
 
         private Product? _snapshotProduct;
+
+        private static Product CloneProduct(Product product)
+        {
+            return new Product
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Sku = product.Sku,
+                CategoryId = product.CategoryId,
+                ImportPrice = product.ImportPrice,
+                SalePrice = product.SalePrice,
+                StockCount = product.StockCount,
+                Description = product.Description,
+                Images = product.Images,
+                CategoryName = product.CategoryName
+            };
+        }
+
+        private void RestoreSelectedProduct(Product? product)
+        {
+            if (ReferenceEquals(_selectedProduct, product))
+                return;
+
+            _selectedProduct = product;
+            OnPropertyChanged(nameof(SelectedProduct));
+            UpdateCommandStates();
+        }
 
         // Query/filter state
         private int _pageIndex = 1;
@@ -178,19 +240,19 @@ namespace MyShop.Client.ViewModels
         public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Ceiling((double)TotalCount / PageSize);
 
         private string _searchKeyword;
-        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) PageIndex = 1; } }
+        public string SearchKeyword { get => _searchKeyword; set { if (SetProperty(ref _searchKeyword, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _minPrice;
-        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) PageIndex = 1; } }
+        public decimal? MinPrice { get => _minPrice; set { if (SetProperty(ref _minPrice, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private decimal? _maxPrice;
-        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) PageIndex = 1; } }
+        public decimal? MaxPrice { get => _maxPrice; set { if (SetProperty(ref _maxPrice, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private string _selectedSortField = "Name";
-        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) LoadProductsCommand.Execute(null); } }
+        public string SelectedSortField { get => _selectedSortField; set { if (SetProperty(ref _selectedSortField, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private bool _sortDescending = false;
-        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) LoadProductsCommand.Execute(null); } }
+        public bool SortDescending { get => _sortDescending; set { if (SetProperty(ref _sortDescending, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         // Sort Options for UI
         private ObservableCollection<string> _sortOptions = new ObservableCollection<string> { "Tên", "Giá", "Tồn kho" };
@@ -208,7 +270,9 @@ namespace MyShop.Client.ViewModels
             {
                 if (SetProperty(ref _sortBy, value))
                 {
-                    LoadProductsCommand.Execute(null);
+                    _filtersDirty = true;
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
                 }
             }
         }
@@ -221,13 +285,16 @@ namespace MyShop.Client.ViewModels
             {
                 if (SetProperty(ref _isAscending, value))
                 {
-                    LoadProductsCommand.Execute(null);
+                    _filtersDirty = true;
+                    TriggerAutoSave();
+                    ApplyFiltersCommand?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsApplyEnabled));
                 }
             }
         }
 
         private string _selectedProductType;
-        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) PageIndex = 1; } }
+        public string SelectedProductType { get => _selectedProductType; set { if (SetProperty(ref _selectedProductType, value)) { _filtersDirty = true; TriggerAutoSave(); ApplyFiltersCommand?.NotifyCanExecuteChanged(); OnPropertyChanged(nameof(IsApplyEnabled)); } } }
 
         private Product? _selectedProduct;
         public Product? SelectedProduct
@@ -235,12 +302,38 @@ namespace MyShop.Client.ViewModels
             get => _selectedProduct;
             set
             {
-                if (SetProperty(ref _selectedProduct, value))
+                if (_selectedProduct == value)
+                    return;
+
+                // If currently editing another product, confirm before switching selection
+                if (EditingProduct != null && value != null && EditingProduct.ProductId != value.ProductId)
                 {
-                    // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
-                    // Nếu muốn bắt đầu edit, gọi hàm riêng
-                    OpenEditMode(value);
-                    UpdateCommandStates();
+                    if (!TryLeaveEditMode())
+                        return; // user cancelled, do not change selection
+
+                    // TryLeaveEditMode cleared the edit state; proceed with selection
+                    if (SetProperty(ref _selectedProduct, value))
+                    {
+                        OpenEditMode(value);
+                        UpdateCommandStates();
+                    }
+                }
+                else
+                {
+                    if (SetProperty(ref _selectedProduct, value))
+                    {
+                        if (value == null)
+                        {
+                            // Selection can be cleared during reload/filtering; keep the edit session alive.
+                            UpdateCommandStates();
+                            return;
+                        }
+
+                        // Không mở edit mode trực tiếp khi chọn dòng, chỉ lưu selection
+                        // Nếu muốn bắt đầu edit, gọi hàm riêng
+                        OpenEditMode(value);
+                        UpdateCommandStates();
+                    }
                 }
             }
         }
@@ -350,31 +443,8 @@ namespace MyShop.Client.ViewModels
                 SelectedImages.Clear();
                 return;
             }
-            // Clone thủ công từng property, không dùng MemberwiseClone
-            var clone = new Product
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                Sku = product.Sku,
-                CategoryId = product.CategoryId,
-                ImportPrice = product.ImportPrice,
-                SalePrice = product.SalePrice,
-                StockCount = product.StockCount,
-                Description = product.Description,
-                Images = product.Images
-            };
-            _snapshotProduct = new Product
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                Sku = product.Sku,
-                CategoryId = product.CategoryId,
-                ImportPrice = product.ImportPrice,
-                SalePrice = product.SalePrice,
-                StockCount = product.StockCount,
-                Description = product.Description,
-                Images = product.Images
-            };
+            var clone = CloneProduct(product);
+            _snapshotProduct = CloneProduct(product);
             EditingProduct = clone;
             // Populate selected images collection from Images string
             SelectedImages = new ObservableCollection<string>(
@@ -409,21 +479,25 @@ namespace MyShop.Client.ViewModels
         public RelayCommand<string> RemoveImageCommand { get; }
         public RelayCommand NextPageCommand { get; }
         public RelayCommand PrevPageCommand { get; }
-        public ICommand ApplyFiltersCommand { get; }
+        public RelayCommand ApplyFiltersCommand { get; }
         public AsyncRelayCommand ImportExcelCommand { get; }
         public ICommand ImportAccessCommand { get; }
-        public ICommand AddProductTypeCommand { get; }
         public AsyncRelayCommand AddCategoryCommand { get; }
         public AsyncRelayCommand DeleteCategoryCommand { get; }
         public RelayCommand ToggleAddCategoryPanelCommand { get; }
         public RelayCommand ToggleDeleteCategoryPanelCommand { get; }
 
-        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService, IImageService imageService)
+        public ProductsViewModel(IProductService productService, IDialogService dialogService, ICategoryService categoryService, IImageService imageService, ITemporaryDataService tempDataService, IAuthService authService)
         {
             _productService = productService;
             _dialogService = dialogService;
             _categoryService = categoryService;
             _imageService = imageService;
+            _tempDataService = tempDataService;
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+
+            _authService.OnRecoveryRequested += OnRecoveryRequested;
+
             LoadProductsCommand = new AsyncRelayCommand(LoadProductsAsync, CanExecuteLoadProducts);
             AddProductCommand = new AsyncRelayCommand(OpenAddFormAsync, CanExecuteOpenAddForm);
             AddCategoryCommand = new AsyncRelayCommand(AddCategoryAsync, CanExecuteAddCategory);
@@ -435,18 +509,19 @@ namespace MyShop.Client.ViewModels
             ClearFormCommand = new AsyncRelayCommand(() => { ClearForm(); return Task.CompletedTask; }, CanExecuteClearForm);
             UploadImageCommand = new AsyncRelayCommand(UploadImageAsync);
             RemoveImageCommand = new RelayCommand<string>(RemoveImage);
+            CancelEditCommand = new AsyncRelayCommand(() => { TryLeaveEditMode(); return Task.CompletedTask; }, CanExecuteClearForm);
 
             // ===============================
             // STEP 4: Sửa NextPageCommand
             // ===============================
             NextPageCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
                     if (PageIndex < TotalPages)
                     {
                         PageIndex++;
                     }
-                }),
+                },
                 () => PageIndex < TotalPages
             );
 
@@ -454,13 +529,13 @@ namespace MyShop.Client.ViewModels
             // STEP 5: Sửa PrevPageCommand
             // ===============================
             PrevPageCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
                     if (PageIndex > 1)
                     {
                         PageIndex--;
                     }
-                }),
+                },
                 () => PageIndex > 1
             );
 
@@ -468,15 +543,40 @@ namespace MyShop.Client.ViewModels
             // STEP 6: Sửa ApplyFiltersCommand
             // ===============================
             ApplyFiltersCommand = new RelayCommand(
-                () => TryChangeState(() =>
+                () =>
                 {
-                    _pageIndex = 1;
-                    OnPropertyChanged(nameof(PageIndex));
+                    PageIndex = 1;
                     LoadProductsCommand.Execute(null);
-                })
+                },
+                () => !IsLoading && _filtersDirty
             );
             ImportExcelCommand = new AsyncRelayCommand(ImportFromExcelAsync, CanExecuteImportExcel);
             ImportAccessCommand = new RelayCommand(ImportFromAccess);
+
+            // Subscribe to settings changes to update PageSize
+            AppSettingsService.ItemsPerPageChanged += OnItemsPerPageChanged;
+
+            // Load PageSize from AppConfig after commands are initialized
+            PageSize = AppConfig.Load().ItemsPerPage;
+
+            // Cố gắng khôi phục dữ liệu tạm thời
+            _ = RecoverDataAsync();
+
+            // Đăng ký cho auto-save
+            RegisterAutoSave(_tempDataService, "Products");
+        }
+
+        public void Dispose()
+        {
+            _authService.OnRecoveryRequested -= OnRecoveryRequested;
+
+            _autoSaveCts?.Cancel();
+            _autoSaveCts?.Dispose();
+
+            if (_editingProduct != null)
+            {
+                _editingProduct.PropertyChanged -= EditingProduct_PropertyChanged;
+            }
         }
 
         private void RemoveImage(string? imageName)
@@ -493,7 +593,17 @@ namespace MyShop.Client.ViewModels
                     EditingProduct.Images = string.Join(";", SelectedImages);
                 }
                 _ = LoadPreviewImagesAsync();
+                TriggerAutoSave();
             }
+        }
+
+        private async void OnRecoveryRequested(List<string> modules)
+        {
+            if (!modules.Contains("Products"))
+                return;
+
+            await RecoverDataAsync();
+            await LoadProductsAsync();
         }
 
         private bool CanExecuteUploadImage()
@@ -548,6 +658,7 @@ namespace MyShop.Client.ViewModels
 
                 OnPropertyChanged(nameof(SelectedImages));
                 OnPropertyChanged(nameof(EditingProduct));
+                TriggerAutoSave();
             }
             finally
             {
@@ -588,7 +699,8 @@ namespace MyShop.Client.ViewModels
 
         private void ClearForm()
         {
-            ClearEdit();
+            // Confirm if user is currently editing; TryLeaveEditMode will clear on confirm
+            TryLeaveEditMode();
         }
 
         private async Task OpenAddFormAsync()
@@ -616,6 +728,7 @@ namespace MyShop.Client.ViewModels
                 if (EditingProduct.CategoryId == -1)
                 {
                     EditingProduct.CategoryId = null; // Gán null nếu chọn "(Không có)"
+                    TriggerAutoSave();
                 }
                 // Ensure Images property is synchronized from SelectedImages
                 EditingProduct.Images = string.Join(";", SelectedImages);
@@ -633,6 +746,19 @@ namespace MyShop.Client.ViewModels
                     _dialogService.Success(
                         isCreate ? "Thành công" : "Cập nhật thành công",
                         isCreate ? "Thêm sản phẩm thành công." : "Cập nhật sản phẩm thành công.");
+                    // Update snapshot after successful save so IsEditDirty returns false
+                    if (EditingProduct != null && _snapshotProduct != null)
+                    {
+                        _snapshotProduct.Name = EditingProduct.Name;
+                        _snapshotProduct.Sku = EditingProduct.Sku;
+                        _snapshotProduct.CategoryId = EditingProduct.CategoryId;
+                        _snapshotProduct.ImportPrice = EditingProduct.ImportPrice;
+                        _snapshotProduct.SalePrice = EditingProduct.SalePrice;
+                        _snapshotProduct.StockCount = EditingProduct.StockCount;
+                        _snapshotProduct.Description = EditingProduct.Description;
+                        _snapshotProduct.Images = EditingProduct.Images;
+                    }
+                    _tempDataService.DeleteTemporaryData("Products");
                     ClearEdit();
                 }
                 else
@@ -657,6 +783,7 @@ namespace MyShop.Client.ViewModels
             EditingProduct = null;
             _snapshotProduct = null;
             ErrorMessage = string.Empty;
+            _tempDataService.DeleteTemporaryData("Products");
         }
 
         private async Task LoadCategoriesAsync()
@@ -705,6 +832,7 @@ namespace MyShop.Client.ViewModels
                 if (SetProperty(ref _newCategoryName, value))
                 {
                     AddCategoryCommand.NotifyCanExecuteChanged();
+                    TriggerAutoSave();
                 }
             }
         }
@@ -736,6 +864,7 @@ namespace MyShop.Client.ViewModels
                     {
                         EditingProduct.CategoryId = created.CategoryId;
                         OnPropertyChanged(nameof(EditingProduct));
+                        TriggerAutoSave();
                     }
                     SelectedCategoryToDelete = created;
                     NewCategoryName = string.Empty;
@@ -795,6 +924,7 @@ namespace MyShop.Client.ViewModels
                     {
                         EditingProduct.CategoryId = -1;
                         OnPropertyChanged(nameof(EditingProduct));
+                        TriggerAutoSave();
                     }
 
                     SelectedCategoryToDelete = null;
@@ -838,6 +968,9 @@ namespace MyShop.Client.ViewModels
             IsLoading = true;
             try
             {
+                var activeEditProductId = EditingProduct?.ProductId;
+                var activeSelectedProductId = SelectedProduct?.ProductId;
+
                 // Map UI SortBy display names to API field names
                 string sortByField = _sortBy switch
                 {
@@ -861,16 +994,28 @@ namespace MyShop.Client.ViewModels
                     : SelectedCategory?.CategoryId
                 };
                 var (products, totalCount) = await _productService.SearchAsync(query);
+
                 Products.Clear();
                 foreach (var p in products)
                 {
-                    p.CategoryName = FilterCategories
+                    var product = CloneProduct(p);
+                    product.CategoryName = FilterCategories
                         .FirstOrDefault(c => c.CategoryId == p.CategoryId)
                         ?.Name ?? "Không có";
-                    Products.Add(p);
+
+                    Products.Add(product);
+
                     // Start loading the thumbnail asynchronously (do not block the UI)
-                    _ = LoadProductThumbnailAsync(p);
+                    _ = LoadProductThumbnailAsync(product);
                 }
+
+                var restoreProductId = activeEditProductId ?? activeSelectedProductId;
+                if (restoreProductId.HasValue)
+                {
+                    var restoredSelection = Products.FirstOrDefault(x => x.ProductId == restoreProductId.Value);
+                    RestoreSelectedProduct(restoredSelection);
+                }
+
                 TotalCount = totalCount;
 
                 ErrorMessage = string.Empty;
@@ -930,16 +1075,16 @@ namespace MyShop.Client.ViewModels
                 }
                 else
                 {
-                    ErrorMessage = "Nhập sản phẩm từ Excel thất bại.";
+                    //ErrorMessage = "Nhập sản phẩm từ Excel thất bại.";
                     // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
-                    //_dialogService.Success("Lỗi", ErrorMessage);
+                    _dialogService.Error("Lỗi nhập sản phẩm", ErrorMessage);
                 }
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Lỗi khi nhập Excel: {ex.Message}";
+                //ErrorMessage = $"Lỗi khi nhập Excel: {ex.Message}";
                 // Nếu muốn popup lỗi, có thể dùng Success với tiêu đề "Lỗi"
-                //_dialogService.Success("Lỗi", ErrorMessage);
+                _dialogService.Error("Lỗi nhập sản phẩm", ErrorMessage);
             }
             finally
             {
@@ -952,16 +1097,82 @@ namespace MyShop.Client.ViewModels
             ErrorMessage = "Import from Access is not implemented in this build.";
         }
 
+        private void TriggerAutoSave()
+        {
+            _autoSaveCts?.Cancel();
+
+            _autoSaveCts = new CancellationTokenSource();
+            var token = _autoSaveCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(1500, token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        await SaveDraftNowAsync();
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                }
+            });
+        }
+
+        private void EditingProduct_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            TriggerAutoSave();
+
+            SaveProductCommand.NotifyCanExecuteChanged();
+        }
+        private async Task SaveDraftNowAsync()
+        {
+            try
+            {
+                var data = GetAutoSaveData();
+
+                if (data == null)
+                {
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
+
+                await _tempDataService.SaveAsync("Products", data);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Auto save failed: {ex.Message}");
+            }
+        }
+        private bool HasRecoverableData(ProductsViewModelSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(snapshot.SearchKeyword))
+                return true;
+
+            if (snapshot.EditingProduct != null)
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(snapshot.NewCategoryName))
+                return true;
+
+            return false;
+        }
 
 
         private async Task DeleteProductAsync()
         {
-            if (IsLoading || SelectedProduct == null) return;
+            var productToDelete = SelectedProduct ?? EditingProduct;
+            if (IsLoading || productToDelete == null) return;
             IsLoading = true;
             // Confirm deletion
             var confirm = _dialogService.Confirm(
                         "Xác nhận",
-                        $"Bạn có chắc muốn xóa sản phẩm '{SelectedProduct.Name}' không?");
+                        $"Bạn có chắc muốn xóa sản phẩm '{productToDelete.Name}' không?");
             if (!confirm)
             {
                 IsLoading = false;
@@ -969,7 +1180,7 @@ namespace MyShop.Client.ViewModels
             }
             try
             {
-                var result = await _productService.DeleteAsync(SelectedProduct.ProductId);
+                var result = await _productService.DeleteAsync(productToDelete.ProductId);
                 if (result)
                 {
                     _dialogService.Success("Thành công", "Xóa sản phẩm thành công.");
@@ -1038,7 +1249,7 @@ namespace MyShop.Client.ViewModels
         private bool CanExecuteLoadProducts() => !IsLoading;
         private bool CanExecuteOpenAddForm() => !IsLoading;
         private bool CanExecuteSaveProduct() => !IsLoading && EditingProduct != null;
-        private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && SelectedProduct != null;
+        private bool CanExecuteUpdateOrDeleteProduct() => !IsLoading && EditingProduct != null;
         private bool CanExecuteClearForm() => !IsLoading;
 
         private void UpdateCommandStates()
@@ -1053,7 +1264,123 @@ namespace MyShop.Client.ViewModels
             DeleteCategoryCommand?.NotifyCanExecuteChanged();
             ToggleAddCategoryPanelCommand?.NotifyCanExecuteChanged();
             ToggleDeleteCategoryPanelCommand?.NotifyCanExecuteChanged();
+            ApplyFiltersCommand?.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(IsApplyEnabled));
             NotifyPagingCommands();
+        }
+
+        private void OnItemsPerPageChanged(object? sender, EventArgs e)
+        {
+            var config = AppConfig.Load();
+            PageSize = config.ItemsPerPage;
+        }
+
+        // =====================================
+        // Auto-Save and Recovery Methods
+        // =====================================
+
+        /// <summary>
+        /// Khôi phục dữ liệu tạm thời nếu ứng dụng bị tắt bất ngờ
+        /// </summary>
+        private async Task RecoverDataAsync()
+        {
+            var snapshot = await TryRecoverDataAsync<ProductsViewModelSnapshot>(_tempDataService, "Products");
+            if (snapshot == null)
+                return;
+
+            try
+            {
+                // Validate UserId matches current user
+                if (int.TryParse(_authService.AccountId, out int currentUserId))
+                {
+                    if (snapshot.UserId != currentUserId)
+                    {
+                        // Data belongs to different user, delete it
+                        _tempDataService.DeleteTemporaryData("Products");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Cannot determine current user ID, skip recovery
+                    return;
+                }
+                if (!HasRecoverableData(snapshot))
+                {
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
+
+                if (MyShop.Client.Helpers.RecoveryHelper.ShowRecoveryDialog(new List<string> { "Products" }) != true)
+                {
+                    // User declined recovery, delete temp data
+                    _tempDataService.DeleteTemporaryData("Products");
+                    return;
+                }
+
+                // Khôi phục new category name
+                if (!string.IsNullOrWhiteSpace(snapshot.NewCategoryName))
+                {
+                    NewCategoryName = snapshot.NewCategoryName;
+                    // open add category panel if there was a new category name
+                    IsAddCategoryPanelVisible = true;
+                }
+                // Khôi phục sản phẩm đang chỉnh sửa
+                if (snapshot.EditingProduct != null)
+                {
+                    EditingProduct = snapshot.EditingProduct;
+                    SelectedImages = new ObservableCollection<string>(
+                        _imageService.ParseImageNames(EditingProduct.Images)
+                    );
+
+                    await LoadPreviewImagesAsync();
+                }
+
+                // Khôi phục Search keyword 
+                if (snapshot.SearchKeyword != null)
+                    SearchKeyword = snapshot.SearchKeyword;
+                // Khôi phục pagination
+                PageIndex = snapshot.CurrentPage;
+                PageSize = snapshot.PageSize;
+
+                CommitRecovery(_tempDataService, "Products");
+                System.Diagnostics.Debug.WriteLine("Dữ liệu sản phẩm đã được khôi phục");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi khi khôi phục dữ liệu: {ex.Message}");
+                // Nếu lỗi, xóa dữ liệu để tránh lặp lại
+                _tempDataService.DeleteTemporaryData("Products");
+            }
+        }
+
+        /// <summary>
+        /// Cung cấp dữ liệu để lưu tạm thời
+        /// </summary>
+        protected override object? GetAutoSaveData()
+        {
+            //nếu như cũ thì không autosave
+            if (EditingProduct != null && _snapshotProduct != null && !IsEditDirty())
+            {
+                return null;
+            }
+            // Get current user ID
+            int? currentUserId = null;
+            if (int.TryParse(_authService.AccountId, out int userId))
+            {
+                currentUserId = userId;
+            }
+
+            return new ProductsViewModelSnapshot
+            {
+                UserId = currentUserId,
+                NewCategoryName = NewCategoryName,
+                SearchKeyword = _searchKeyword,
+                EditingProduct = EditingProduct,
+                SelectedProductId = SelectedProduct?.ProductId,
+                CurrentPage = PageIndex,
+                PageSize = PageSize
+            };
         }
 
         public void LoadData()

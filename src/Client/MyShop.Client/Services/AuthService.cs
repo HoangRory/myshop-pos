@@ -20,6 +20,13 @@ namespace MyShop.Client.Services
             _http = http;
         }
 
+        public event Action<List<string>>? OnRecoveryRequested;
+
+        public Task RequestRecoveryAsync(List<string> viewModels)
+        {
+            OnRecoveryRequested?.Invoke(viewModels);
+            return Task.CompletedTask;
+        }
         public async Task<bool> LoginAsync(string username, string password, bool isHashed = false)
         {
             var account = new Account(username, password, isHashed);
